@@ -1,0 +1,77 @@
+{
+  "common": {
+    "request_demo": "Demander une Démo",
+    "learn_more": "En Savoir Plus",
+    "contact": "Contact",
+    "features": "Fonctionnalités",
+    "benefits": "Avantages",
+    "privacy_policy": "Politique de Confidentialité",
+    "terms_of_service": "Conditions d'Utilisation",
+    "all_rights_reserved": "Tous Droits Réservés."
+  },
+  "landing": {
+    "hero_title": "Contrôle Total de Votre Flotte. Partout au Cameroun.",
+    "hero_subtitle": "Suivi en temps réel, géorepérage et analyses puissantes pour optimiser vos services de transport.",
+
+    "challenges_title": "Les Défis de la Gestion de Flotte Moderne",
+    "challenges_subtitle": "Naviguer dans les complexités de la logistique des véhicules au Cameroun présente un ensemble unique d'obstacles. Nous les comprenons et avons bâti la solution.",
+    "section_problems": "Les Problèmes",
+    "section_solution": "Notre Solution",
+
+    "problem_1_title": "Voyages Non Autorisés et Vol de Carburant",
+    "problem_1_text": "Le manque de visibilité mène à une mauvaise utilisation des actifs de l'entreprise et à l'augmentation des coûts opérationnels.",
+    "problem_2_title": "Retards de Trajet et Inefficacité",
+    "problem_2_text": "Une mauvaise planification d'itinéraire et des retards imprévus impactent les délais de livraison et la satisfaction client.",
+    "problem_3_title": "Manque de Responsabilité des Conducteurs",
+    "problem_3_text": "Les habitudes de conduite dangereuses ne sont pas contrôlées, augmentant les risques et les coûts de maintenance.",
+
+    "solution_1_title": "Alertes et Surveillance en Temps Réel",
+    "solution_1_text": "Recevez des notifications instantanées pour les franchissements de zone de géorepérage et surveillez les niveaux de carburant pour prévenir le vol.",
+    "solution_2_title": "Optimisation Intelligente des Itinéraires",
+    "solution_2_text": "Planifiez les itinéraires les plus efficaces et obtenez des mises à jour en direct du trafic pour éviter les retards coûteux.",
+    "solution_3_title": "Analyse Complète du Conducteur",
+    "solution_3_text": "Suivez le comportement du conducteur, sa vitesse et son temps de ralenti pour améliorer la sécurité et la conformité.",
+
+    "solution_section_title": "La Solution au Bout des Doigts",
+    "solution_section_subtitle": "Notre système vous fournit les outils nécessaires pour surmonter les défis courants de la gestion de flotte avec facilité et efficacité.",
+
+    "feature_1_title": "Suivi GPS en Temps Réel",
+    "feature_1_text": "Connaissez l'emplacement exact de vos véhicules 24/7 sur une carte en direct.",
+    "feature_2_title": "Géorepérage et Alertes",
+    "feature_2_text": "Créez des limites virtuelles et recevez des alertes instantanées lorsque les véhicules entrent ou sortent.",
+    "feature_3_title": "Historique et Relecture de Trajet",
+    "feature_3_text": "Passez en revue les trajets passés, analysez les itinéraires empruntés et identifiez les inefficacités.",
+    "feature_4_title": "Analyses et Rapports",
+    "feature_4_text": "Générez des rapports détaillés sur le kilométrage, le carburant, le comportement du conducteur, et plus encore.",
+
+    "benefits_title": "Avantages Tangibles pour Votre Entreprise",
+    "benefits_subtitle": "Débloquez des améliorations significatives en efficacité, sécurité et rentabilité pour vos opérations de transport au Cameroun.",
+
+    "benefit_1_title": "Coûts de Carburant Optimisés",
+    "benefit_1_text": "Réduisez la consommation de carburant en surveillant le ralenti, en optimisant les itinéraires et en prévenant le vol, vous faisant économiser sur votre plus grande dépense.",
+    "benefit_2_title": "Sécurité Accrue",
+    "benefit_2_text": "Protégez vos actifs de valeur grâce au suivi en temps réel et aux alertes instantanées en cas de vol ou d'utilisation non autorisée, assurant votre tranquillité d'esprit.",
+    "benefit_3_title": "Responsabilité Améliorée des Conducteurs",
+    "benefit_3_text": "Encouragez des habitudes de conduite plus sûres et assurez la conformité aux politiques de l'entreprise grâce à une surveillance détaillée du comportement et des rapports.",
+
+    "steps_title": "Commencez en 3 Étapes Simples",
+    "steps_subtitle": "Notre processus est conçu pour être rapide, facile et fluide, vous permettant de connecter votre flotte sans tracas.",
+
+    "step_1_title": "Installation du Dispositif",
+    "step_1_text": "Nos techniciens effectuent une installation rapide et professionnelle du dispositif de suivi GPS dans vos véhicules.",
+    "step_2_title": "Surveillance sur le Tableau de Bord",
+    "step_2_text": "Connectez-vous à notre plateforme web conviviale depuis n'importe quel ordinateur pour voir l'intégralité de votre flotte en temps réel.",
+    "step_3_title": "Obtenir des Aperçus",
+    "step_3_text": "Utilisez des analyses puissantes et des rapports automatisés pour prendre des décisions basées sur les données et optimiser vos opérations.",
+
+    "contact_title": "Prêt à Transformer la Gestion de Votre Flotte ?",
+    "contact_text": "Faites le premier pas vers une efficacité et un contrôle accrus. Remplissez le formulaire pour demander une démo gratuite et sans obligation adaptée à vos besoins d'affaires au Cameroun.",
+    "contact_phone": "+237 6XX XXX XXX",
+    "contact_email": "contact@fleetcontrol.cm",
+    "form_name": "Votre Nom",
+    "form_company": "Nom de l'Entreprise",
+    "form_email": "Adresse E-mail",
+    "form_message": "Votre Message",
+    "form_button": "Prendre Contact"
+  }
+}

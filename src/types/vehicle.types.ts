@@ -1,63 +1,40 @@
-import {
-    UUID,
-    DateString,
-    DateTimeString,
-    VehicleType,
-    EngineStatus,
-    MaintenanceStatus,
-    Coordinates,
-} from './base.types';
+import { UUID, DateString, DateTimeString, VehicleType, EngineStatus, MaintenanceStatus, Coordinates } from './base.types';
 
-/**
- * Interface pour le conducteur assigné (vue simplifiée)
- */
 export interface AssignedDriver {
     userId: UUID;
     name: string;
     phone?: string;
 }
 
-/**
- * Interface pour les paramètres financiers d'un véhicule
- */
 export interface FinancialParameters {
     insuranceNumber?: string;
     insuranceExpiryDate?: DateString;
     registrationDate?: DateString;
     purchaseDate?: DateString;
-    depreciationRate?: number; // Pourcentage
-    costPerKm?: number; // Coût par kilomètre
+    depreciationRate?: number;
+    costPerKm?: number;
 }
 
-/**
- * Interface pour les paramètres de maintenance
- */
 export interface MaintenanceParameters {
     lastMaintenanceDate?: DateString;
     nextMaintenanceDue?: DateString;
     engineStatus?: EngineStatus;
-    batteryHealth?: number; // Pourcentage (0-100)
+    batteryHealth?: number;
     maintenanceStatus?: MaintenanceStatus;
 }
 
-/**
- * Interface pour les paramètres opérationnels
- */
 export interface OperationalParameters {
-    status: boolean; // true = en service, false = hors service
-    currentSpeed?: number; // km/h
-    fuelLevel?: string; // ex: "65%" ou "12/16"
-    mileage?: number; // Kilométrage total
-    odometerReading?: number; // Lecture de l'odomètre
-    bearing?: number; // Direction en degrés (0-360)
-    timestamp?: DateTimeString; // Dernière mise à jour
+    status: boolean;
+    currentSpeed?: number;
+    fuelLevel?: string;
+    mileage?: number;
+    odometerReading?: number;
+    bearing?: number;
+    timestamp?: DateTimeString;
     currentLocation?: Coordinates;
     currentTripId?: UUID;
 }
 
-/**
- * Interface complète pour un véhicule
- */
 export interface Vehicle {
     id: UUID;
     fleetId: UUID;
@@ -74,9 +51,6 @@ export interface Vehicle {
     operationalParameters?: OperationalParameters;
 }
 
-/**
- * Interface pour créer un véhicule
- */
 export interface CreateVehicleDto {
     fleetId: UUID;
     licensePlate: string;
@@ -88,9 +62,6 @@ export interface CreateVehicleDto {
     imageUrl?: string;
 }
 
-/**
- * Interface pour mettre à jour un véhicule
- */
 export interface UpdateVehicleDto {
     licensePlate?: string;
     brand?: string;
@@ -101,31 +72,19 @@ export interface UpdateVehicleDto {
     imageUrl?: string;
 }
 
-/**
- * Interface pour mettre à jour les paramètres financiers
- */
 export interface UpdateFinancialParametersDto extends Partial<FinancialParameters> {}
 
-/**
- * Interface pour mettre à jour les paramètres de maintenance
- */
 export interface UpdateMaintenanceParametersDto extends Partial<MaintenanceParameters> {}
 
-/**
- * Interface pour les filtres de recherche de véhicules
- */
 export interface VehicleFilters {
     fleetId?: UUID;
     type?: VehicleType;
     status?: boolean;
-    search?: string; // Recherche par plaque, marque, modèle
+    search?: string;
     assignedDriverId?: UUID;
     maintenanceStatus?: MaintenanceStatus;
 }
 
-/**
- * Interface pour la vue carte d'un véhicule (version simplifiée)
- */
 export interface VehicleMapView {
     id: UUID;
     licensePlate: string;

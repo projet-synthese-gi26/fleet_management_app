@@ -1,0 +1,77 @@
+{
+  "common": {
+    "request_demo": "Request a Demo",
+    "learn_more": "Learn More",
+    "contact": "Contact",
+    "features": "Features",
+    "benefits": "Benefits",
+    "privacy_policy": "Privacy Policy",
+    "terms_of_service": "Terms of Service",
+    "all_rights_reserved": "All Rights Reserved."
+  },
+  "landing": {
+    "hero_title": "Total Control Over Your Fleet. Anywhere in Cameroon.",
+    "hero_subtitle": "Real-time tracking, geofencing, and powerful analytics to optimize your transportation services.",
+
+    "challenges_title": "The Challenges of Modern Fleet Management",
+    "challenges_subtitle": "Navigating the complexities of vehicle logistics in Cameroon comes with a unique set of obstacles. We understand them, and we've built the solution.",
+    "section_problems": "The Problems",
+    "section_solution": "Our Solution",
+
+    "problem_1_title": "Unauthorized Trips & Fuel Theft",
+    "problem_1_text": "Lack of visibility leads to misuse of company assets and increased operational costs.",
+    "problem_2_title": "Route Delays & Inefficiency",
+    "problem_2_text": "Poor route planning and unforeseen delays impact delivery times and customer satisfaction.",
+    "problem_3_title": "Lack of Driver Accountability",
+    "problem_3_text": "Unsafe driving habits go unchecked, increasing risks and maintenance costs.",
+
+    "solution_1_title": "Real-Time Alerts & Monitoring",
+    "solution_1_text": "Get instant notifications for geofence breaches and monitor fuel levels to prevent theft.",
+    "solution_2_title": "Intelligent Route Optimization",
+    "solution_2_text": "Plan the most efficient routes and get live traffic updates to avoid costly delays.",
+    "solution_3_title": "Comprehensive Driver Analytics",
+    "solution_3_text": "Track driver behavior, speed, and idling time to improve safety and compliance.",
+
+    "solution_section_title": "The Solution at Your Fingertips",
+    "solution_section_subtitle": "Our system provides the tools you need to overcome common fleet management challenges with ease and efficiency.",
+
+    "feature_1_title": "Real-Time GPS Tracking",
+    "feature_1_text": "Know the exact location of your vehicles 24/7 on a live map.",
+    "feature_2_title": "Geofencing & Alerts",
+    "feature_2_text": "Create virtual boundaries and get instant alerts when vehicles enter or exit.",
+    "feature_3_title": "Route History & Playback",
+    "feature_3_text": "Review past trips, analyze routes taken, and identify inefficiencies.",
+    "feature_4_title": "Analytics & Reports",
+    "feature_4_text": "Generate detailed reports on mileage, fuel, driver behavior, and more.",
+
+    "benefits_title": "Tangible Benefits for Your Business",
+    "benefits_subtitle": "Unlock significant improvements in efficiency, security, and profitability for your transport operations in Cameroon.",
+
+    "benefit_1_title": "Optimized Fuel Costs",
+    "benefit_1_text": "Reduce fuel consumption by monitoring idling, optimizing routes, and preventing theft, saving you money on your biggest expense.",
+    "benefit_2_title": "Increased Security",
+    "benefit_2_text": "Protect your valuable assets with real-time tracking and instant alerts for theft or unauthorized use, ensuring peace of mind.",
+    "benefit_3_title": "Improved Driver Accountability",
+    "benefit_3_text": "Promote safer driving habits and ensure compliance with company policies through detailed behavior monitoring and reports.",
+
+    "steps_title": "Get Started in 3 Simple Steps",
+    "steps_subtitle": "Our process is designed to be quick, easy, and seamless, getting your fleet connected without hassle.",
+
+    "step_1_title": "Install Device",
+    "step_1_text": "Our technicians perform a quick and professional installation of the GPS tracking device in your vehicles.",
+    "step_2_title": "Monitor on Dashboard",
+    "step_2_text": "Log in to our user-friendly web platform from any desktop to see your entire fleet in real-time.",
+    "step_3_title": "Get Insights",
+    "step_3_text": "Use powerful analytics and automated reports to make data-driven decisions and optimize your operations.",
+
+    "contact_title": "Ready to Transform Your Fleet Management?",
+    "contact_text": "Take the first step towards greater efficiency and control. Fill out the form to request a free, no-obligation demo tailored to your business needs in Cameroon.",
+    "contact_phone": "+237 6XX XXX XXX",
+    "contact_email": "contact@fleetcontrol.cm",
+    "form_name": "Your Name",
+    "form_company": "Company Name",
+    "form_email": "Email Address",
+    "form_message": "Your Message",
+    "form_button": "Get in Touch"
+  }
+}

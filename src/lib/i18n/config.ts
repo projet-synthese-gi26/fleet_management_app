@@ -12,4 +12,3 @@ export function getLocaleFromPathname(pathname: string): Locale {
     const locale = pathname.split('/')[1];
     return locales.includes(locale as Locale) ? (locale as Locale) : defaultLocale;
 }
-

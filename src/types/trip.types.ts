@@ -1,33 +1,17 @@
-import {
-    UUID,
-    DateString,
-    TimeString,
-    VehicleType,
-    Coordinates,
-    DateFilter,
-} from './base.types';
+import { UUID, DateString, TimeString, VehicleType, Coordinates, DateFilter } from './base.types';
 
-/**
- * Interface pour un point de route
- */
 export interface RoutePoint extends Coordinates {
     routeId: UUID;
 }
 
-/**
- * Interface pour une route
- */
 export interface Route {
     routeId: UUID;
     startPoint: Coordinates;
     endPoint: Coordinates;
-    distance?: number; // Distance en km
-    estimatedDuration?: number; // Durée estimée en minutes
+    distance?: number;
+    estimatedDuration?: number;
 }
 
-/**
- * Énumération pour le statut d'un trajet
- */
 export enum TripStatus {
     ONGOING = 'ONGOING',
     COMPLETED = 'COMPLETED',
@@ -35,9 +19,6 @@ export enum TripStatus {
     PAUSED = 'PAUSED',
 }
 
-/**
- * Interface principale pour un trajet
- */
 export interface Trip {
     id: UUID;
     vehicleId: UUID;
@@ -46,20 +27,15 @@ export interface Trip {
     startTime: TimeString;
     endDate?: DateString;
     endTime?: TimeString;
-    type?: VehicleType; // Type de véhicule (historique)
-    color?: string; // Couleur du véhicule (historique)
+    type?: VehicleType;
+    color?: string;
     routes?: Route[];
-
-    // Informations calculées (optionnelles)
-    duration?: number; // Durée en minutes
-    distance?: number; // Distance parcourue en km
-    averageSpeed?: number; // Vitesse moyenne en km/h
+    duration?: number;
+    distance?: number;
+    averageSpeed?: number;
     status?: TripStatus;
 }
 
-/**
- * Interface pour créer un trajet
- */
 export interface CreateTripDto {
     vehicleId: UUID;
     driverId: UUID;
@@ -71,17 +47,11 @@ export interface CreateTripDto {
     }[];
 }
 
-/**
- * Interface pour terminer un trajet
- */
 export interface EndTripDto {
     endDate: DateString;
     endTime: TimeString;
 }
 
-/**
- * Interface pour les filtres de recherche de trajets
- */
 export interface TripFilters extends DateFilter {
     vehicleId?: UUID;
     driverId?: UUID;
@@ -91,23 +61,17 @@ export interface TripFilters extends DateFilter {
     maxDistance?: number;
 }
 
-/**
- * Interface pour les statistiques de trajets
- */
 export interface TripStatistics {
     totalTrips: number;
     ongoingTrips: number;
     completedTrips: number;
-    totalDistance: number; // en km
-    totalDuration: number; // en minutes
-    averageDistance: number; // en km
-    averageDuration: number; // en minutes
-    averageSpeed: number; // en km/h
+    totalDistance: number;
+    totalDuration: number;
+    averageDistance: number;
+    averageDuration: number;
+    averageSpeed: number;
 }
 
-/**
- * Interface pour un trajet détaillé avec informations supplémentaires
- */
 export interface DetailedTrip extends Trip {
     vehicleInfo: {
         licensePlate: string;
@@ -133,9 +97,6 @@ export interface DetailedTrip extends Trip {
     }[];
 }
 
-/**
- * Interface pour l'historique des trajets (vue liste)
- */
 export interface TripListItem {
     id: UUID;
     vehicleLicensePlate: string;

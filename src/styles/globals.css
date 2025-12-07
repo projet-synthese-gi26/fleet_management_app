@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 * {
     margin: 0;
     padding: 0;
@@ -35,6 +39,8 @@
     --color-error-light: #fee2e2;
     --color-info: #3b82f6;
     --color-info-light: #dbeafe;
+
+    --color-text-invert: #ffffff;
 
     --color-overlay: rgba(0, 0, 0, 0.5);
     --color-overlay-light: rgba(0, 0, 0, 0.3);
@@ -96,6 +102,7 @@
 
     --color-overlay: rgba(0, 0, 0, 0.7);
     --color-overlay-light: rgba(0, 0, 0, 0.5);
+    --color-text-invert: #ffffff;
 
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);

@@ -2,14 +2,7 @@
 
 import React, { createContext, useState, useEffect } from 'react';
 import { Locale, defaultLocale, locales } from '@/lib/i18n/config';
-
-import enDictionary from '../../../public/locales/en.json';
-import frDictionary from '../../../public/locales/fr.json';
-
-const dictionaries = {
-    en: enDictionary,
-    fr: frDictionary,
-};
+import { clientDictionaries, Dictionary } from '@/lib/i18n/utils';
 
 interface I18nContextType {
     locale: Locale;
@@ -17,13 +10,11 @@ interface I18nContextType {
     t: (key: string, section?: string) => string;
 }
 
-// Exporter le contexte pour qu'il soit accessible par le hook
 export const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
     const [locale, setLocaleState] = useState<Locale>(defaultLocale);
 
-    // Initialiser depuis localStorage
     useEffect(() => {
         if (typeof window !== 'undefined' && window.localStorage) {
             const storedLocale = localStorage.getItem('locale') as Locale;
@@ -39,12 +30,16 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     };
 
     const t = (key: string, section: string = 'common'): string => {
-        const dict = dictionaries[locale];
-        if (!dict || !dict[section]) {
+        const dict = clientDictionaries[locale];
+
+        const sectionContent = dict[section as keyof Dictionary];
+
+        if (!dict || !sectionContent) {
             console.warn(`Section "${section}" not found for locale "${locale}"`);
             return `[${section}:${key}]`;
         }
-        return dict[section][key] || `[${section}:${key}]`;
+
+        return sectionContent[key as keyof typeof sectionContent] || `[${section}:${key}]`;
     };
 
     return (

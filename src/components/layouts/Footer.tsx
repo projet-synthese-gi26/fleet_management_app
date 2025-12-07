@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { useI18n } from '../providers/I18nProvider';
+import { useI18n } from '@/hooks/useI18n';
 
 export function Footer() {
     const { t } = useI18n();

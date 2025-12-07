@@ -1,13 +1,16 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useI18n } from '../providers/I18nProvider';
-import { localeNames, locales } from '../../lib/i18n/config';
+import { usePathname, useRouter } from 'next/navigation';
+import { useI18n } from '@/hooks/useI18n';
+import { localeNames, locales, type Locale } from '@/lib/i18n/config';
 
 export function LanguageSelector() {
     const { locale, setLocale } = useI18n();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -20,11 +23,19 @@ export function LanguageSelector() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleLanguageChange = (newLocale: string) => {
-        setLocale(newLocale as any);
+    const handleLanguageChange = (newLocale: Locale) => {
+        setLocale(newLocale);
         setIsOpen(false);
 
-        window.location.reload();
+        // Mettre à jour l'URL
+        const segments = pathname.split('/');
+        if (segments.length > 1 && locales.includes(segments[1] as Locale)) {
+            segments[1] = newLocale;
+            const newPathname = segments.join('/');
+            router.push(newPathname);
+        } else {
+            router.push(`/${newLocale}${pathname}`);
+        }
     };
 
     return (
@@ -32,6 +43,7 @@ export function LanguageSelector() {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center gap-2 text-sm font-medium p-2 rounded-md hover:bg-background-secondary transition-colors"
+                aria-label="Select language"
             >
                 <span className="material-symbols-outlined text-base">language</span>
                 <span>{locale.toUpperCase()}</span>

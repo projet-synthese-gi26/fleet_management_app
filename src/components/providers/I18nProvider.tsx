@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useState, useEffect } from 'react';
-import { Locale, defaultLocale, locales } from '@/lib/i18n/config';
+import { usePathname } from 'next/navigation';
+import { Locale, defaultLocale, locales, getLocaleFromPathname } from '@/lib/i18n/config';
 import { clientDictionaries, Dictionary } from '@/lib/i18n/utils';
 
 interface I18nContextType {
@@ -13,20 +14,24 @@ interface I18nContextType {
 export const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-    const [locale, setLocaleState] = useState<Locale>(defaultLocale);
-
+    const pathname = usePathname();
+    const localeFromPath = getLocaleFromPathname(pathname);
+    const [locale, setLocaleState] = useState<Locale>(localeFromPath);
     useEffect(() => {
-        if (typeof window !== 'undefined' && window.localStorage) {
-            const storedLocale = localStorage.getItem('locale') as Locale;
-            if (storedLocale && locales.includes(storedLocale)) {
-                setLocaleState(storedLocale);
+        const newLocale = getLocaleFromPathname(pathname);
+        if (newLocale !== locale) {
+            setLocaleState(newLocale);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('locale', newLocale);
             }
         }
-    }, []);
+    }, [pathname]);
 
     const setLocale = (newLocale: Locale) => {
         setLocaleState(newLocale);
-        localStorage.setItem('locale', newLocale);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('locale', newLocale);
+        }
     };
 
     const t = (key: string, section: string = 'common'): string => {
@@ -39,7 +44,14 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
             return `[${section}:${key}]`;
         }
 
-        return sectionContent[key as keyof typeof sectionContent] || `[${section}:${key}]`;
+        const translation = sectionContent[key as keyof typeof sectionContent];
+
+        if (!translation) {
+            console.warn(`Translation key "${key}" not found in section "${section}" for locale "${locale}"`);
+            return `[${section}:${key}]`;
+        }
+
+        return translation as string;
     };
 
     return (

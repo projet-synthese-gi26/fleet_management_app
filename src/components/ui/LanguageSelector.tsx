@@ -47,17 +47,27 @@ export function LanguageSelector() {
             >
                 <span className="material-symbols-outlined text-base">language</span>
                 <span>{locale.toUpperCase()}</span>
-                <span className="material-symbols-outlined text-base">expand_more</span>
+                <span className="material-symbols-outlined text-base">
+                    {isOpen ? 'expand_less' : 'expand_more'}
+                </span>
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-40 bg-surface border border-border-default rounded-lg shadow-lg overflow-hidden z-50">
+                <div
+                    className="absolute right-0 mt-2 min-w-[160px] bg-surface border border-border-default rounded-lg shadow-lg z-[100]"
+                    style={{
+                        maxHeight: '200px',
+                        overflowY: 'auto'
+                    }}
+                >
                     {locales.map((loc) => (
                         <button
                             key={loc}
                             onClick={() => handleLanguageChange(loc)}
-                            className={`w-full text-left px-4 py-2 text-sm hover:bg-background-secondary transition-colors ${
-                                locale === loc ? 'bg-primary-light text-primary font-semibold' : 'text-text-primary'
+                            className={`w-full text-left px-4 py-3 text-sm hover:bg-background-secondary transition-colors block ${
+                                locale === loc
+                                    ? 'bg-primary-light text-primary font-semibold'
+                                    : 'text-text-primary'
                             }`}
                         >
                             {localeNames[loc]}

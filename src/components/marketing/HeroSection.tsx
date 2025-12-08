@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { useI18n } from '@/hooks/useI18n';
 
@@ -24,10 +26,10 @@ export function HeroSection() {
 
                     <div className="flex flex-wrap gap-3">
                         <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary hover:bg-primary-hover text-white text-base font-bold leading-normal tracking-[0.015em] transition-colors">
-                            <span className="truncate">{t('request_demo')}</span>
+                            <span className="truncate">{t('request_demo', 'common')}</span>
                         </button>
                         <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-surface hover:bg-surface-hover text-text-primary text-base font-bold leading-normal tracking-[0.015em] transition-colors border border-border-default">
-                            <span className="truncate">{t('learn_more')}</span>
+                            <span className="truncate">{t('learn_more', 'common')}</span>
                         </button>
                     </div>
                 </div>

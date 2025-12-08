@@ -9,6 +9,12 @@ export const localeNames: Record<Locale, string> = {
 };
 
 export function getLocaleFromPathname(pathname: string): Locale {
-    const locale = pathname.split('/')[1];
-    return locales.includes(locale as Locale) ? (locale as Locale) : defaultLocale;
+    const segments = pathname.split('/').filter(Boolean);
+    const firstSegment = segments[0];
+
+    if (firstSegment && locales.includes(firstSegment as Locale)) {
+        return firstSegment as Locale;
+    }
+
+    return defaultLocale;
 }

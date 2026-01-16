@@ -40,6 +40,7 @@ type NavItem = {
 const primaryItems: NavItem[] = [
   { title: "Dashboard", href: "/admin", icon: LayoutDashboard, description: "Vue d'ensemble de la flotte" },
   { title: "Utilisateurs", href: "/admin/users", icon: Users, description: "Gestion des comptes et rôles" },
+  { title: "Fleet Managers", href: "/admin/fleet-managers", icon: Users, description: "Gestion des managers de flotte" },
   { title: "Flottes", href: "/admin/fleets", icon: Building2, description: "Gestion des groupes de véhicules" },
   { title: "Véhicules", href: "/admin/vehicles", icon: Truck, description: "Suivi et gestion des véhicules" },
   { title: "Conducteurs", href: "/admin/drivers", icon: User, description: "Gestion des conducteurs" },

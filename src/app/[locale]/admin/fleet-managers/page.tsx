@@ -54,7 +54,7 @@ export default function FleetManagersPage() {
   const managers = getManagerData();
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="">
       <PageHeader />
       <FilterBar />
       <FleetManagersTableContainer managers={managers} />

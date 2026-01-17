@@ -37,14 +37,15 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     const t = (key: string, section: string = 'common'): string => {
         const dict = clientDictionaries[locale];
 
-        const sectionContent = dict[section as keyof Dictionary];
+        const sectionContent = dict[section as keyof typeof dict]; // Correctly type sectionContent as a key of dict
 
         if (!dict || !sectionContent) {
             console.warn(`Section "${section}" not found for locale "${locale}"`);
             return `[${section}:${key}]`;
         }
-
-        const translation = sectionContent[key as keyof typeof sectionContent];
+        
+        // Ensure sectionContent is treated as a record to allow direct key access
+        const translation = (sectionContent as Record<string, string>)[key];
 
         if (!translation) {
             console.warn(`Translation key "${key}" not found in section "${section}" for locale "${locale}"`);

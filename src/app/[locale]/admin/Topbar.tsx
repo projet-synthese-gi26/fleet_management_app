@@ -6,6 +6,8 @@ import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Bell, Search, Settings } from "lucide-react";
 import { useSidebar } from "./contexts/SidebarContext";
+import { LanguageSelector } from "@/components/ui/LanguageSelector";
+import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
 
 const pageConfig: Record<string, { title: string; description: string }> = {
   "/admin": { title: "Dashboard", description: "Vue d'ensemble de votre flotte" },
@@ -27,25 +29,30 @@ export default function Topbar() {
   /* =======================
      Heure & date actuelles
   ======================== */
-  const [now, setNow] = useState(new Date());
+  const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
+    setNow(new Date()); // Initialize on client after hydration
     const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  const formattedDate = now.toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const formattedDate = now
+    ? now.toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : "Chargement..."; // Placeholder for server render
 
-  const formattedTime = now.toLocaleTimeString("fr-FR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+  const formattedTime = now
+    ? now.toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+    : ""; // Placeholder for server render
 
   return (
     <header
@@ -119,6 +126,11 @@ export default function Topbar() {
               <Bell className="w-5 h-5 text-text-secondary" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-error rounded-full" />
             </button>
+            
+            <div className="h-6 w-px bg-border-default mx-2"></div>
+
+            <LanguageSelector />
+            <ThemeSwitcher />
           </div>
 
         </div>

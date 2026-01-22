@@ -11,7 +11,10 @@
     "login": "Login",
     "signup": "Sign Up",
     "legalNotices": "Legal Notice",
-    "copyright": "© 2024 Logistics Cameroon"
+    "copyright": "© 2024 Logistics Cameroon",
+    "cancel": "Cancel",
+    "add": "Add",
+    "close": "Close"
   },
   "landing": {
     "hero_title": "Total Control Over Your Fleet. Anywhere in Cameroon.",
@@ -45,7 +48,6 @@
     "feature_2_text": "Create virtual boundaries and get instant alerts when vehicles enter or exit.",
     "feature_3_title": "Route History & Playback",
     "feature_3_text": "Review past trips, analyze routes taken, and identify inefficiencies.",
-    "feature_4_title": "Analytics & Reports",
     "feature_4_text": "Generate detailed reports on mileage, fuel, driver behavior, and more.",
 
     "benefits_title": "Tangible Benefits for Your Business",
@@ -55,7 +57,6 @@
     "benefit_1_text": "Reduce fuel consumption by monitoring idling, optimizing routes, and preventing theft, saving you money on your biggest expense.",
     "benefit_2_title": "Increased Security",
     "benefit_2_text": "Protect your valuable assets with real-time tracking and instant alerts for theft or unauthorized use, ensuring peace of mind.",
-    "benefit_3_title": "Improved Driver Accountability",
     "benefit_3_text": "Promote safer driving habits and ensure compliance with company policies through detailed behavior monitoring and reports.",
 
     "steps_title": "Get Started in 3 Simple Steps",
@@ -107,7 +108,10 @@
     "paginationShowing": "Showing",
     "paginationTo": "to",
     "paginationOf": "of",
-    "paginationResults": "results"
+    "paginationResults": "results",
+    "modalAddManagerTitle": "Add New Manager",
+    "formName": "Name",
+    "formEmail": "Email"
   },
   "authPage": {
     "loginPageTitle": "Login - Logistics Platform",
@@ -164,5 +168,25 @@
     "passwordMismatch": "Passwords do not match.",
     "signupSuccess": "Signup successful! You can now log in.",
     "signupError": "Signup failed. Please try again later."
+  },
+  "driverDashboardPage": {
+    "modalReportIssueTitle": "Report an Issue",
+    "issueDescriptionLabel": "Describe the Issue",
+    "reportIssueButton": "Report Issue",
+    "modalStartBreakTitle": "Start a Break",
+    "startBreakConfirmation": "Are you sure you want to start a break? Your status will change to \"On Break\".",
+    "startBreakButton": "Start Break",
+    "onBreakMessage": "You are currently on break. Enjoy your time!",
+    "endBreakButton": "End Break",
+    "modalContactTitle": "Contact Dispatch",
+    "contactPrompt": "Who would you like to contact?",
+    "callDispatchButton": "Call Dispatch",
+    "callTechnicalSupportButton": "Call Technical Support",
+    "callDestinationButton": "Call Destination",
+    "modalNotificationDetailsTitle": "Notification Details",
+    "modalAllNotificationsTitle": "All Notifications",
+    "noNewNotifications": "No new notifications.",
+    "searchPlaceholder": "Search missions, documents, or alerts...",
+    "notificationsButton": "Notifications"
   }
 }

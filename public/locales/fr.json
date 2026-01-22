@@ -11,7 +11,10 @@
     "login": "Se connecter",
     "signup": "S'inscrire",
     "legalNotices": "Mentions légales",
-    "copyright": "© 2024 Logistique Cameroun"
+    "copyright": "© 2024 Logistique Cameroun",
+    "cancel": "Annuler",
+    "add": "Ajouter",
+    "close": "Fermer"
   },
   "landing": {
     "hero_title": "Contrôle Total de Votre Flotte. Partout au Cameroun.",
@@ -53,7 +56,7 @@
 
     "benefit_1_title": "Coûts de Carburant Optimisés",
     "benefit_1_text": "Réduisez la consommation de carburant en surveillant le ralenti, en optimisant les itinéraires et en prévenant le vol, vous faisant économiser sur votre plus grande dépense.",
-    "benefit_2_title": "Sécurité Accrue",
+    "benefit_2_title": "Increased Security",
     "benefit_2_text": "Protégez vos actifs de valeur grâce au suivi en temps réel et aux alertes instantanées en cas de vol ou d'utilisation non autorisée, assurant votre tranquillité d'esprit.",
     "benefit_3_title": "Responsabilité Améliorée des Conducteurs",
     "benefit_3_text": "Encouragez des habitudes de conduite plus sûres et assurez la conformité aux politiques de l'entreprise grâce à une surveillance détaillée du comportement et des rapports.",
@@ -107,7 +110,10 @@
     "paginationShowing": "Affiche",
     "paginationTo": "à",
     "paginationOf": "sur",
-    "paginationResults": "résultats"
+    "paginationResults": "résultats",
+    "modalAddManagerTitle": "Ajouter un nouveau manager",
+    "formName": "Nom",
+    "formEmail": "Email"
   },
   "authPage": {
     "loginPageTitle": "Login - Logistics Platform",
@@ -164,5 +170,25 @@
     "passwordMismatch": "Les mots de passe ne correspondent pas.",
     "signupSuccess": "Inscription réussie ! Vous pouvez maintenant vous connecter.",
     "signupError": "Échec de l'inscription. Veuillez réessayer plus tard."
+  },
+  "driverDashboardPage": {
+    "modalReportIssueTitle": "Signaler un problème",
+    "issueDescriptionLabel": "Décrivez le problème",
+    "reportIssueButton": "Signaler le problème",
+    "modalStartBreakTitle": "Commencer une pause",
+    "startBreakConfirmation": "Voulez-vous vraiment commencer une pause ? Votre statut passera à \"En pause\".",
+    "startBreakButton": "Commencer la pause",
+    "onBreakMessage": "Vous êtes actuellement en pause. Profitez de votre temps !",
+    "endBreakButton": "Terminer la pause",
+    "modalContactTitle": "Contacter la répartition",
+    "contactPrompt": "Qui souhaitez-vous contacter ?",
+    "callDispatchButton": "Appeler la répartition",
+    "callTechnicalSupportButton": "Appeler le support technique",
+    "callDestinationButton": "Appeler la destination",
+    "modalNotificationDetailsTitle": "Détails de la notification",
+    "modalAllNotificationsTitle": "Toutes les notifications",
+    "noNewNotifications": "Pas de nouvelles notifications.",
+    "searchPlaceholder": "Rechercher des missions, documents ou alertes...",
+    "notificationsButton": "Notifications"
   }
 }

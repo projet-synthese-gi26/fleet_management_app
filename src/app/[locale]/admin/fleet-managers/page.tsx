@@ -1,6 +1,4 @@
 import React from 'react';
-import PageHeader from '@/components/admin/fleet-managers/PageHeader';
-import FilterBar from '@/components/admin/fleet-managers/FilterBar';
 import FleetManagersTableContainer from '@/components/admin/fleet-managers/FleetManagersTableContainer';
 import { MOCK_FLEETS } from '@/data/mockFleets';
 import { MOCK_USERS_ADDITIONAL_INFO, UserAdditionalInfo } from '@/data/mockUsers';
@@ -38,9 +36,9 @@ const getManagerData = (): ManagerWithDetails[] => {
     }
     const current = managerMap.get(managerId)!;
     current.fleetCount += 1;
-    current.fleets.push({ 
-        id: fleet.id, 
-        name: fleet.name, 
+    current.fleets.push({
+        id: fleet.id,
+        name: fleet.name,
         vehicleCount: fleet.vehicleCount,
         statistics: MOCK_FLEET_STATISTICS[fleet.id]
     });
@@ -55,8 +53,6 @@ export default function FleetManagersPage() {
 
   return (
     <div className="">
-      <PageHeader />
-      <FilterBar />
       <FleetManagersTableContainer managers={managers} />
     </div>
   );

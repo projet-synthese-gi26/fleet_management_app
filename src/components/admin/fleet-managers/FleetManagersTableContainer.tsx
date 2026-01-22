@@ -6,6 +6,8 @@ import Modal from '@/components/ui/Modal';
 import StatusBadge from './StatusBadge';
 import { FleetStatistics } from '@/types/fleet.types';
 import { useI18n } from '@/hooks/useI18n';
+import PageHeader from '@/components/admin/fleet-managers/PageHeader';
+import FilterBar from '@/components/admin/fleet-managers/FilterBar';
 
 // --- Local Components ---
 
@@ -84,9 +86,10 @@ const FleetStatisticsCard = ({ stats }: { stats: FleetStatistics }) => {
 const FleetManagersTableContainer = ({ managers }) => {
   const { t } = useI18n();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddManagerModalOpen, setAddManagerModalOpen] = useState(false);
   const [selectedManager, setSelectedManager] = useState(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  
+
   // This state would be managed by a proper state management solution
   const [managerData, setManagerData] = useState(managers);
 
@@ -100,12 +103,25 @@ const FleetManagersTableContainer = ({ managers }) => {
     setSelectedManager(null);
   };
   
+  const closeAddManagerModal = () => {
+    setAddManagerModalOpen(false);
+  }
+
   const toggleMenu = (managerId) => {
     setOpenMenuId(openMenuId === managerId ? null : managerId);
+  };
+  
+  const handleAddManager = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    // Here you would typically handle form submission, e.g., API call
+    console.log("Adding new manager...");
+    closeAddManagerModal();
   };
 
   return (
     <>
+      <PageHeader onAddManagerClick={() => setAddManagerModalOpen(true)} />
+      <FilterBar />
       <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#182635]">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -140,7 +156,7 @@ const FleetManagersTableContainer = ({ managers }) => {
                   <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{data.fleetCount}</td>
                   <td className="px-4 py-2 text-right">
                     <div className="relative">
-                      <button 
+                      <button
                         onClick={(e) => { e.stopPropagation(); toggleMenu(data.manager.userId); }}
                         className="p-2 text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-primary/20"
                       >
@@ -160,9 +176,9 @@ const FleetManagersTableContainer = ({ managers }) => {
       </div>
 
       {selectedManager && (
-        <Modal 
-          isOpen={isModalOpen} 
-          onClose={closeModal} 
+        <Modal
+          isOpen={isModalOpen}
+          onClose={closeModal}
           title={t('modalTitle', 'fleetManagersPage').replace('{name}', selectedManager.manager.name)}
         >
           <div className="space-y-6">
@@ -183,6 +199,27 @@ const FleetManagersTableContainer = ({ managers }) => {
           </div>
         </Modal>
       )}
+      
+      <Modal
+        isOpen={isAddManagerModalOpen}
+        onClose={closeAddManagerModal}
+        title={t('modalAddManagerTitle', 'fleetManagersPage')}
+      >
+        <form onSubmit={handleAddManager} className="space-y-4">
+            <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('formName', 'fleetManagersPage')}</label>
+                <input type="text" name="name" id="name" className="mt-1 block w-full px-3 py-2 bg-white dark:bg-background-dark border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" required />
+            </div>
+            <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('formEmail', 'fleetManagersPage')}</label>
+                <input type="email" name="email" id="email" className="mt-1 block w-full px-3 py-2 bg-white dark:bg-background-dark border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" required />
+            </div>
+            <div className="flex justify-end pt-4">
+                <button type="button" onClick={closeAddManagerModal} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 mr-2">{t('cancel', 'common')}</button>
+                <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">{t('add', 'common')}</button>
+            </div>
+        </form>
+      </Modal>
     </>
   );
 };

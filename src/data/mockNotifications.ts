@@ -10,6 +10,9 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
         description: "You arrived at Warehouse A perimeter.",
         time: "10 mins ago",
         read: false,
+        titleKey: "geofenceEntered",
+        descriptionKey: "arrivedAtWarehouseA",
+        timeKey: "time10mins"
     },
     {
         id: "notif-2",
@@ -20,6 +23,9 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
         description: "Scheduled oil check due in 500km.",
         time: "2 hours ago",
         read: false,
+        titleKey: "maintenanceReminder",
+        descriptionKey: "scheduledOilCheck",
+        timeKey: "time2hours"
     },
     {
         id: "notif-3",
@@ -30,6 +36,9 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
         description: "Dispatch uploaded \"Cargo Manifest #9921\".",
         time: "4 hours ago",
         read: false,
+        titleKey: "newDocumentUploaded",
+        descriptionKey: "dispatchUploadedCargoManifest",
+        timeKey: "time4hours"
     },
     {
         id: "notif-4",
@@ -40,5 +49,8 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
         description: "Mission #9920 successfully closed.",
         time: "Yesterday",
         read: true,
+        titleKey: "missionComplete",
+        descriptionKey: "missionSuccessfullyClosed",
+        timeKey: "timeYesterday"
     },
 ];

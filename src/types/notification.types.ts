@@ -7,4 +7,7 @@ export type Notification = {
     description: string;
     time: string;
     read: boolean;
+    titleKey?: string;
+    descriptionKey?: string;
+    timeKey?: string;
 };

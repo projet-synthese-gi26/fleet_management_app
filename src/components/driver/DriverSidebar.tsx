@@ -3,14 +3,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useI18n } from '@/hooks/useI18n'; // Import useI18n
 
-const navLinks = [
-    { href: "/driver/dashboard", icon: "dashboard", label: "Dashboard" },
-    { href: "/driver/missions", icon: "map", label: "Missions" },
-    { href: "/driver/history", icon: "history", label: "History" },
-    { href: "/driver/documents", icon: "description", label: "Documents" },
-    { href: "/driver/settings", icon: "settings", label: "Settings" },
-];
-
 const ProfileCard = () => (
     <div className="flex items-center gap-3">
         <div 
@@ -44,16 +36,27 @@ const NavLink = ({ href, icon, label }) => {
     );
 };
 
-const LogoutButton = () => (
-    <div className="mt-auto p-6 border-t border-slate-200 dark:border-slate-800">
-        <button className="flex w-full items-center justify-center gap-2 rounded-lg h-10 bg-slate-100 dark:bg-[#283039] text-slate-900 dark:text-white text-sm font-medium hover:bg-slate-200 dark:hover:bg-[#3e4856] transition-colors">
-            <span className="material-symbols-outlined text-[18px]">logout</span>
-            <span>Log Out</span>
-        </button>
-    </div>
-);
+const LogoutButton = () => {
+    const { t } = useI18n();
+    return (
+        <div className="mt-auto p-6 border-t border-slate-200 dark:border-slate-800">
+            <button className="flex w-full items-center justify-center gap-2 rounded-lg h-10 bg-slate-100 dark:bg-[#283039] text-slate-900 dark:text-white text-sm font-medium hover:bg-slate-200 dark:hover:bg-[#3e4856] transition-colors">
+                <span className="material-symbols-outlined text-[18px]">logout</span>
+                <span>{t('logout', 'driverSidebar')}</span>
+            </button>
+        </div>
+    );
+};
 
 export const DriverSidebar = () => {
+    const { t } = useI18n();
+    const navLinks = [
+        { href: "/driver/dashboard", icon: "dashboard", label: t('dashboard', 'driverSidebar') },
+        { href: "/driver/missions", icon: "map", label: t('missions', 'driverSidebar') },
+        { href: "/driver/history", icon: "history", label: t('history', 'driverSidebar') },
+        { href: "/driver/documents", icon: "description", label: t('documents', 'driverSidebar') },
+        { href: "/driver/settings", icon: "settings", label: t('settings', 'driverSidebar') },
+    ];
     return (
         <aside className="w-64 flex-shrink-0 flex flex-col bg-white dark:bg-[#111418] border-r border-slate-200 dark:border-slate-800">
             <div className="p-6">

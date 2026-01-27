@@ -7,27 +7,23 @@ interface AcceptNewMissionModalProps {
     mission: Mission; // The new mission to be accepted/rejected
     onAccept: (missionId: string) => void;
     onReject: (missionId: string, reason: string) => void;
-    onClose: () => void;
 }
 
-export const AcceptNewMissionModal = ({ mission, onAccept, onReject, onClose }: AcceptNewMissionModalProps) => {
+export const AcceptNewMissionModal = ({ mission, onAccept, onReject }: AcceptNewMissionModalProps) => {
     const { t } = useI18n();
     const [rejectReason, setRejectReason] = useState('');
 
     const handleAccept = () => {
         onAccept(mission.id);
-        onClose();
     };
 
     const handleReject = () => {
         onReject(mission.id, rejectReason);
-        onClose();
     };
 
     return (
         <div className="flex flex-col gap-6 p-4">
             <div className="flex flex-col gap-2">
-                <h3 className="font-bold text-lg">{t('acceptNewMissionTitle', 'driverMissionsPage')}</h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                     {t('newMissionAssigned', 'driverMissionsPage')} {mission.id}.
                     <br/>

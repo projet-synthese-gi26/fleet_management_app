@@ -11,7 +11,7 @@ export const CurrentMissionCard = ({ onCallDispatchClick }) => {
                     <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
                         <span className="material-symbols-outlined text-[20px]">local_shipping</span>
                     </div>
-                    <h3 className="font-bold text-lg">{t('currentMissionTitle', 'driverDashboardPage').replace('{missionId}', '#9921')}</h3>
+                    <h3 className="font-bold text-lg">{t('currentMissionTitle', 'driverDashboardPage', { missionId: '#9921' })}</h3>
                 </div>
                 <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold border border-amber-500/20">
                     {t('inProgressStatus', 'driverDashboardPage')}
@@ -52,7 +52,7 @@ export const CurrentMissionCard = ({ onCallDispatchClick }) => {
                                 <div className="flex gap-4">
                                     <div className="mt-1 h-6 w-6 rounded-full bg-slate-200 dark:bg-slate-700 border-4 border-white dark:border-[#1c2127] flex-shrink-0"></div>
                                     <div className="flex flex-col">
-                                        <span className="text-xs text-slate-500 dark:text-[#9dabb9] uppercase font-bold tracking-wider">{t('originLabel', 'driverDashboardPage').replace('{time}', '08:00 AM')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-[#9dabb9] uppercase font-bold tracking-wider">{t('originLabel', 'driverDashboardPage', { time: '08:00 AM' })}</span>
                                         <span className="text-slate-900 dark:text-white font-medium text-lg">{t('warehouseA', 'driverDashboardPage')}</span>
                                         <span className="text-slate-500 dark:text-slate-500 text-sm">{t('loadingDock', 'driverDashboardPage')}</span>
                                     </div>
@@ -60,7 +60,7 @@ export const CurrentMissionCard = ({ onCallDispatchClick }) => {
                                 <div className="flex gap-4">
                                     <div className="mt-1 h-6 w-6 rounded-full bg-primary border-4 border-white dark:border-[#1c2127] flex-shrink-0 shadow-[0_0_0_2px_rgba(19,127,236,0.3)]"></div>
                                     <div className="flex flex-col">
-                                        <span className="text-xs text-primary uppercase font-bold tracking-wider">{t('destinationLabel', 'driverDashboardPage').replace('{eta}', '14:30 PM')}</span>
+                                        <span className="text-xs text-primary uppercase font-bold tracking-wider">{t('destinationLabel', 'driverDashboardPage', { eta: '14:30 PM' })}</span>
                                         <span className="text-slate-900 dark:text-white font-medium text-lg">{t('distributionCenterB', 'driverDashboardPage')}</span>
                                         <span className="text-slate-500 dark:text-slate-500 text-sm">{t('unloadingBay', 'driverDashboardPage')}</span>
                                     </div>

@@ -9,6 +9,8 @@ import { CurrentMissionCard } from '@/components/driver/dashboard/CurrentMission
 import Modal from '@/components/ui/Modal';
 import { MissionDetailsModal } from '@/components/driver/missions/MissionDetailsModal';
 import { StartMissionConfirmationModal } from '@/components/driver/missions/StartMissionConfirmationModal';
+import { AcceptNewMissionModal } from '@/components/driver/missions/AcceptNewMissionModal';
+import { ReportIssueModal } from '@/components/driver/dashboard/ReportIssueModal'; // Reusing existing modal
 
 const UpcomingMissions = ({ onMissionClick }) => {
     const { t } = useI18n();
@@ -43,9 +45,21 @@ const CompletedMissions = ({ onMissionClick }) => {
 
 
 const DriverMissionsPage = () => {
+    const { t } = useI18n();
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isStartConfirmationModalOpen, setIsStartConfirmationModalOpen] = useState(false);
+    const [isAcceptNewMissionModalOpen, setIsAcceptNewMissionModalOpen] = useState(false);
+    const [isReportIssueModalOpen, setIsReportIssueModalOpen] = useState(false); // New state for Report Issue
     const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
+
+    // Placeholder for a new mission
+    const [newMissionToAccept] = useState<Mission>({
+        id: "#9924",
+        status: "SCHEDULED",
+        date: "Nov 17, 10:00 AM",
+        origin: { name: "Warehouse D, Industrial Zone" },
+        destination: { name: "Client Office, Downtown" }
+    });
 
     const openDetailsModal = (mission: Mission) => {
         setSelectedMission(mission);
@@ -66,10 +80,37 @@ const DriverMissionsPage = () => {
     };
 
     const handleConfirmStartMission = () => {
-        // Logic to actually start the mission tracking
         console.log(`Mission ${selectedMission?.id} confirmed to start.`);
         closeStartConfirmationModal();
-        closeDetailsModal(); // Close details modal after confirmation
+        closeDetailsModal();
+    };
+
+    const openAcceptNewMissionModal = () => {
+        setIsAcceptNewMissionModalOpen(true);
+    };
+
+    const closeAcceptNewMissionModal = () => {
+        setIsAcceptNewMissionModalOpen(false);
+    };
+
+    const handleAcceptMission = (missionId: string) => {
+        console.log(`Mission ${missionId} accepted!`);
+        closeAcceptNewMissionModal();
+    };
+
+    const handleRejectMission = (missionId: string, reason: string) => {
+        console.log(`Mission ${missionId} rejected with reason: ${reason}`);
+        closeAcceptNewMissionModal();
+    };
+
+    const openReportIssueModal = (mission: Mission) => {
+        setSelectedMission(mission); // Associate report with the mission
+        setIsReportIssueModalOpen(true);
+    };
+
+    const closeReportIssueModal = () => {
+        setIsReportIssueModalOpen(false);
+        setSelectedMission(null); // Clear selected mission when closing
     };
 
     // Dummy function for now
@@ -90,14 +131,25 @@ const DriverMissionsPage = () => {
                         <CompletedMissions onMissionClick={openDetailsModal} />
                     </div>
                 </div>
+                {/* Temporary button to trigger new mission modal for testing */}
+                <button 
+                    onClick={openAcceptNewMissionModal}
+                    className="fixed bottom-4 right-4 bg-purple-600 text-white p-3 rounded-full shadow-lg hover:bg-purple-700 transition-colors z-50"
+                >
+                    {t('openNewMissionModal', 'driverMissionsPage')}
+                </button>
             </div>
             <Modal isOpen={isDetailsModalOpen} onClose={closeDetailsModal} title="">
                 <MissionDetailsModal 
                     mission={selectedMission} 
                     onClose={closeDetailsModal} 
                     onStartTripClick={() => {
-                        closeDetailsModal(); // Close details modal first
-                        openStartConfirmationModal(); // Then open confirmation
+                        closeDetailsModal();
+                        openStartConfirmationModal();
+                    }}
+                    onReportIssueClick={(mission) => {
+                        closeDetailsModal();
+                        openReportIssueModal(mission);
                     }}
                 />
             </Modal>
@@ -106,6 +158,17 @@ const DriverMissionsPage = () => {
                     onConfirm={handleConfirmStartMission} 
                     onClose={closeStartConfirmationModal} 
                 />
+            </Modal>
+            <Modal isOpen={isAcceptNewMissionModalOpen} onClose={closeAcceptNewMissionModal} title="">
+                <AcceptNewMissionModal 
+                    mission={newMissionToAccept} 
+                    onAccept={handleAcceptMission} 
+                    onReject={handleRejectMission} 
+                    onClose={closeAcceptNewMissionModal} 
+                />
+            </Modal>
+            <Modal isOpen={isReportIssueModalOpen} onClose={closeReportIssueModal} title={t('reportAnIssue', 'driverMissionsPage')}>
+                <ReportIssueModal onClose={closeReportIssueModal} />
             </Modal>
         </>
     );

@@ -14,6 +14,7 @@ import {
   Save,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import ProfileSettings from "@/components/profile/ProfileSettings"; // Import du composant
 
 export default function SettingsPage() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -43,11 +44,13 @@ export default function SettingsPage() {
     >
       {/* ===== En-tête ===== */}
       <div className="mb-10">
-        <h1 className="text-3xl font-bold text-text-primary">Paramètres</h1>
+        <h1 className="text-3xl font-bold text-text-primary">Paramètres du Compte</h1>
         <p className="mt-2 text-text-secondary">
-          Configuration de l'application et de votre compte
+          Gérez vos informations personnelles, votre sécurité et vos préférences.
         </p>
       </div>
+
+      <ProfileSettings />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* ===== Navigation gauche ===== */}

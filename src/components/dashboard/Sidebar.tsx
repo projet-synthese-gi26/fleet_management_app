@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Car,
+  MapPin,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -32,6 +33,7 @@ const MENU_ITEMS = [
   { icon: Truck, label: "Vehicles", path: "/dashboard/vehicles" },
   { icon: Users, label: "Drivers", path: "/dashboard/drivers" },
   { icon: Route, label: "Trips", path: "/dashboard/trips" },
+  { icon: MapPin, label: "Geofencing", path: "/admin/geofencing" },
   { icon: Bell, label: "Alerts", path: "/dashboard/alerts" },
   { icon: Settings, label: "Settings", path: "/dashboard/settings" },
 ];

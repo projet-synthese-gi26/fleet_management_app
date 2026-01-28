@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { I18nProvider } from "@/components/providers/I18nProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import { Header } from "@/components/layouts/Header";
-import { Footer } from "@/components/layouts/Footer";
 import "../../styles/globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata: Metadata = {
   title: "Fleet Management and Geofencing System",
@@ -49,11 +48,11 @@ export default async function LocaleLayout({
       <body className="font-display bg-background-light dark:bg-background-dark text-[#0d131b] dark:text-white antialiased">
         <ThemeProvider>
           <I18nProvider>
-            <Header />
-            <main className="min-h-screen bg-background text-text-primary">
-              {children}
-            </main>
-            <Footer />
+            <AuthProvider>
+              <main className="min-h-screen bg-background text-text-primary">
+                {children}
+              </main>
+            </AuthProvider>
           </I18nProvider>
         </ThemeProvider>
       </body>

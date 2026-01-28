@@ -133,7 +133,7 @@ export const MissionDetailsModal = ({ isOpen, mission, onClose, onStartTripClick
                     {/* Right Column: Interactive Map */}
                     <div className="flex-1 lg:flex-[0_0_60%] relative bg-[#151c24] min-h-[300px]">
                         {/* Map Image */}
-                        <div className="absolute inset-0 bg-cover bg-center opacity-80" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCWaKZJuaCFJProndoPt-CGgax92EGdsvJFVFW-mR4nHy7jTwvHcpzQnsv9U0FN4wH7q-Bwz8JAwtRgGrRABa_5SiuLFEpKJHz17ik0II70AWPO96q3aLTzNDn2INFs_FSZfuZJClfU2Zs4KiRsMN9eyVqt02P6aqF9d8twhIvgtx6JVzFbo2lC0px7Dj3iSfTjuWKyJGrgtRZFVgTxh1XBtTEiozP1Rd_ZtAXzKdo9mxsrS1s9xA2U12FBs6m_xF2TE5-d2gAag_Bb"); filter: grayscale(100%) invert(100%) hue-rotate(180deg) brightness(0.6) contrast(1.2); mix-blend-mode: luminosity;' }}></div>
+                        <div className="absolute inset-0 bg-cover bg-center opacity-80" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCWaKZJuaCFJProndoPt-CGgax92EGdsvJFVFW-mR4nHy7jTwvHcpzQnsv9U0FN4wH7q-Bwz8JAwtRgGrRABa_5SiuLFEpKJHz17ik0II70AWPO96q3aLTzNDn2INFs_FSZfuZJClfU2Zs4KiRsMNeyVqt02P6aqF9d8twhIvgtx6JVzFbo2lC0px7Dj3iSfTjuWKyJGrgtRZFVgTxh1XBtTEiozP1Rd_ZtAXzKdo9mxsrS1s9xA2U12FBs6m_xF2TE5-d2gAag_Bb")', filter: 'grayscale(100%) invert(100%) hue-rotate(180deg) brightness(0.6) contrast(1.2)', mixBlendMode: 'luminosity' }}></div>
                         {/* Simulated Map Overlay UI (Zoom controls etc) */}
                         <div className="absolute bottom-6 right-6 flex flex-col gap-2 z-20">
                             <button className="h-10 w-10 bg-surface-dark text-white rounded-lg shadow-lg flex items-center justify-center hover:bg-border-dark border border-border-dark">
@@ -144,7 +144,7 @@ export const MissionDetailsModal = ({ isOpen, mission, onClose, onStartTripClick
                             </button>
                         </div>
                         {/* Map Route Visualization (Simulated overlay on top of image) */}
-                        <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" style={{ filter: 'drop-shadow(0px 4px 6px rgba(0,0,0,0.5));' }}>
+                        <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" style={{ filter: 'drop-shadow(0px 4px 6px rgba(0,0,0,0.5))' }}>
                             {/* Simulated Polyline */}
                             <path d="M 200 450 Q 300 350 350 300 T 550 150" fill="none" stroke="#137fec" strokeDasharray="8 4" strokeLinecap="round" strokeWidth="4"></path>
                             {/* Start Point */}

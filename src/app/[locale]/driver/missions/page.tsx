@@ -139,21 +139,19 @@ const DriverMissionsPage = () => {
                     {t('openNewMissionModal', 'driverMissionsPage')}
                 </button>
             </div>
-            <Modal isOpen={isDetailsModalOpen} onClose={closeDetailsModal} title="">
-                <MissionDetailsModal 
-                    mission={selectedMission} 
-                    onClose={closeDetailsModal} 
-                    onStartTripClick={() => {
-                        closeDetailsModal();
-                        openStartConfirmationModal();
-                    }}
-                    onReportIssueClick={(mission) => {
-                        closeDetailsModal();
-                        openReportIssueModal(mission);
-                    }}
-                />
-            </Modal>
-            <Modal isOpen={isStartConfirmationModalOpen} onClose={closeStartConfirmationModal} title="">
+                        <MissionDetailsModal
+                            isOpen={isDetailsModalOpen}
+                            mission={selectedMission}
+                            onClose={closeDetailsModal}
+                            onStartTripClick={() => {
+                                closeDetailsModal();
+                                openStartConfirmationModal();
+                            }}
+                            onReportIssueClick={(mission) => {
+                                closeDetailsModal();
+                                openReportIssueModal(mission);
+                            }}
+                        />            <Modal isOpen={isStartConfirmationModalOpen} onClose={closeStartConfirmationModal} title="">
                 <StartMissionConfirmationModal 
                     onConfirm={handleConfirmStartMission} 
                     onClose={closeStartConfirmationModal} 

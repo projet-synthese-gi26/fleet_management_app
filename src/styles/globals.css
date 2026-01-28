@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Noto+Sans:wght@400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,25 +12,25 @@
 
 :root {
     /* Light theme (default) */
-    --color-primary: #2563eb;
-    --color-primary-hover: #1d4ed8;
-    --color-primary-light: #dbeafe;
+    --color-primary: #136dec;
+    --color-primary-dark: #0e4bbf;
+    --color-primary-light: #dbeafe; /* Keep original light primary for now or adjust if needed */
     --color-secondary: #64748b;
     --color-secondary-hover: #475569;
 
-    --color-background: #ffffff;
+    --color-background: #ffffff; /* background-light */
     --color-background-secondary: #f8fafc;
     --color-background-tertiary: #f1f5f9;
 
-    --color-surface: #ffffff;
+    --color-surface: #f6f7f8; /* surface-light */
     --color-surface-hover: #f8fafc;
 
-    --color-text-primary: #0f172a;
-    --color-text-secondary: #475569;
-    --color-text-tertiary: #94a3b8;
+    --color-text-primary: #0d131b;
+    --color-text-secondary: #4c6c9a;
+    --color-text-tertiary: #9aa2b1;
     --color-text-disabled: #cbd5e1;
 
-    --color-border: #e2e8f0;
+    --color-border: #cfd9e7;
     --color-border-hover: #cbd5e1;
 
     --color-success: #10b981;
@@ -70,25 +72,25 @@
 }
 
 [data-theme='dark'] {
-    --color-primary: #3b82f6;
-    --color-primary-hover: #2563eb;
+    --color-primary: #136dec;
+    --color-primary-dark: #0e4bbf;
     --color-primary-light: #1e3a8a;
     --color-secondary: #94a3b8;
     --color-secondary-hover: #cbd5e1;
 
-    --color-background: #0f172a;
+    --color-background: #101822; /* background-dark */
     --color-background-secondary: #1e293b;
     --color-background-tertiary: #334155;
 
-    --color-surface: #1e293b;
+    --color-surface: #1a2432; /* surface-dark */
     --color-surface-hover: #334155;
 
-    --color-text-primary: #f1f5f9;
-    --color-text-secondary: #cbd5e1;
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #94a3b8; /* Adjusted for dark mode text */
     --color-text-tertiary: #94a3b8;
     --color-text-disabled: #64748b;
 
-    --color-border: #334155;
+    --color-border: #475569; /* Adjusted for dark mode border */
     --color-border-hover: #475569;
 
     --color-success: #10b981;
@@ -110,11 +112,17 @@
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
 }
 
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+
+
 html,
 body {
     max-width: 100vw;
     overflow-x: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: var(--font-display, "Inter", sans-serif); /* Use CSS variable for font */
     font-size: 16px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
@@ -130,11 +138,11 @@ body {
 a {
     color: var(--color-primary);
     text-decoration: none;
-    transition: color var(--transition-fast);
+    transition: color var(--transition-normal); /* Adjusted to normal */
 }
 
 a:hover {
-    color: var(--color-primary-hover);
+    color: var(--color-primary-dark); /* Changed to primary-dark for consistency */
 }
 
 button {

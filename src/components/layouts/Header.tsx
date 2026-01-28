@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { ThemeSwitcher } from '../ui/ThemeSwitcher';
 import { LanguageSelector } from '../ui/LanguageSelector';
+import Link from 'next/link';
 import { useI18n } from '@/hooks/useI18n';
 
 export function Header() {
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     useEffect(() => {
         const handleResize = () => {
@@ -38,13 +39,13 @@ export function Header() {
     return (
         <>
             <header className="sticky top-0 z-50 flex items-center justify-center whitespace-nowrap border-b border-solid border-border-default bg-surface">
-                <div className="flex items-center justify-between w-full max-w-6xl px-4 py-3">
-                    <div className="flex items-center gap-3 text-text-primary">
+                <div className="flex items-center justify-between w-full px-4 py-3">
+                    <Link href={`/${locale}`} className="flex items-center gap-3 text-text-primary cursor-pointer">
                         <div className="size-6 text-primary">
                             <span className="material-symbols-outlined text-3xl">hub</span>
                         </div>
                         <h2 className="text-lg font-bold tracking-[-0.015em]">FleetControl</h2>
-                    </div>
+                    </Link>
 
                     {/* Menu Desktop */}
                     <div className="hidden md:flex flex-1 justify-end items-center gap-4">
@@ -78,9 +79,13 @@ export function Header() {
                                 </div>
                             </div>
 
-                            <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary hover:bg-primary-hover text-white text-sm font-bold leading-normal tracking-[0.015em] transition-colors">
-                                <span className="truncate">{t('request_demo', 'common')}</span>
-                            </button>
+                            {/* New Login/Signup Buttons */}
+                            <Link href={`/${locale}/login`} className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 border border-primary text-primary hover:bg-primary/10 text-sm font-bold leading-normal tracking-[0.015em] transition-colors">
+                                <span className="truncate">{t('login', 'common')}</span>
+                            </Link>
+                            <Link href={`/${locale}/signup`} className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary hover:bg-primary-hover text-white text-sm font-bold leading-normal tracking-[0.015em] transition-colors">
+                                <span className="truncate">{t('signup', 'common')}</span>
+                            </Link>
                         </div>
                     </div>
 
@@ -158,14 +163,21 @@ export function Header() {
 
                     <div className="flex-1"></div>
 
-                    <div className="p-4 border-t border-border-default">
-                        <button
+                    <div className="p-4 border-t border-border-default space-y-2">
+                        <Link
+                            href={`/${locale}/login`}
+                            onClick={handleNavClick}
+                            className="w-full flex items-center justify-center gap-2 rounded-lg h-12 px-5 border border-primary text-primary text-base font-bold transition-colors hover:bg-primary/10"
+                        >
+                            <span>{t('login', 'common')}</span>
+                        </Link>
+                        <Link
+                            href={`/${locale}/signup`}
                             onClick={handleNavClick}
                             className="w-full flex items-center justify-center gap-2 rounded-lg h-12 px-5 bg-primary hover:bg-primary-hover text-white text-base font-bold transition-colors"
                         >
-                            <span className="material-symbols-outlined">rocket_launch</span>
-                            <span>{t('request_demo', 'common')}</span>
-                        </button>
+                            <span>{t('signup', 'common')}</span>
+                        </Link>
                     </div>
                 </div>
             </div>

@@ -94,18 +94,21 @@ const recentTrips = [
 export default function DriverDetailPage() {
   const driver = driverData;
 
-  const [now, setNow] = useState(new Date());
+  const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
+    setNow(new Date()); // Initialize on client after hydration
     const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  const formattedTime = now.toLocaleTimeString("fr-FR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+  const formattedTime = now
+    ? now.toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+    : ""; // Placeholder for server render
 
   const getStatusColor = () => {
     switch (driver.currentStatus) {

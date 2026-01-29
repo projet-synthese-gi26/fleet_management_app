@@ -369,6 +369,9 @@
     "fuelConsumption": "Consommation de Carburant",
     "routeMap": "Carte du Trajet",
     "mapPlaceholder": "Emplacement Carte Interactive",
-    "geofencingAlerts": "Alertes Géorepérage"
+    "geofencingAlerts": "Alertes Géorepérage",
+    "lastMonth": "Mois dernier",
+    "customRange": "Plage personnalisée",
+    "noMissionsFound": "Aucune mission trouvée"
   }
 }

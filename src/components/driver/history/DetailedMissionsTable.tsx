@@ -40,7 +40,7 @@ export const DetailedMissionsTable: React.FC<DetailedMissionsTableProps> = ({
         }
         return (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20">
-                    {t('completed', 'DriverHistory', 'Statut Terminé')}
+                    {t('completed', 'driverHistoryPage')}
                 </span>
             );
     };

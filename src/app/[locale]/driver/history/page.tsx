@@ -26,6 +26,9 @@ const DriverHistoryPage = () => {
 
     // State
     const [searchTerm, setSearchTerm] = useState('');
+    const [dateFilterType, setDateFilterType] = useState<'thisMonth' | 'lastMonth' | 'custom'>('thisMonth');
+    const [customStartDate, setCustomStartDate] = useState<string>('');
+    const [customEndDate, setCustomEndDate] = useState<string>('');
     const [currentPage, setCurrentPage] = useState(1);
     const missionsPerPage = 5;
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,12 +39,44 @@ const DriverHistoryPage = () => {
 
     // Filtering and Searching
     const filteredMissions = useMemo(() => {
-        return missionsData.filter(mission =>
-            mission.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            mission.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            mission.destination.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [searchTerm, missionsData]);
+        let filtered = missionsData;
+
+        // Apply date filter
+        const today = new Date();
+        if (dateFilterType === 'thisMonth') {
+            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            filtered = filtered.filter(mission => {
+                const missionDate = new Date(mission.date);
+                return missionDate >= startOfMonth && missionDate <= today;
+            });
+        } else if (dateFilterType === 'lastMonth') {
+            const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+            filtered = filtered.filter(mission => {
+                const missionDate = new Date(mission.date);
+                return missionDate >= startOfLastMonth && missionDate <= endOfLastMonth;
+            });
+        } else if (dateFilterType === 'custom' && customStartDate && customEndDate) {
+            const start = new Date(customStartDate);
+            const end = new Date(customEndDate);
+            filtered = filtered.filter(mission => {
+                const missionDate = new Date(mission.date);
+                return missionDate >= start && missionDate <= end;
+            });
+        }
+
+        // Apply search filter
+        if (searchTerm) {
+            const lowerCaseSearchTerm = searchTerm.toLowerCase();
+            filtered = filtered.filter(mission =>
+                mission.id.toLowerCase().includes(lowerCaseSearchTerm) ||
+                mission.origin.toLowerCase().includes(lowerCaseSearchTerm) ||
+                mission.destination.toLowerCase().includes(lowerCaseSearchTerm)
+            );
+        }
+
+        return filtered;
+    }, [searchTerm, dateFilterType, customStartDate, customEndDate, missionsData]);
 
     // Pagination
     const indexOfLastMission = currentPage * missionsPerPage;
@@ -65,6 +100,46 @@ const DriverHistoryPage = () => {
         setIsModalOpen(false);
         setSelectedMission(null);
     };
+
+    // Export Handler
+    const handleExport = () => {
+        const headers = [
+            t('date', 'driverHistoryPage'),
+            t('tripId', 'driverHistoryPage'),
+            t('route', 'driverHistoryPage'),
+            t('distance', 'driverHistoryPage'),
+            t('duration', 'driverHistoryPage'),
+            t('status', 'driverHistoryPage')
+        ].join(',');
+
+        const csvContent = filteredMissions.map(mission => {
+            const statusText = mission.status === 'completed' ? t('completed', 'driverHistoryPage') : `${t('alert', 'driverHistoryPage')} (${t(mission.alerts[0], 'driverHistoryPage')})`;
+            return [
+                mission.date,
+                mission.id,
+                `${mission.origin} ${t('to', 'driverHistoryPage')} ${mission.destination}`,
+                `${mission.distance} km`,
+                mission.duration,
+                statusText
+            ].map(e => `"${String(e).replace(/"/g, '""')}"`).join(','); // Escape quotes and join
+        }).join('\n');
+
+        const fullCsv = headers + '\n' + csvContent;
+
+        const blob = new Blob([fullCsv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'driver_missions_history.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else {
+            alert(t('exportNotSupported', 'driverHistoryPage')); // Fallback for browsers not supporting download attribute
+        }
+    };
     
     return (
         <>
@@ -81,12 +156,38 @@ const DriverHistoryPage = () => {
                         <p className="text-slate-500 dark:text-[#9dabb9] text-base">{t('historySubtitle', 'driverHistoryPage')}</p>
                     </div>
                     <div className="flex gap-3">
-                        <button className="flex items-center gap-2 px-4 h-10 rounded-lg bg-white dark:bg-[#1c2127] border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-[#283039] transition-colors shadow-sm">
-                            <span className="material-symbols-outlined text-[20px]">calendar_today</span>
-                            {t('thisMonth', 'driverHistoryPage')}
-                            <span className="material-symbols-outlined text-[18px] text-slate-400">expand_more</span>
-                        </button>
-                        <button className="flex items-center gap-2 px-4 h-10 rounded-lg bg-primary text-white text-sm font-bold hover:bg-blue-600 transition-colors shadow-sm">
+                        <select 
+                            className="flex items-center gap-2 px-4 h-10 rounded-lg bg-white dark:bg-[#1c2127] border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-[#283039] transition-colors shadow-sm"
+                            value={dateFilterType}
+                            onChange={(e) => {
+                                setDateFilterType(e.target.value as typeof dateFilterType);
+                                if (e.target.value !== 'custom') {
+                                    setCustomStartDate('');
+                                    setCustomEndDate('');
+                                }
+                            }}
+                        >
+                            <option value="thisMonth">{t('thisMonth', 'driverHistoryPage')}</option>
+                            <option value="lastMonth">{t('lastMonth', 'driverHistoryPage')}</option>
+                            <option value="custom">{t('customRange', 'driverHistoryPage')}</option>
+                        </select>
+                        {dateFilterType === 'custom' && (
+                            <div className="flex gap-2">
+                                <input
+                                    type="date"
+                                    className="p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-primary focus:border-primary"
+                                    value={customStartDate}
+                                    onChange={(e) => setCustomStartDate(e.target.value)}
+                                />
+                                <input
+                                    type="date"
+                                    className="p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-primary focus:border-primary"
+                                    value={customEndDate}
+                                    onChange={(e) => setCustomEndDate(e.target.value)}
+                                />
+                            </div>
+                        )}
+                        <button onClick={handleExport} className="flex items-center gap-2 px-4 h-10 rounded-lg bg-primary text-white text-sm font-bold hover:bg-blue-600 transition-colors shadow-sm">
                             <span className="material-symbols-outlined text-[20px]">download</span>
                             {t('exportReport', 'driverHistoryPage')}
                         </button>

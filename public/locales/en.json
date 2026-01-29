@@ -367,6 +367,9 @@
     "fuelConsumption": "Fuel Consumption",
     "routeMap": "Route Map",
     "mapPlaceholder": "Interactive Map Placeholder",
-    "geofencingAlerts": "Geofencing Alerts"
+    "geofencingAlerts": "Geofencing Alerts",
+    "lastMonth": "Last Month",
+    "customRange": "Custom Range",
+    "noMissionsFound": "No missions found"
   }
 }

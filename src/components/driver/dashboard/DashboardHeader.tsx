@@ -4,7 +4,7 @@ import { LanguageSelector } from '@/components/ui/LanguageSelector';
 import { ThemeSwitcher } from '@/components/ui/ThemeSwitcher';
 import { useI18n } from '@/hooks/useI18n';
 
-export const DashboardHeader = ({ onNotificationsClick }) => {
+export const DashboardHeader = ({ onNotificationsClick, searchTerm, onSearchChange }) => {
     const { t } = useI18n();
     const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -18,6 +18,9 @@ export const DashboardHeader = ({ onNotificationsClick }) => {
 
     const formattedTime = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 
+    // Determine if the search input is controlled or not
+    const isSearchControlled = searchTerm !== undefined && onSearchChange !== undefined;
+
     return (
         <header className="flex flex-col md:flex-row items-center justify-between gap-4 pb-2">
             <div className="relative w-full md:max-w-md">
@@ -28,6 +31,8 @@ export const DashboardHeader = ({ onNotificationsClick }) => {
                     className="block w-full h-10 pl-10 pr-4 text-sm text-slate-900 border border-slate-200 rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-[#1c2127] dark:border-slate-800 dark:placeholder-slate-500 dark:text-white transition-all shadow-sm" 
                     placeholder={t('searchPlaceholder', 'driverDashboardPage')} 
                     type="text"
+                    value={isSearchControlled ? searchTerm : undefined}
+                    onChange={isSearchControlled ? (e) => onSearchChange(e.target.value) : undefined}
                 />
             </div>
             <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto justify-end">

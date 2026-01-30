@@ -208,7 +208,8 @@
     "documents": "Documents",
     "settings": "Paramètres",
     "logout": "Déconnexion",
-    "driverIdLabel": "ID:"
+    "driverIdLabel": "ID:",
+    "driverName": "Alex Chauffeur"
   },
   "driverDocumentsPage": {
     "documentsPageTitle": "Documents du Chauffeur",
@@ -373,5 +374,25 @@
     "lastMonth": "Mois dernier",
     "customRange": "Plage personnalisée",
     "noMissionsFound": "Aucune mission trouvée"
+  },
+  "driverSettingsPage": {
+    "title": "Paramètres",
+    "description": "Gérez votre compte, vos préférences et vos notifications.",
+    "profile_title": "Profil",
+    "profile_edit_button": "Modifier le profil",
+    "profile_alt": "Photo de profil du chauffeur",
+    "appearance_title": "Apparence & Langue",
+    "appearance_theme_label": "Thème",
+    "appearance_theme_description": "Choisissez entre le mode clair et sombre.",
+    "appearance_language_label": "Langue",
+    "appearance_language_description": "Sélectionnez votre langue préférée.",
+    "notifications_title": "Notifications",
+    "notifications_new_mission_label": "Alertes nouvelle mission",
+    "notifications_mission_updates_label": "Mises à jour statut mission",
+    "notifications_doc_expiry_label": "Rappels d'expiration de document",
+    "notifications_weekly_summary_label": "Résumé hebdomadaire",
+    "security_title": "Sécurité",
+    "security_password_label": "Changer le mot de passe",
+    "security_password_description": "Mettez à jour votre mot de passe régulièrement pour la sécurité."
   }
 }

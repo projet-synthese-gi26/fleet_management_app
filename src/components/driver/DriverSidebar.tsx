@@ -23,7 +23,7 @@ const ProfileCard = () => {
 
             <div className="flex flex-col">
 
-                <h1 className="text-base font-semibold leading-tight">Alex Driver</h1>
+                <h1 className="text-base font-semibold leading-tight">{t('driverName', 'driverSidebar')}</h1>
 
                 <p className="text-slate-500 dark:text-[#9dabb9] text-xs">{t('driverIdLabel', 'driverSidebar')} #88392</p>
 

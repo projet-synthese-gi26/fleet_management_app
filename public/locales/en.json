@@ -206,7 +206,8 @@
     "documents": "Documents",
     "settings": "Settings",
     "logout": "Log Out",
-    "driverIdLabel": "ID:"
+    "driverIdLabel": "ID:",
+    "driverName": "Alex Driver"
   },
   "driverDocumentsPage": {
     "documentsPageTitle": "Driver Documents",
@@ -371,5 +372,25 @@
     "lastMonth": "Last Month",
     "customRange": "Custom Range",
     "noMissionsFound": "No missions found"
+  },
+  "driverSettingsPage": {
+    "title": "Settings",
+    "description": "Manage your account, preferences, and notifications.",
+    "profile_title": "Profile",
+    "profile_edit_button": "Edit Profile",
+    "profile_alt": "Driver Profile Photo",
+    "appearance_title": "Appearance & Language",
+    "appearance_theme_label": "Theme",
+    "appearance_theme_description": "Choose between light and dark mode.",
+    "appearance_language_label": "Language",
+    "appearance_language_description": "Select your preferred language.",
+    "notifications_title": "Notifications",
+    "notifications_new_mission_label": "New Mission Alerts",
+    "notifications_mission_updates_label": "Mission Status Updates",
+    "notifications_doc_expiry_label": "Document Expiration Reminders",
+    "notifications_weekly_summary_label": "Weekly Summary",
+    "security_title": "Security",
+    "security_password_label": "Change Password",
+    "security_password_description": "Update your password regularly for security."
   }
 }

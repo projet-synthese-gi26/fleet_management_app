@@ -29,7 +29,7 @@ const driverData = {
   licenceNumber: "LIC-789456",
   licenceExpiry: "2028-11-15",
   status: true,
-  currentStatus: "driving" as const,
+  currentStatus: "driving" as "driving" | "idle" | "on-break" | "offline",
   assignedVehicle: {
     id: "veh-001",
     licensePlate: "AB-123-CD",

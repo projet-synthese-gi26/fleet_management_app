@@ -20,8 +20,7 @@ export const authService = {
   register: async (payload: RegisterRequest): Promise<LoginResponse> => {
     const formData = new FormData();
 
-    // 1. Préparation de l'objet User en JSON
-    const userJson = JSON.stringify({
+    const userData = {
       username: payload.username,
       password: payload.password,
       email: payload.email,
@@ -29,28 +28,26 @@ export const authService = {
       firstName: payload.firstName,
       lastName: payload.lastName,
       roles: payload.roles,
+    };
+
+    // Correct pour Spring Boot @RequestPart
+    const userBlob = new Blob([JSON.stringify(userData)], {
+      type: "application/json",
     });
 
-    // 2. Ajout de la partie 'user' en tant que Blob avec le type application/json
-    // C'est la méthode la plus robuste pour Spring Boot (@RequestPart)
-    formData.append("user", userJson);
+    formData.append("user", userBlob);
 
-    // 3. Ajout du fichier si présent
     if (payload.file) {
       formData.append("file", payload.file);
     }
 
-    // 4. Envoi de la requête
     const { data } = await apiClient.post<LoginResponse>(
       "/auth/register",
       formData,
       {
         headers: {
-          // "Content-Type: multipart/form-data; boundary=----WebKitFormBoundary..."
-          "Content-Type": undefined,
+          "Content-Type": "multipart/form-data",
         },
-        // Nécessaire pour certains environnements Axios pour ne pas transformer le FormData
-        transformRequest: (data) => data,
       },
     );
     return data;

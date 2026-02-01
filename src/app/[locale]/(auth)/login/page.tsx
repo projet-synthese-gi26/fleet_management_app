@@ -6,7 +6,9 @@ import { useI18n } from "@/hooks/useI18n";
 import AuthHeroSection from "@/components/auth/AuthHeroSection";
 import { Chrome } from "lucide-react"; // Import Chrome icon
 import { useAuth } from "@/contexts/AuthContext";
+import { motion } from "framer-motion"; // Nécessaire pour l'animation
 import { toast } from "sonner";
+import { Button } from "@/components/ui/Button";
 
 const LoginPage = () => {
   const { t, locale } = useI18n();
@@ -14,18 +16,31 @@ const LoginPage = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isShaking, setIsShaking] = useState(false);
 
   const togglePasswordVisibility = () => setPasswordVisible(!passwordVisible);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsShaking(false); // Reset
 
     try {
       await login({ identifier: email, password: password });
       toast.success("Connexion réussie !");
     } catch (err: any) {
       console.error(err);
-      toast.error("Échec de la connexion. Vérifiez vos identifiants.");
+
+      // Gestion spécifique 401 -> Secouer
+      if (err.status === 401) {
+        setIsShaking(true);
+        toast.error("Identifiants incorrects", {
+          description: "Email ou mot de passe invalide.",
+        });
+        // Reset shake after animation
+        setTimeout(() => setIsShaking(false), 500);
+      } else {
+        toast.error(err.title || "Erreur", { description: err.detail });
+      }
     }
   };
 
@@ -62,7 +77,11 @@ const LoginPage = () => {
       {/* Right column (form and footer) */}
       <div className="flex w-full lg:w-1/2 flex-col bg-background-light dark:bg-background-dark">
         <div className="flex h-full flex-col justify-center px-6 py-12 sm:px-12 xl:px-24">
-          <div className="mx-auto w-full max-w-md flex flex-col gap-8">
+          <motion.div
+            className="mx-auto w-full max-w-md flex flex-col gap-8"
+            animate={isShaking ? { x: [-10, 10, -10, 10, 0] } : {}}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          >
             {/* Welcome/Subtitle section */}
             <div className="flex flex-col gap-2">
               <h2 className="text-[#0d131b] dark:text-white text-3xl font-black leading-tight tracking-[-0.033em]">
@@ -146,19 +165,13 @@ const LoginPage = () => {
                 </Link>
               </div>
               {/* Login Button */}
-              <button
-                className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary hover:bg-primary-dark text-white text-base font-bold leading-normal tracking-[0.015em] shadow-sm transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+              <Button
                 type="submit"
-                disabled={isLoading}
+                isLoading={isLoading}
+                className="w-full mt-2"
               >
-                {isLoading ? (
-                  <span className="material-symbols-outlined animate-spin">
-                    progress_activity
-                  </span>
-                ) : (
-                  t("loginButton", "authPage")
-                )}
-              </button>
+                {t("loginButton", "authPage")}
+              </Button>
             </form>
 
             {/* Or separator */}
@@ -186,18 +199,18 @@ const LoginPage = () => {
                 </Link>
               </p>
             </div>
-          </div>
+          </motion.div>
         </div>
-        {/* Footer */}
-        <div className="p-6 flex flex-col sm:flex-row justify-center gap-6 text-center text-xs text-[#4c6c9a] dark:text-slate-500 mt-auto">
-          <Link className="hover:text-primary transition-colors" href="#">
-            {t("legalNotices", "common")}
-          </Link>
-          <Link className="hover:text-primary transition-colors" href="#">
-            {t("privacy_policy", "common")}
-          </Link>
-          <span>{t("copyright", "common")}</span>
-        </div>
+      </div>
+      {/* Footer */}
+      <div className="p-6 flex flex-col sm:flex-row justify-center gap-6 text-center text-xs text-[#4c6c9a] dark:text-slate-500 mt-auto">
+        <Link className="hover:text-primary transition-colors" href="#">
+          {t("legalNotices", "common")}
+        </Link>
+        <Link className="hover:text-primary transition-colors" href="#">
+          {t("privacy_policy", "common")}
+        </Link>
+        <span>{t("copyright", "common")}</span>
       </div>
     </div>
   );

@@ -8,7 +8,10 @@ import PageHeader from "@/components/admin/fleet-managers/PageHeader";
 import FilterBar from "@/components/admin/fleet-managers/FilterBar";
 import { adminService } from "@/services/admin.service";
 import { FleetManager, FleetStatistics } from "@/types/fleet.types";
+import { TableSkeleton } from "@/components/ui/skeletons/TableSkeleton";
+import { PageLoader } from "@/components/ui/Spinner";
 import { toast } from "sonner";
+
 
 // Composant Avatar simplifié
 const Avatar = ({ name, src }: { name: string; src?: string }) => {
@@ -185,7 +188,7 @@ export default function FleetManagersTableContainer() {
 
       <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#182635]">
         {isLoading ? (
-          <div className="p-8 text-center text-gray-500">Chargement...</div>
+          <TableSkeleton rows={6} columns={6} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">

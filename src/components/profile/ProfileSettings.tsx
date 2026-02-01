@@ -89,9 +89,17 @@ export default function ProfileSettings() {
       await refreshUser();
       toast.dismiss(toastId);
       toast.success("Photo de profil mise à jour !");
-    } catch (error) {
+    } catch (error: any) {
       toast.dismiss(toastId);
-      toast.error("Erreur lors de l'upload de la photo.");
+      
+      // Gestion spécifique 413
+      if (error.status === 413) {
+        toast.error("Image trop volumineuse", { 
+            description: "L'image ne doit pas dépasser 2Mo." 
+        });
+      } else {
+        toast.error("Erreur", { description: error.detail || "Impossible de mettre à jour la photo." });
+      }
     }
   };
 

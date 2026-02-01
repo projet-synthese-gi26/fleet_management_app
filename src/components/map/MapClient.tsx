@@ -1,55 +1,61 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
+import React from "react";
+import { MapContainer, TileLayer } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css"; // Styles du cluster
+import "leaflet.markercluster/dist/MarkerCluster.Default.css"; // Styles par défaut du cluster
+
 import { MOCK_VEHICLES } from "@/data/mockVehicles";
 import { VehicleMarker } from "./VehicleMarker";
-
-// Composant utilitaire pour déplacer la carte
-function MapController({ center }: { center: [number, number] | null }) {
-  const map = useMap();
-  useEffect(() => {
-    if (center) {
-      map.flyTo(center, 15, {
-        duration: 1.5,
-      });
-    }
-  }, [center, map]);
-  return null;
-}
+import MapController from "./MapController";
 
 interface MapClientProps {
   selectedVehicleId: string | null;
 }
 
 export default function MapClient({ selectedVehicleId }: MapClientProps) {
-  const defaultCenter: [number, number] = [3.848, 11.5021]; // Yaoundé
+  // Coordonnées par défaut (Cameroun)
+  const defaultCenter: [number, number] = [4.0511, 9.7679];
 
-  // Trouver le véhicule sélectionné pour centrer la carte
+  // Trouver le véhicule sélectionné
   const selectedVehicle = MOCK_VEHICLES.find((v) => v.id === selectedVehicleId);
-  const centerPosition: [number, number] | null = selectedVehicle
-    ? [selectedVehicle.location.lat, selectedVehicle.location.lng]
-    : null;
+  const selectedLocation = selectedVehicle ? selectedVehicle.location : null;
 
   return (
     <MapContainer
       center={defaultCenter}
-      zoom={13}
+      zoom={6}
       style={{ height: "100%", width: "100%", zIndex: 0 }}
-      zoomControl={false} // On va créer nos propres contrôles ou les déplacer
+      zoomControl={false} // On cache le zoom par défaut pour le mettre ailleurs si on veut
     >
-      {/* TileLayer professionnel et clean (CartoDB Voyager) */}
+      {/* Fond de carte sombre/clair selon préférence ou thème */}
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        attribution='&copy; <a href="https://carto.com/">CARTO</a>'
         url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
       />
 
-      <MapController center={centerPosition} />
+      {/* Gestion des mouvements de caméra */}
+      <MapController
+        selectedLocation={selectedLocation}
+        vehicles={MOCK_VEHICLES}
+      />
 
-      {MOCK_VEHICLES.map((vehicle) => (
-        <VehicleMarker key={vehicle.id} vehicle={vehicle} />
-      ))}
+      {/* Regroupement des marqueurs (Clustering) */}
+      <MarkerClusterGroup
+        chunkedLoading // Performance pour beaucoup de points
+        spiderfyOnMaxZoom={true}
+        showCoverageOnHover={false}
+      >
+        {MOCK_VEHICLES.map((vehicle) => (
+          <VehicleMarker
+            key={vehicle.id}
+            vehicle={vehicle}
+            // On pourrait ajouter un handler ici si besoin
+          />
+        ))}
+      </MarkerClusterGroup>
     </MapContainer>
   );
 }

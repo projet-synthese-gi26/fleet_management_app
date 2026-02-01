@@ -6,6 +6,7 @@ import { useI18n } from "@/hooks/useI18n";
 import AuthHeroSection from "@/components/auth/AuthHeroSection";
 import { Chrome, Upload, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/Button";
 import { toast } from "sonner";
 
 // Regex simple pour email
@@ -83,13 +84,11 @@ const SignUpPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 1. Validation Frontend
     if (!validateForm()) {
       toast.error("Veuillez corriger les erreurs dans le formulaire.");
       return;
     }
 
-    // Mapping des rôles
     let backendRole = "FLEET_MANAGER";
     if (role === "admin") backendRole = "ADMIN";
     if (role === "driver") backendRole = "FLEET_DRIVER";
@@ -110,11 +109,19 @@ const SignUpPage = () => {
     } catch (err: any) {
       console.error("Erreur Inscription:", err);
 
-      // Gestion spécifique Network Error
-      if (err.message === "Network Error") {
+      // GESTION DU CONFLIT (409)
+      if (err.response?.status === 409) {
         toast.error(
-          "Impossible de contacter le serveur. Vérifiez votre connexion ou l'URL de l'API.",
+          "Conflit : Ce nom d'utilisateur ou cet email est déjà utilisé.",
         );
+
+        // Optionnel : On peut surligner les champs en rouge
+        setErrors({
+          username: "Déjà utilisé",
+          email: "Déjà utilisé",
+        });
+      } else if (err.message === "Network Error") {
+        toast.error("Erreur réseau : Impossible de contacter le serveur.");
       } else {
         const errorMessage =
           err.response?.data?.message || t("signupError", "authPage");
@@ -435,19 +442,13 @@ const SignUpPage = () => {
               </div>
 
               {/* Signup Button */}
-              <button
-                className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary hover:bg-primary-dark text-white text-base font-bold leading-normal tracking-[0.015em] shadow-sm transition-all active:scale-[0.98] mt-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                type="submit"
-                disabled={isLoading}
+              <Button 
+                type="submit" 
+                isLoading={isLoading} 
+                className="w-full mt-4"
               >
-                {isLoading ? (
-                  <span className="material-symbols-outlined animate-spin">
-                    progress_activity
-                  </span>
-                ) : (
-                  t("signupButton", "authPage")
-                )}
-              </button>
+                {t("signupButton", "authPage")}
+              </Button>
             </form>
 
             <div className="relative flex py-2 items-center">

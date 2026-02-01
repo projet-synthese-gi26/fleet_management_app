@@ -13,7 +13,9 @@ export default function DashboardLayout({
   const [isCollapsed, setIsCollapsed] = useState(false); // Desktop
 
   return (
-    <div className="min-h-screen bg-background-secondary">
+    // h-screen + overflow-hidden empêche le body de scroller
+    <div className="flex h-screen bg-background-secondary overflow-hidden">
+      {/* Sidebar : Doit gérer sa propre hauteur ou être fixe */}
       <Sidebar
         isOpen={isSidebarOpen}
         isCollapsed={isCollapsed}
@@ -23,14 +25,16 @@ export default function DashboardLayout({
 
       <div
         className={`
-                flex flex-col min-h-screen transition-all duration-300 ease-in-out
-                ${isCollapsed ? "lg:pl-20" : "lg:pl-72"}
-            `}
+            flex flex-col flex-1 h-full transition-all duration-300 ease-in-out
+            ${isCollapsed ? "lg:pl-20" : "lg:pl-72"}
+        `}
       >
+        {/* Header reste en haut du flex column */}
         <DashboardHeader onMenuClick={() => setIsSidebarOpen(true)} />
 
-        <main className="flex-1 p-4 lg:p-8 overflow-x-hidden">
-          <div className="max-w-[1600px] mx-auto">{children}</div>
+        {/* Main prend l'espace restant et scrolle indépendamment */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-8">
+          <div className="max-w-[1600px] mx-auto min-h-full">{children}</div>
         </main>
       </div>
     </div>

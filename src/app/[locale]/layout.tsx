@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { I18nProvider } from "@/components/providers/I18nProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import "../../styles/globals.css";
+import { Toaster } from 'sonner';
 import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata: Metadata = {
@@ -52,6 +53,7 @@ export default async function LocaleLayout({
               <main className="min-h-screen bg-background text-text-primary">
                 {children}
               </main>
+              <Toaster position="top-right" richColors closeButton />
             </AuthProvider>
           </I18nProvider>
         </ThemeProvider>

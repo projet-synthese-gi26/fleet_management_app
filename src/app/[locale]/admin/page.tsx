@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import { healthService, SystemHealth } from "@/services/health.service";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Truck,
@@ -236,6 +237,30 @@ function ChartPlaceholder() {
   );
 }
 
+function SystemStatusWidget() {
+    const [health, setHealth] = useState<SystemHealth | null>(null);
+    const [error, setError] = useState(false);
+
+    useEffect(() => {
+        healthService.check()
+            .then(setHealth)
+            .catch(() => setError(true));
+    }, []);
+
+    if (error || (health && health.status !== 'UP')) {
+        return (
+            <div className="mb-6 bg-warning-light border border-warning text-warning-dark px-4 py-3 rounded-xl flex items-center gap-3">
+                <span className="material-symbols-outlined">warning</span>
+                <div>
+                    <p className="font-bold">Attention requise</p>
+                    <p className="text-sm">Certains services (API/BDD) semblent instables.</p>
+                </div>
+            </div>
+        );
+    }
+
+    return null; // Rien si tout va bien
+}
 /* =========================
    Page Admin
 ========================= */
@@ -247,6 +272,9 @@ export default function AdminPage() {
       transition={{ duration: 0.5 }}
       className="min-h-screen p-4 md:p-6 lg:p-8"
     >
+
+      <SystemStatusWidget />
+      
       {/* En-tête */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-text-primary">Bonjour, Administrateur 👋</h1>

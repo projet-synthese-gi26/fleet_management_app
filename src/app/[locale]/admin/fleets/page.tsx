@@ -72,13 +72,22 @@ export default function FleetsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer cette flotte ?")) {
-      try {
-        await fleetService.deleteFleet(id);
-        toast.success("Flotte supprimée");
-        setFleets((prev) => prev.filter((f) => f.id !== id));
-      } catch (error) {
-        toast.error("Impossible de supprimer la flotte");
+    // Note: Pour une meilleure UX, remplacez window.confirm par une modale personnalisée plus tard
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette flotte ?")) return;
+
+    try {
+      await fleetService.deleteFleet(id);
+      toast.success("Flotte supprimée");
+      setFleets((prev) => prev.filter((f) => f.id !== id));
+    } catch (error: any) {
+      if (error.status === 409) {
+        // Affichage d'une alerte bloquante ou toast long
+        toast.error("Suppression impossible", {
+            description: "Impossible de supprimer cette flotte car elle contient des véhicules actifs. Veuillez les déplacer ou les supprimer d'abord.",
+            duration: 8000, // Durée plus longue pour lire
+        });
+      } else {
+        toast.error("Erreur", { description: error.detail });
       }
     }
   };

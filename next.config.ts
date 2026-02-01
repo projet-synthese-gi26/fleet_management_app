@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  reactStrictMode: false,
+  
   images: {
     remotePatterns: [
       {
@@ -11,8 +13,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Ajout des rewrites pour faire passer les appels API par le serveur Node de Next.js
-  // Cela cache votre origine localhost au serveur distant
+  // AJOUTER CECI :
   async rewrites() {
     return [
       {

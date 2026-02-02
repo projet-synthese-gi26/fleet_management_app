@@ -15,17 +15,6 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
 import { Zone, CreateZoneDto, Vertex } from "@/types/geofence.types";
 
-useEffect(() => {
-  return () => {
-    // Cette fonction s'exécute au démontage du composant.
-    // On cherche l'élément par son ID et on s'assure qu'il est vide pour la prochaine fois.
-    const container = L.DomUtil.get("geofence-map-container"); // ou 'geofence-map-container'
-    if (container !== null) {
-      (container as any)._leaflet_id = null;
-    }
-  };
-}, []);
-
 // Configuration des icônes Leaflet (fix Next.js)
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -60,6 +49,16 @@ export default function GeofenceMap({
 }: GeofenceMapProps) {
   const featureGroupRef = useRef<L.FeatureGroup>(null);
   const defaultCenter: [number, number] = [4.0511, 9.7679]; // Douala par défaut
+
+  useEffect(() => {
+    return () => {
+      // Nettoyage Leaflet au démontage (fix Next.js)
+      const container = L.DomUtil.get("geofence-map-container");
+      if (container !== null) {
+        (container as any)._leaflet_id = null;
+      }
+    };
+  }, []);
 
   const _onCreated = (e: any) => {
     const type = e.layerType;

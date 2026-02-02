@@ -1,11 +1,11 @@
 "use client";
 
-import React from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
-import MarkerClusterGroup from "react-leaflet-cluster";
+import MarkerClusterGroup from "@changey/react-leaflet-markercluster";
+
 import "leaflet/dist/leaflet.css";
-import "leaflet.markercluster/dist/MarkerCluster.css"; // Styles du cluster
-import "leaflet.markercluster/dist/MarkerCluster.Default.css"; // Styles par défaut du cluster
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
 import { MOCK_VEHICLES } from "@/data/mockVehicles";
 import { VehicleMarker } from "./VehicleMarker";
@@ -27,10 +27,14 @@ export default function MapClient({ selectedVehicleId }: MapClientProps) {
     <MapContainer
       center={defaultCenter}
       zoom={6}
-      style={{ height: "100%", width: "100%", zIndex: 0 }}
-      zoomControl={false} // On cache le zoom par défaut pour le mettre ailleurs si on veut
+      zoomControl={false}
+      style={{
+        height: "100%",
+        width: "100%",
+        zIndex: 0,
+      }}
     >
-      {/* Fond de carte sombre/clair selon préférence ou thème */}
+      {/* Fond de carte */}
       <TileLayer
         attribution='&copy; <a href="https://carto.com/">CARTO</a>'
         url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
@@ -42,20 +46,20 @@ export default function MapClient({ selectedVehicleId }: MapClientProps) {
         vehicles={MOCK_VEHICLES}
       />
 
-      {/* Regroupement des marqueurs (Clustering) */}
+      {/* Regroupement des marqueurs (clustering) */}
       <MarkerClusterGroup
-        chunkedLoading // Performance pour beaucoup de points
-        spiderfyOnMaxZoom={true}
+        chunkedLoading
+        spiderfyOnMaxZoom
         showCoverageOnHover={false}
       >
         {MOCK_VEHICLES.map((vehicle) => (
           <VehicleMarker
             key={vehicle.id}
             vehicle={vehicle}
-            // On pourrait ajouter un handler ici si besoin
           />
         ))}
       </MarkerClusterGroup>
     </MapContainer>
+
   );
 }

@@ -5,9 +5,10 @@ import { useI18n } from '@/hooks/useI18n';
 
 interface DocumentCardProps {
     document: Document;
+    onPreviewClick?: (doc: Document) => void;
 }
 
-export const DocumentCard = ({ document }: DocumentCardProps) => {
+export const DocumentCard = ({ document, onPreviewClick }: DocumentCardProps) => {
     const { t } = useI18n();
 
     const getStatusClasses = (status: DocumentStatus) => {

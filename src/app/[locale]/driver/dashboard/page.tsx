@@ -14,13 +14,14 @@ import { StartBreakModal } from '@/components/driver/dashboard/StartBreakModal';
 import { ContactModal } from '@/components/driver/dashboard/ContactModal';
 import { NotificationDetailsModal } from '@/components/driver/dashboard/NotificationDetailsModal';
 import { AllNotificationsModal } from '@/components/driver/dashboard/AllNotificationsModal';
+import { Notification } from '@/types/notification.types';
 
 const DriverDashboardPage = () => {
     const [isReportIssueModalOpen, setIsReportIssueModalOpen] = useState(false);
     const [isStartBreakModalOpen, setIsStartBreakModalOpen] = useState(false);
     const [isContactModalOpen, setIsContactModalOpen] = useState(false);
     const [isNotificationDetailsModalOpen, setIsNotificationDetailsModalOpen] = useState(false);
-    const [selectedNotification, setSelectedNotification] = useState(null); // To store the notification data
+    const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null); // To store the notification data
     const [isAllNotificationsModalOpen, setIsAllNotificationsModalOpen] = useState(false); // New state
 
     const openReportIssueModal = () => setIsReportIssueModalOpen(true);
@@ -32,7 +33,7 @@ const DriverDashboardPage = () => {
     const openContactModal = () => setIsContactModalOpen(true);
     const closeContactModal = () => setIsContactModalOpen(false);
 
-    const openNotificationDetailsModal = (notification) => {
+    const openNotificationDetailsModal = (notification: Notification) => {
         setSelectedNotification(notification);
         setIsNotificationDetailsModalOpen(true);
     };

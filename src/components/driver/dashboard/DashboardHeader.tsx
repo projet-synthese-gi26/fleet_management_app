@@ -7,11 +7,14 @@ import { useI18n } from '@/hooks/useI18n';
 export const DashboardHeader = ({ 
     onNotificationsClick, 
     searchTerm = "", 
-    onSearchChange = () => {} 
+    onSearchChange = () => {},
+    title = "", 
 }: { 
     onNotificationsClick?: () => void; 
     searchTerm?: string; 
-    onSearchChange?: (val: string) => void; 
+    onSearchChange?: (val: string) => void;
+    title?: string; 
+
 }) => {
     const { t } = useI18n();
     const [currentTime, setCurrentTime] = useState(new Date());

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { UserPlus, UserCheck, RefreshCw, AlertCircle } from "lucide-react";
 import { TableSkeleton } from "@/components/ui/skeletons/TableSkeleton";
 import { AssignVehicleModal } from "@/components/dashboard/drivers/AssignVehicleModal";
+import { RegisterDriverModal } from "@/components/dashboard/drivers/RegisterDriverModal";
 import { toast } from "sonner";
 
 export default function ManagerDriversPage() {
@@ -18,6 +19,7 @@ export default function ManagerDriversPage() {
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
 
   // 1. Charger les flottes du manager au montage
   useEffect(() => {
@@ -84,7 +86,10 @@ export default function ManagerDriversPage() {
           <Button variant="outline" className="gap-2">
             <UserCheck size={18} /> Recruter
           </Button>
-          <Button className="gap-2">
+          <Button
+            className="gap-2"
+            onClick={() => setIsRegisterModalOpen(true)}
+          >
             <UserPlus size={18} /> Nouveau Chauffeur
           </Button>
         </div>
@@ -138,6 +143,13 @@ export default function ManagerDriversPage() {
           </div>
         )}
       </div>
+
+      <RegisterDriverModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        fleetId={selectedFleetId}
+        onSuccess={fetchDrivers}
+      />
 
       <AssignVehicleModal
         isOpen={isAssignModalOpen}

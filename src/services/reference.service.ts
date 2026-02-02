@@ -10,7 +10,7 @@ export const referenceService = {
 
     // 2.2. Lookups (Proxy externe)
     // Resources: fuel-types, manufacturers, transmission-types, vehicle-makes, vehicle-sizes
-    getLookup: async (resource: string): Promise<{id: string, name: string}[]> => {
+    getLookup: async (resource: string): Promise<any[]> => {
         const { data } = await apiClient.get(`/vehicles/lookup/${resource}`);
         return data;
     }

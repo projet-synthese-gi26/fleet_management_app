@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Car,
   MapPin,
+  Building2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -29,10 +30,11 @@ interface SidebarProps {
 
 const MENU_ITEMS = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+  { icon: Building2, label: "Mes Flottes", path: "/dashboard/fleets" }, // AJOUTER CECI
   { icon: Map, label: "Live Map", path: "/dashboard/map" },
   { icon: Truck, label: "Vehicles", path: "/dashboard/vehicles" },
   { icon: Users, label: "Drivers", path: "/dashboard/drivers" },
-  { icon: Route, label: "Trips", path: "/dashboard/trips" },
+  { icon: Route, label: "Trips", path: "/dashboard/trips" }, // Vérifier si le fichier existe
   { icon: MapPin, label: "Geofencing", path: "/admin/geofencing" },
   { icon: Bell, label: "Alerts", path: "/dashboard/alerts" },
   { icon: Settings, label: "Settings", path: "/dashboard/settings" },

@@ -89,8 +89,9 @@ const SignUpPage = () => {
       return;
     }
 
+    // Normalisation des rôles selon votre spec backend
     let backendRole = "FLEET_MANAGER";
-    if (role === "admin") backendRole = "ADMIN";
+    if (role === "admin") backendRole = "FLEET_ADMIN"; // ou ADMIN selon votre securité
     if (role === "driver") backendRole = "FLEET_DRIVER";
 
     try {
@@ -105,27 +106,34 @@ const SignUpPage = () => {
         file: file || undefined,
       });
 
-      toast.success("Compte créé avec succès !");
+      toast.success("Compte créé avec succès ! Bienvenue.");
     } catch (err: any) {
-      console.error("Erreur Inscription:", err);
+      // DEBUG : Pour voir enfin le vrai contenu de l'erreur
+      console.error("Détail de l'erreur reçue:", {
+        status: err.status,
+        title: err.title,
+        detail: err.detail,
+      });
 
-      // GESTION DU CONFLIT (409)
-      if (err.response?.status === 409) {
-        toast.error(
-          "Conflit : Ce nom d'utilisateur ou cet email est déjà utilisé.",
-        );
+      // L'intercepteur rejette maintenant un objet avec .status
+      if (err.status === 409) {
+        toast.error("Conflit", { description: err.detail });
 
-        // Optionnel : On peut surligner les champs en rouge
-        setErrors({
-          username: "Déjà utilisé",
-          email: "Déjà utilisé",
-        });
-      } else if (err.message === "Network Error") {
-        toast.error("Erreur réseau : Impossible de contacter le serveur.");
+        if (err.detail.toLowerCase().includes("email")) {
+          setErrors((prev) => ({ ...prev, email: "Email déjà utilisé" }));
+        } else {
+          setErrors((prev) => ({
+            ...prev,
+            username: "Nom d'utilisateur déjà pris",
+          }));
+        }
+      } else if (err.status === 400) {
+        toast.error("Données invalides", { description: err.detail });
       } else {
-        const errorMessage =
-          err.response?.data?.message || t("signupError", "authPage");
-        toast.error(errorMessage);
+        // Erreur générique provenant de l'intercepteur
+        toast.error(err.title || "Erreur", {
+          description: err.detail || "Une erreur inconnue est survenue",
+        });
       }
     }
   };
@@ -442,9 +450,9 @@ const SignUpPage = () => {
               </div>
 
               {/* Signup Button */}
-              <Button 
-                type="submit" 
-                isLoading={isLoading} 
+              <Button
+                type="submit"
+                isLoading={isLoading}
                 className="w-full mt-4"
               >
                 {t("signupButton", "authPage")}

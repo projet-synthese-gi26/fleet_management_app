@@ -18,12 +18,36 @@ export interface AssignedVehicle {
     imageUrl?: string;
 }
 
+export type DriverStatus = 'ACTIVE' | 'INACTIVE';
+
 export interface Driver {
-    userId: UUID;
-    licenceNumber: string;
-    status: boolean;
-    assignedVehicle?: AssignedVehicle;
-    userProfile: DriverUserProfile;
+  userId: UUID;
+  fleetId: UUID;
+  licenceNumber: string;
+  status: DriverStatus;
+  assignedVehicleId: UUID | null;
+  photoUrl: string | null;
+  
+  // Champs optionnels (souvent fusionnés par le backend ou à enrichir manuellement)
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  vehiclePlate?: string; // Pour l'affichage dans les listes
+}
+
+export interface RegisterDriverDto {
+  username: string;
+  password?: string;
+  email: string;
+  phone: string;
+  firstName: string;
+  lastName: string;
+  licenceNumber: string;
+}
+
+export interface RecruitDriverDto {
+  identifier: string;
 }
 
 export interface CreateDriverDto {

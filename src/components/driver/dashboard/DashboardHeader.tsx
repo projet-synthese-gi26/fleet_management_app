@@ -4,7 +4,15 @@ import { LanguageSelector } from '@/components/ui/LanguageSelector';
 import { ThemeSwitcher } from '@/components/ui/ThemeSwitcher';
 import { useI18n } from '@/hooks/useI18n';
 
-export const DashboardHeader = ({ onNotificationsClick, searchTerm, onSearchChange }) => {
+export const DashboardHeader = ({ 
+    onNotificationsClick, 
+    searchTerm = "", 
+    onSearchChange = () => {} 
+}: { 
+    onNotificationsClick?: () => void; 
+    searchTerm?: string; 
+    onSearchChange?: (val: string) => void; 
+}) => {
     const { t } = useI18n();
     const [currentTime, setCurrentTime] = useState(new Date());
 

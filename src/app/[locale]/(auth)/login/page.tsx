@@ -203,15 +203,6 @@ const LoginPage = () => {
         </div>
       </div>
       {/* Footer */}
-      <div className="p-6 flex flex-col sm:flex-row justify-center gap-6 text-center text-xs text-[#4c6c9a] dark:text-slate-500 mt-auto">
-        <Link className="hover:text-primary transition-colors" href="#">
-          {t("legalNotices", "common")}
-        </Link>
-        <Link className="hover:text-primary transition-colors" href="#">
-          {t("privacy_policy", "common")}
-        </Link>
-        <span>{t("copyright", "common")}</span>
-      </div>
     </div>
   );
 };

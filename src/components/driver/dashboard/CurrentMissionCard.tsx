@@ -1,9 +1,26 @@
 "use client";
 import React from 'react';
 import { useI18n } from '@/hooks/useI18n';
+import { useTrip } from '@/contexts/TripContext';
 
-export const CurrentMissionCard = ({ onCallDispatchClick }) => {
+interface CurrentMissionCardProps {
+    onCallDispatchClick: () => void;
+}
+
+// 2. Appliquer l'interface au composant
+export const CurrentMissionCard = ({ onCallDispatchClick }: CurrentMissionCardProps) => {
     const { t } = useI18n();
+    const { currentTrip, isTripActive, endTrip } = useTrip();
+
+    if (!isTripActive) {
+        return (
+            <div className="p-8 text-center bg-white dark:bg-[#1c2127] rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-800">
+                <p className="text-slate-500 mb-4">Aucune course en cours</p>
+                {/* Note: Le bouton "Start" est généralement dans la page Missions ou un bouton flottant */}
+            </div>
+        );
+    }
+
     return (
         <div className="rounded-xl overflow-hidden bg-white dark:bg-[#1c2127] shadow-sm border border-slate-200 dark:border-slate-800">
             <div className="p-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
@@ -12,6 +29,16 @@ export const CurrentMissionCard = ({ onCallDispatchClick }) => {
                         <span className="material-symbols-outlined text-[20px]">local_shipping</span>
                     </div>
                     <h3 className="font-bold text-lg">{t('currentMissionTitle', 'driverDashboardPage', { missionId: '#9921' })}</h3>
+                </div>
+
+                <div className="p-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+                    <h3 className="font-bold text-lg">Course Active : {currentTrip?.id.substring(0,8)}</h3>
+                    <button 
+                        onClick={endTrip}
+                        className="px-4 py-1.5 rounded-lg bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-colors"
+                    >
+                        TERMINER LA COURSE
+                    </button>
                 </div>
                 <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold border border-amber-500/20">
                     {t('inProgressStatus', 'driverDashboardPage')}

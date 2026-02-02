@@ -28,6 +28,9 @@ export interface Fleet {
   creationDate: DateString;
   managerUserId: UUID;
   vehicleCount: number;
+  phoneNumber?: string;
+  managerName?: string; 
+  managerEmail?: string;
   // L'API ne renvoie pas l'objet complet du manager dans la liste des flottes,
   // juste l'ID. On gérera l'affichage du nom coté front via un mapping si nécessaire.
   manager?: {

@@ -82,6 +82,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             } else {
                 router.push(`/${locale}/dashboard`);
             }
+        } catch (error) {
+            // CRUCIAL : On attrape l'erreur ici pour s'assurer qu'elle est re-jetée 
+            // vers la page de signup
+            throw error; 
         } finally {
             setIsLoading(false);
         }

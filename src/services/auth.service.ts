@@ -12,24 +12,36 @@ export const authService = {
   register: async (payload: RegisterRequest): Promise<LoginResponse> => {
     const formData = new FormData();
 
-    // La spec demande un champ "user" qui est un JSON stringifié
-    const userPayload = {
+    const userData = {
       username: payload.username,
       password: payload.password,
       email: payload.email,
       phone: payload.phone,
       firstName: payload.firstName,
       lastName: payload.lastName,
-      roles: payload.roles, // ex: ["FLEET_MANAGER"]
+      roles: payload.roles,
     };
 
-    formData.append("user", JSON.stringify(userPayload));
+    // Correct pour Spring Boot @RequestPart
+    const userBlob = new Blob([JSON.stringify(userData)], {
+      type: "application/json",
+    });
+
+    formData.append("user", userBlob);
 
     if (payload.file) {
       formData.append("file", payload.file);
     }
 
-    const { data } = await apiClient.post<LoginResponse>("/auth/register", formData);
+    const { data } = await apiClient.post<LoginResponse>(
+      "/auth/register",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
     return data;
   },
 

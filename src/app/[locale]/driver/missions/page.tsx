@@ -10,9 +10,13 @@ import Modal from '@/components/ui/Modal';
 import { MissionDetailsModal } from '@/components/driver/missions/MissionDetailsModal';
 import { StartMissionConfirmationModal } from '@/components/driver/missions/StartMissionConfirmationModal';
 import { AcceptNewMissionModal } from '@/components/driver/missions/AcceptNewMissionModal';
+import { useTrip } from '@/contexts/TripContext';
 import { ReportIssueModal } from '@/components/driver/dashboard/ReportIssueModal'; // Reusing existing modal
 
-const UpcomingMissions = ({ onMissionClick }) => {
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
+
+const UpcomingMissions = ({ onMissionClick }: { onMissionClick: (m: Mission) => void }) => {
     const { t } = useI18n();
     return (
         <div>
@@ -29,7 +33,7 @@ const UpcomingMissions = ({ onMissionClick }) => {
     );
 }
 
-const CompletedMissions = ({ onMissionClick }) => {
+const CompletedMissions = ({ onMissionClick }: { onMissionClick: (m: Mission) => void }) => {
     const { t } = useI18n();
     return (
         <div className="flex flex-col gap-4">
@@ -45,7 +49,9 @@ const CompletedMissions = ({ onMissionClick }) => {
 
 
 const DriverMissionsPage = () => {
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
+    const router = useRouter();
+    const { startTrip, isTripActive } = useTrip();
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isStartConfirmationModalOpen, setIsStartConfirmationModalOpen] = useState(false);
     const [isAcceptNewMissionModalOpen, setIsAcceptNewMissionModalOpen] = useState(false);
@@ -58,7 +64,11 @@ const DriverMissionsPage = () => {
         status: "SCHEDULED",
         date: "Nov 17, 10:00 AM",
         origin: { name: "Warehouse D, Industrial Zone" },
-        destination: { name: "Client Office, Downtown" }
+        destination: { name: "Client Office, Downtown" },
+        cargoType: "Bunch",
+        distance: "90 km",
+        estimatedDuration: "1h 15m",
+        vehicle: "Van #221"
     });
 
     const openDetailsModal = (mission: Mission) => {
@@ -79,10 +89,20 @@ const DriverMissionsPage = () => {
         setIsStartConfirmationModalOpen(false);
     };
 
-    const handleConfirmStartMission = () => {
-        console.log(`Mission ${selectedMission?.id} confirmed to start.`);
+    const handleConfirmStartMission = async () => {
+        if (isTripActive) {
+            toast.error("Vous avez déjà une course en cours !");
+            return;
+        }
+        
+        // On récupère le vehicleId de la mission sélectionnée (ou du chauffeur)
+        // Pour cet exemple, on suppose que la mission contient un vehicleId
+        await startTrip(selectedMission?.vehicle); 
+        
         closeStartConfirmationModal();
         closeDetailsModal();
+        // Optionnel : Rediriger vers le dashboard pour voir la progression
+        router.push(`/${locale}/driver/dashboard`);
     };
 
     const openAcceptNewMissionModal = () => {

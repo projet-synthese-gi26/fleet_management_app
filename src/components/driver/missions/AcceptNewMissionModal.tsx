@@ -7,9 +7,10 @@ interface AcceptNewMissionModalProps {
     mission: Mission; // The new mission to be accepted/rejected
     onAccept: (missionId: string) => void;
     onReject: (missionId: string, reason: string) => void;
+    onClose: () => void;
 }
 
-export const AcceptNewMissionModal = ({ mission, onAccept, onReject }: AcceptNewMissionModalProps) => {
+export const AcceptNewMissionModal = ({ mission, onAccept, onReject, onClose }: AcceptNewMissionModalProps) => {
     const { t } = useI18n();
     const [rejectReason, setRejectReason] = useState('');
 

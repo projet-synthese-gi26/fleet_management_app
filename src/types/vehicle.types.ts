@@ -1,12 +1,14 @@
-// Vehicle-related types for the fleet management application
-// src/types/vehicle.types.ts
+import { UUID, DateString, DateTimeString, VehicleType } from './base.types';
 
-import { UUID, DateString, DateTimeString, VehicleType, EngineStatus, MaintenanceStatus, Coordinates } from './base.types';
+export type VehicleStatus = 'AVAILABLE' | 'ON_TRIP' | 'MAINTENANCE';
+export type EngineStatus = 'OK' | 'NEEDS_SERVICE' | 'OUT_OF_SERVICE';
+export type MaintenanceStatus = 'UP_TO_DATE' | 'PENDING' | 'OVERDUE';
 
-export interface AssignedDriver {
-    userId: UUID;
-    name: string;
-    phone?: string;
+export interface VehicleTypeRef {
+    id: UUID;
+    code: string;
+    label: string;
+    description?: string;
 }
 
 export interface FinancialParameters {
@@ -21,63 +23,88 @@ export interface FinancialParameters {
 export interface MaintenanceParameters {
     lastMaintenanceDate?: DateString;
     nextMaintenanceDue?: DateString;
-    engineStatus?: EngineStatus;
-    batteryHealth?: number;
-    maintenanceStatus?: MaintenanceStatus;
+    engineStatus: EngineStatus;
+    batteryHealth: number;
+    maintenanceStatus: MaintenanceStatus;
 }
 
 export interface OperationalParameters {
-    status: boolean;
-    currentSpeed?: number;
-    fuelLevel?: string;
-    mileage?: number;
-    odometerReading?: number;
-    bearing?: number;
-    timestamp?: DateTimeString;
-    currentLocation?: Coordinates;
-    currentTripId?: UUID;
+    currentMileage: number;
+    fuelLevel: number;
+    latitude: number;
+    longitude: number;
+    lastUpdate: DateTimeString;
 }
 
 export interface Vehicle {
     id: UUID;
-    fleetId: UUID;
+    fleetId: UUID | null;
+    managerId: UUID;
+    currentDriverId: UUID | null;
+    vehicleTypeId: UUID;
+    
+    // Identification
     licensePlate: string;
-    brand?: string;
-    model?: string;
-    manufacturingYear?: number;
-    type?: VehicleType;
-    color?: string;
-    imageUrl?: string;
-    assignedDriver?: AssignedDriver;
+    vehicleSerialNumber: string;
+    brand: string;
+    model: string;
+    manufacturingYear: number;
+    transmissionType: string;
+    fuelType: string;
+    color: string;
+    
+    // Technique
+    tankCapacity: number;
+    totalSeatNumber: number;
+    averageFuelConsumption: number;
+    
+    status: VehicleStatus;
+    
+    // Médias
+    photoUrl?: string;
+    serialNumberPhotoUrl?: string;
+    registrationPhotoUrl?: string;
+    illustrationImages: string[];
+
+    // Sous-objets
     financialParameters?: FinancialParameters;
     maintenanceParameters?: MaintenanceParameters;
     operationalParameters?: OperationalParameters;
 }
 
+// DTOs
 export interface CreateVehicleDto {
-    fleetId: UUID;
+    vehicleTypeId: UUID;
+    brand: string;
+    model: string;
     licensePlate: string;
-    brand?: string;
-    model?: string;
-    manufacturingYear?: number;
-    type?: VehicleType;
-    color?: string;
-    imageUrl?: string;
+    manufacturerName: string;
+    sizeName: string;
+    typeName: string;
+    fuelType: string;
+    transmissionType: string;
+    color: string;
+    manufacturingYear: number;
+    status: VehicleStatus;
+    tankCapacity: number;
+    totalSeatNumber: number;
+    averageFuelConsumption: number;
+    vehicleSerialNumber?: string;
 }
 
-export interface UpdateVehicleDto {
-    licensePlate?: string;
-    brand?: string;
-    model?: string;
-    manufacturingYear?: number;
-    type?: VehicleType;
-    color?: string;
-    imageUrl?: string;
-}
+export type UpdateVehicleDto = Partial<CreateVehicleDto>;
 
 export interface UpdateFinancialParametersDto extends Partial<FinancialParameters> {}
 
 export interface UpdateMaintenanceParametersDto extends Partial<MaintenanceParameters> {}
+
+
+export interface VehicleTypeReference {
+    id: UUID;
+    code: string;
+    label: string;
+    description?: string;
+}
 
 export interface VehicleFilters {
     fleetId?: UUID;
@@ -87,6 +114,11 @@ export interface VehicleFilters {
     assignedDriverId?: UUID;
     maintenanceStatus?: MaintenanceStatus;
 }
+
+export interface Coordinates {
+    latitude: number;
+    longitude: number;
+}   
 
 export interface VehicleMapView {
     id: UUID;

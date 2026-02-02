@@ -2,13 +2,33 @@
 
 import React from 'react';
 
-const StatusBadge = ({ status, color }) => (
+interface StatusBadgeProps {
+  status: string;
+  color: string;
+}
+
+const StatusBadge: React.FC<StatusBadgeProps> = ({ status, color }) => (
   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-${color}-100 text-${color}-800 dark:bg-${color}-900/50 dark:text-${color}-300`}>
     {status}
   </span>
 );
 
-const FleetManagersTable = ({ fleetManagers }) => {
+// 2. Définir l'interface pour les données du manager dans ce tableau
+interface ManagerTableData {
+  avatarUrl: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  lastActive: string;
+  statusColor: string;
+}
+
+interface FleetManagersTableProps {
+  fleetManagers: ManagerTableData[];
+}
+
+const FleetManagersTable: React.FC<FleetManagersTableProps> = ({ fleetManagers }) => {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#182635]">
       <div className="overflow-x-auto">

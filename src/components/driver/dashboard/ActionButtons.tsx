@@ -2,7 +2,11 @@
 import React from 'react';
 import { useI18n } from '@/hooks/useI18n'; // Import useI18n
 
-export const ActionButtons = ({ onReportIssueClick, onStartBreakClick }) => {
+interface ActionButtonsProps {
+    onReportIssueClick: () => void;
+    onStartBreakClick: () => void;
+}
+export const ActionButtons: React.FC<ActionButtonsProps> = ({ onReportIssueClick, onStartBreakClick }) => {
     const { t } = useI18n(); // Use the hook
 
     return (

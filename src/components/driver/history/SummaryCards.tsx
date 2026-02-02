@@ -3,8 +3,19 @@
 import React from 'react';
 import { useI18n } from '@/hooks/useI18n';
 
+interface StatCardProps {
+    title: string;
+    value: number | string;
+    unit?: string | null;
+    icon: string;
+    iconBgClass: string;
+    trend?: string;
+    trendDirection?: 'up' | 'down' | 'neutral';
+    trendDescription?: string;
+}
+
 // A single reusable card component
-const StatCard = ({ title, value, unit, icon, iconBgClass, trend, trendDirection, trendDescription }) => {
+const StatCard: React.FC<StatCardProps> = ({ title, value, unit, icon, iconBgClass, trend, trendDirection, trendDescription }) => {
     const { t } = useI18n();
 
     const trendColor = trendDirection === 'up' ? 'text-[#0bda5b]' : 'text-slate-500';
@@ -48,7 +59,8 @@ interface SummaryCardsProps {
 export const SummaryCards: React.FC<SummaryCardsProps> = ({ distance, trips, score }) => {
     const { t } = useI18n();
 
-    const cards = [
+    // Ajoute le type StatCardProps[] ici
+    const cards: StatCardProps[] = [
         {
             title: t('monthlyDistance', 'driverHistoryPage'),
             value: distance.value.toLocaleString(),
@@ -56,7 +68,7 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ distance, trips, sco
             icon: 'distance',
             iconBgClass: 'bg-blue-50 dark:bg-blue-900/20 text-primary',
             trend: `${distance.trend}%`,
-            trendDirection: 'up', // Assuming 'up' for demo
+            trendDirection: 'up', 
             trendDescription: t('vsLastMonth', 'driverHistoryPage'),
         },
         {
@@ -66,7 +78,7 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ distance, trips, sco
             icon: 'local_shipping',
             iconBgClass: 'bg-amber-50 dark:bg-amber-900/20 text-amber-500',
             trend: trips.trend,
-            trendDirection: 'up', // Assuming 'up' for demo
+            trendDirection: 'up',
             trendDescription: t('moreThanLastMonth', 'driverHistoryPage'),
         },
         {
@@ -76,7 +88,7 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ distance, trips, sco
             icon: 'speed',
             iconBgClass: 'bg-green-50 dark:bg-green-900/20 text-green-500',
             trend: `${score.trend}%`,
-            trendDirection: 'neutral', // Assuming 'neutral' for demo
+            trendDirection: 'neutral',
             trendDescription: t('stableVsLastMonth', 'driverHistoryPage'),
         },
     ];
@@ -84,6 +96,8 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ distance, trips, sco
     return (
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {cards.map((card, index) => (
+                // L'erreur disparaîtra car TypeScript sait maintenant que 
+                // card.trendDirection est du bon type
                 <StatCard key={index} {...card} />
             ))}
         </section>

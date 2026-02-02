@@ -116,7 +116,7 @@ export const MissionDetailsModal = ({ isOpen, mission, onClose, onStartTripClick
                                     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-blue-700 flex items-center justify-center text-white font-bold text-sm">{mission.contactInitials}</div>
                                     <div className="flex flex-col">
                                         <span className="text-white text-sm font-medium">{mission.contactName}</span>
-                                        <span className="text-text-secondary text-xs">{t(mission.contactTitle, 'driverMissionsPage')}</span>
+                                        <span className="text-text-secondary text-xs">{mission.contactTitle}</span>
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
@@ -153,7 +153,7 @@ export const MissionDetailsModal = ({ isOpen, mission, onClose, onStartTripClick
                             <circle cx="550" cy="150" fill="white" r="6" stroke="#137fec" strokeWidth="2"></circle>
                             {/* Tooltip for destination */}
                             <foreignObject height="40" width="160" x="565" y="135">
-                                <div className="bg-surface-dark text-white text-xs px-2 py-1 rounded shadow-md border border-border-dark whitespace-nowrap" xmlns="http://www.w3.org/1999/xhtml">
+                                <div className="bg-surface-dark text-white text-xs px-2 py-1 rounded shadow-md border border-border-dark whitespace-nowrap" style={{ filter: 'drop-shadow(0px 4px 6px rgba(0,0,0,0.5))' }}>
                                     {mission.destination.name}
                                 </div>
                             </foreignObject>

@@ -35,7 +35,13 @@ const ProfileCard = () => {
 
 };
 
-const NavLink = ({ href, icon, label }) => {
+interface NavLinkProps {
+    href: string;
+    icon: string;
+    label: string;
+}
+
+const NavLink: React.FC<NavLinkProps> = ({ href, icon, label }) => {
     const pathname = usePathname();
     const { locale } = useI18n(); // Get current locale
     const isActive = pathname.includes(href);
@@ -54,7 +60,7 @@ const NavLink = ({ href, icon, label }) => {
     );
 };
 
-const LogoutButton = () => {
+const LogoutButton: React.FC = () => {
     const { t } = useI18n();
     return (
         <div className="mt-auto p-6 border-t border-slate-200 dark:border-slate-800">

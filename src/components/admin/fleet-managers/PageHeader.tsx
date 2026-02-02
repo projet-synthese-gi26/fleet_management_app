@@ -3,7 +3,11 @@
 import React from 'react';
 import { useI18n } from '@/hooks/useI18n';
 
-const PageHeader = ({ onAddManagerClick }) => {
+interface PageHeaderProps {
+  onAddManagerClick: () => void;
+}
+
+const PageHeader: React.FC<PageHeaderProps> = ({ onAddManagerClick }) => {
   const { t } = useI18n();
   return (
     <div className="flex flex-wrap justify-between items-center gap-4 mb-6">

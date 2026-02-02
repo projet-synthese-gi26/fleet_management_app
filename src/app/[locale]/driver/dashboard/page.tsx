@@ -7,7 +7,7 @@ import { ActionButtons } from '@/components/driver/dashboard/ActionButtons';
 import { CurrentMissionCard } from '@/components/driver/dashboard/CurrentMissionCard';
 import { StatsGrid } from '@/components/driver/dashboard/StatsGrid';
 import { NotificationsPanel } from '@/components/driver/dashboard/NotificationsPanel';
-import { WeatherAlert } from '@/components/driver/dashboard/WeatherAlert';
+
 import Modal from '@/components/ui/Modal';
 import { ReportIssueModal } from '@/components/driver/dashboard/ReportIssueModal';
 import { StartBreakModal } from '@/components/driver/dashboard/StartBreakModal';
@@ -62,7 +62,7 @@ const DriverDashboardPage = () => {
                 </div>
                 <div className="flex flex-col gap-6">
                     <NotificationsPanel onNotificationClick={openNotificationDetailsModal} />
-                    <WeatherAlert />
+                    
                 </div>
             </div>
 

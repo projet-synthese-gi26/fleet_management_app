@@ -17,7 +17,7 @@ export const NotificationsPanel = ({ onNotificationClick }: NotificationsPanelPr
                 <button className="text-primary text-sm font-medium hover:underline">{t('markAllRead', 'driverNotifications')}</button>
             </div>
             <div className="flex flex-col divide-y divide-slate-100 dark:divide-slate-800 overflow-y-auto max-h-[500px]">
-                {MOCK_NOTIFICATIONS.map(notification => (
+                {MOCK_NOTIFICATIONS.map((notification: Notification) => (
                     <div 
                         key={notification.id}
                         onClick={() => onNotificationClick(notification)}
@@ -29,9 +29,9 @@ export const NotificationsPanel = ({ onNotificationClick }: NotificationsPanelPr
                                 <span className="material-symbols-outlined text-[18px]">{notification.icon}</span>
                             </div>
                             <div className="flex flex-col gap-1">
-                                <p className="text-sm font-medium leading-snug">{t(notification.titleKey, 'driverNotifications')}</p>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">{t(notification.descriptionKey, 'driverNotifications')}</p>
-                                <p className="text-[11px] text-slate-400 mt-1">{t(notification.timeKey, 'driverNotifications', notification.time)}</p>
+                                <p className="text-sm font-medium leading-snug">{notification.titleKey}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{notification.descriptionKey}</p>
+                                <p className="text-[11px] text-slate-400 mt-1">{notification.timeKey}, {notification.time}</p>
                             </div>
                         </div>
                     </div>

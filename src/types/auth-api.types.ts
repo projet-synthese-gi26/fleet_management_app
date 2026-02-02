@@ -12,6 +12,7 @@ export interface User {
     phone?: string;
     firstName?: string;
     lastName?: string;
+    service: string;
     photoUrl?: string;
     licenceNumber?: string;
     vehicleId?: string;

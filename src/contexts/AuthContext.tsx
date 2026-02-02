@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const token = localStorage.getItem('accessToken');
             if (token) {
                 try {
-                    const userData = await authService.getProfile();
+                    const userData = await accountService.getProfile();
                     setUser(userData);
                 } catch (error) {
                     console.error("Session expired or invalid", error);
@@ -72,7 +72,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             localStorage.setItem('accessToken', response.accessToken);
             localStorage.setItem('refreshToken', response.refreshToken);
             setUser(response.user);
-            router.push(`/${locale}/dashboard`); // Ou autre page après inscription
+            
+            // Redirection intelligente identique au login
+            const roles = response.user.roles || [];
+            if (roles.includes('ADMIN') || roles.includes('ROLE_FLEET_ADMIN')) {
+                router.push(`/${locale}/admin`);
+            } else if (roles.includes('DRIVER') || roles.includes('FLEET_DRIVER')) {
+                router.push(`/${locale}/driver/dashboard`);
+            } else {
+                router.push(`/${locale}/dashboard`);
+            }
         } finally {
             setIsLoading(false);
         }

@@ -1,61 +1,35 @@
 import { apiClient } from "@/lib/api-client";
-import {
-  LoginRequest,
-  LoginResponse,
-  RegisterRequest,
-  User,
-} from "@/types/auth-api.types";
+import { LoginRequest, LoginResponse, RegisterRequest, User } from "@/types/auth-api.types";
 
 export const authService = {
-  // 02. Auth - Login
+  // 🟢 2.1. Login
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    const { data } = await apiClient.post<LoginResponse>(
-      "/auth/login",
-      credentials,
-    );
+    const { data } = await apiClient.post<LoginResponse>("/auth/login", credentials);
     return data;
   },
 
-  // 02. Auth - Register (Multipart)
+  // 🟢 2.2. Register (Multipart/form-data conforme à la spec)
   register: async (payload: RegisterRequest): Promise<LoginResponse> => {
     const formData = new FormData();
 
-    const userData = {
+    // La spec demande un champ "user" qui est un JSON stringifié
+    const userPayload = {
       username: payload.username,
       password: payload.password,
       email: payload.email,
       phone: payload.phone,
       firstName: payload.firstName,
       lastName: payload.lastName,
-      roles: payload.roles,
+      roles: payload.roles, // ex: ["FLEET_MANAGER"]
     };
 
-    // Correct pour Spring Boot @RequestPart
-    const userBlob = new Blob([JSON.stringify(userData)], {
-      type: "application/json",
-    });
-
-    formData.append("user", userBlob);
+    formData.append("user", JSON.stringify(userPayload));
 
     if (payload.file) {
       formData.append("file", payload.file);
     }
 
-    const { data } = await apiClient.post<LoginResponse>(
-      "/auth/register",
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      },
-    );
-    return data;
-  },
-
-  // 03. Account - Get Profile
-  getProfile: async (): Promise<User> => {
-    const { data } = await apiClient.get<User>("/account");
+    const { data } = await apiClient.post<LoginResponse>("/auth/register", formData);
     return data;
   },
 
@@ -63,7 +37,6 @@ export const authService = {
     if (typeof window !== "undefined") {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-      localStorage.removeItem("user");
     }
   },
 };

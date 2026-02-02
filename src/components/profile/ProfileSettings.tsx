@@ -4,15 +4,28 @@ import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { accountService } from "@/services/account.service";
 import { toast } from "sonner";
-import { User, Camera, Save, Lock, Shield, Trash2, AlertTriangle, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import {
+  User,
+  Camera,
+  Save,
+  Lock,
+  Trash2,
+  AlertTriangle,
+  Loader2,
+  Phone,
+  Mail,
+  Shield,
+} from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 export default function ProfileSettings() {
-  const { user, refreshUser } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { user, refreshUser, logout } = useAuth();
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // États pour les formulaires
+  // Formulaire Profil
   const [profileForm, setProfileForm] = useState({
     firstName: "",
     lastName: "",
@@ -20,13 +33,14 @@ export default function ProfileSettings() {
     phone: "",
   });
 
+  // Formulaire Mot de passe
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
 
-  // Initialiser le formulaire avec les données user
+  // Synchronisation avec les données utilisateur réelles au chargement
   useEffect(() => {
     if (user) {
       setProfileForm({
@@ -38,295 +52,365 @@ export default function ProfileSettings() {
     }
   }, [user]);
 
-  // --- Handlers ---
-
+  // 🔒 3.2 Mettre à jour l'identité (PUT /account)
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsUpdatingProfile(true);
     try {
       await accountService.updateProfile(profileForm);
-      await refreshUser(); // Met à jour le contexte global
-      toast.success("Profil mis à jour avec succès !");
-    } catch (error) {
-      toast.error("Erreur lors de la mise à jour du profil.");
+      await refreshUser(); // Rafraîchit les données dans l'AuthContext
+      toast.success("Profil mis à jour !");
+    } catch (error: any) {
+      toast.error(error.title || "Erreur", { description: error.detail });
     } finally {
-      setIsLoading(false);
+      setIsUpdatingProfile(false);
     }
   };
 
+  // 🔒 3.3 Changer le mot de passe (PUT /account/password)
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error("Les nouveaux mots de passe ne correspondent pas.");
+      toast.error("Validation échouée", {
+        description: "Les nouveaux mots de passe ne correspondent pas.",
+      });
       return;
     }
-    setIsLoading(true);
+
+    setIsUpdatingPassword(true);
     try {
       await accountService.updatePassword({
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword,
       });
-      toast.success("Mot de passe modifié !");
-      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (error) {
-      toast.error("Erreur : Mot de passe actuel incorrect ou erreur serveur.");
+      toast.success("Mot de passe modifié avec succès.");
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error: any) {
+      toast.error("Erreur", {
+        description: error.detail || "L'ancien mot de passe est incorrect.",
+      });
     } finally {
-      setIsLoading(false);
+      setIsUpdatingPassword(false);
     }
   };
 
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
-
+  // 🔒 3.4 Changer la photo de profil (POST /account/picture)
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const toastId = toast.loading("Téléchargement de la photo...");
+    // Check size localement avant upload (2Mo)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Fichier trop lourd", {
+        description: "L'image ne doit pas dépasser 2Mo.",
+      });
+      return;
+    }
+
+    const toastId = toast.loading("Mise à jour de la photo...");
     try {
       await accountService.updatePicture(file);
       await refreshUser();
       toast.dismiss(toastId);
-      toast.success("Photo de profil mise à jour !");
+      toast.success("Photo mise à jour !");
     } catch (error: any) {
       toast.dismiss(toastId);
-      
-      // Gestion spécifique 413
       if (error.status === 413) {
-        toast.error("Image trop volumineuse", { 
-            description: "L'image ne doit pas dépasser 2Mo." 
-        });
+        toast.error("L'image est trop lourde pour le serveur.");
       } else {
-        toast.error("Erreur", { description: error.detail || "Impossible de mettre à jour la photo." });
+        toast.error("Erreur d'upload", { description: error.detail });
       }
     }
   };
 
+  // 🔒 3.5 Supprimer mon compte (DELETE /account)
   const handleDeleteAccount = async () => {
-      const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.");
-      if (confirmDelete) {
-          try {
-              await accountService.deleteAccount();
-              toast.success("Compte supprimé. Au revoir.");
-              window.location.href = "/login"; // Force redirect
-          } catch (error) {
-              toast.error("Impossible de supprimer le compte.");
-          }
-      }
-  }
+    if (
+      !confirm(
+        "ATTENTION : Cette action est irréversible. Votre compte sera désactivé. Continuer ?",
+      )
+    )
+      return;
 
-  if (!user) return <div className="p-8 text-center">Chargement du profil...</div>;
+    setIsDeleting(true);
+    try {
+      await accountService.deleteAccount();
+      toast.success("Compte supprimé. Vous allez être déconnecté.");
+      setTimeout(() => logout(), 2000);
+    } catch (error: any) {
+      toast.error("Erreur", { description: error.detail });
+      setIsDeleting(false);
+    }
+  };
+
+  if (!user) return null;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* ===== COLONNE GAUCHE : Avatar & Infos Lecture Seule ===== */}
+      {/* ===== COLONNE GAUCHE : Sommaire & Info Métier (Lecture Seule) ===== */}
       <div className="space-y-6">
-        {/* Carte Avatar */}
         <div className="bg-surface rounded-xl border border-border-default shadow-sm p-6 flex flex-col items-center text-center">
-          <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
-            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-surface-hover shadow-md">
+          <div
+            className="relative group cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white dark:border-slate-800 shadow-lg bg-slate-100 flex items-center justify-center">
               {user.photoUrl ? (
-                <img src={user.photoUrl} alt="Avatar" className="w-full h-full object-cover" />
+                <img
+                  src={user.photoUrl}
+                  alt="Profil"
+                  className="w-full h-full object-cover"
+                />
               ) : (
-                <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-bold">
-                  {user.username?.charAt(0).toUpperCase()}
-                </div>
+                <User size={48} className="text-slate-400" />
               )}
             </div>
-            {/* Overlay au survol */}
             <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera className="text-white w-8 h-8" />
+              <Camera className="text-white w-8 h-8" />
             </div>
-            <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept="image/*" 
-                onChange={handleFileChange} 
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileChange}
             />
           </div>
-          
-          <h2 className="mt-4 text-xl font-bold text-text-primary">{user.firstName} {user.lastName}</h2>
-          <p className="text-text-secondary">@{user.username}</p>
-          
+
+          <h2 className="mt-4 text-xl font-bold text-text-primary">
+            {user.firstName} {user.lastName}
+          </h2>
+          <p className="text-text-secondary text-sm">@{user.username}</p>
+
           <div className="mt-4 flex flex-wrap justify-center gap-2">
-            {user.roles?.map(role => (
-                <span key={role} className="px-3 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium border border-primary/20">
-                    {role.replace('ROLE_', '').replace('_', ' ')}
-                </span>
+            {user.roles.map((role) => (
+              <span
+                key={role}
+                className="px-3 py-1 bg-primary/10 text-primary text-[10px] font-bold uppercase rounded-full border border-primary/20"
+              >
+                {role.replace("ROLE_", "").replace("_", " ")}
+              </span>
             ))}
           </div>
         </div>
 
-        {/* Carte Infos Métier (Lecture Seule) */}
+        {/* Infos Système / Métier (Non modifiables selon spec) */}
         <div className="bg-surface rounded-xl border border-border-default shadow-sm p-6">
-            <h3 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
-                <Shield className="w-4 h-4 text-primary" /> Informations Système
-            </h3>
-            <div className="space-y-3 text-sm">
-                <div className="flex justify-between py-2 border-b border-border-default">
-                    <span className="text-text-secondary">ID Utilisateur</span>
-                    <span className="font-mono text-text-primary text-xs">{user.id.substring(0, 12)}...</span>
-                </div>
-                {user.companyName && (
-                    <div className="flex justify-between py-2 border-b border-border-default">
-                        <span className="text-text-secondary">Entreprise</span>
-                        <span className="text-text-primary font-medium">{user.companyName}</span>
-                    </div>
-                )}
-                {user.licenceNumber && (
-                    <div className="flex justify-between py-2 border-b border-border-default">
-                        <span className="text-text-secondary">Permis de conduire</span>
-                        <span className="text-text-primary font-medium">{user.licenceNumber}</span>
-                    </div>
-                )}
+          <h3 className="font-bold text-text-primary text-sm mb-4 flex items-center gap-2 uppercase tracking-wider">
+            <Shield size={16} className="text-primary" /> Informations métier
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <p className="text-[10px] text-text-tertiary uppercase font-bold">
+                Entreprise / Service
+              </p>
+              <p className="text-sm font-medium text-text-primary">
+                {user.companyName || user.service || "Non renseigné"}
+              </p>
             </div>
+            {user.licenceNumber && (
+              <div>
+                <p className="text-[10px] text-text-tertiary uppercase font-bold">
+                  Numéro de Permis
+                </p>
+                <p className="text-sm font-medium text-text-primary">
+                  {user.licenceNumber}
+                </p>
+              </div>
+            )}
+            <div>
+              <p className="text-[10px] text-text-tertiary uppercase font-bold">
+                ID Système
+              </p>
+              <p className="text-[10px] font-mono text-text-tertiary truncate">
+                {user.id}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ===== COLONNE DROITE : Formulaires Édition ===== */}
+      {/* ===== COLONNE DROITE : Actions ===== */}
       <div className="lg:col-span-2 space-y-8">
-        
-        {/* Formulaire Informations Personnelles */}
-        <div className="bg-surface rounded-xl border border-border-default shadow-sm p-8">
-          <h2 className="text-xl font-semibold mb-6 flex items-center gap-3 text-text-primary">
-            <User className="w-5 h-5 text-primary" />
-            Informations Personnelles
-          </h2>
-          
-          <form onSubmit={handleProfileUpdate} className="space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-1">Prénom</label>
-                    <input 
-                        type="text" 
-                        value={profileForm.firstName}
-                        onChange={e => setProfileForm({...profileForm, firstName: e.target.value})}
-                        className="w-full px-4 py-2 rounded-lg border border-border-default bg-background text-text-primary focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-colors"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-1">Nom</label>
-                    <input 
-                        type="text" 
-                        value={profileForm.lastName}
-                        onChange={e => setProfileForm({...profileForm, lastName: e.target.value})}
-                        className="w-full px-4 py-2 rounded-lg border border-border-default bg-background text-text-primary focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-colors"
-                    />
-                </div>
+        {/* Formulaire Profil */}
+        <section className="bg-surface rounded-xl border border-border-default shadow-sm p-6 md:p-8">
+          <h3 className="text-lg font-bold text-text-primary mb-6 flex items-center gap-2">
+            <User size={20} className="text-primary" /> Informations
+            personnelles
+          </h3>
+          <form
+            onSubmit={handleProfileUpdate}
+            className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          >
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-text-secondary">
+                Prénom
+              </label>
+              <input
+                className="w-full px-4 py-2 rounded-lg border border-border-default bg-background text-text-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                value={profileForm.firstName}
+                onChange={(e) =>
+                  setProfileForm({ ...profileForm, firstName: e.target.value })
+                }
+                required
+              />
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-1">Email</label>
-                    <input 
-                        type="email" 
-                        value={profileForm.email}
-                        onChange={e => setProfileForm({...profileForm, email: e.target.value})}
-                        className="w-full px-4 py-2 rounded-lg border border-border-default bg-background text-text-primary focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-colors"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-1">Téléphone</label>
-                    <input 
-                        type="tel" 
-                        value={profileForm.phone}
-                        onChange={e => setProfileForm({...profileForm, phone: e.target.value})}
-                        className="w-full px-4 py-2 rounded-lg border border-border-default bg-background text-text-primary focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-colors"
-                    />
-                </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-text-secondary">
+                Nom
+              </label>
+              <input
+                className="w-full px-4 py-2 rounded-lg border border-border-default bg-background text-text-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                value={profileForm.lastName}
+                onChange={(e) =>
+                  setProfileForm({ ...profileForm, lastName: e.target.value })
+                }
+                required
+              />
             </div>
-
-            <div className="flex justify-end pt-2">
-                <button 
-                    type="submit" 
-                    disabled={isLoading}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-70 transition-colors font-medium"
-                >
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Enregistrer les modifications
-                </button>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-text-secondary">
+                Email
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
+                <input
+                  type="email"
+                  className="w-full pl-10 pr-4 py-2 rounded-lg border border-border-default bg-background text-text-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  value={profileForm.email}
+                  onChange={(e) =>
+                    setProfileForm({ ...profileForm, email: e.target.value })
+                  }
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-text-secondary">
+                Téléphone
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
+                <input
+                  className="w-full pl-10 pr-4 py-2 rounded-lg border border-border-default bg-background text-text-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  value={profileForm.phone}
+                  onChange={(e) =>
+                    setProfileForm({ ...profileForm, phone: e.target.value })
+                  }
+                  required
+                />
+              </div>
+            </div>
+            <div className="md:col-span-2 flex justify-end">
+              <Button
+                type="submit"
+                isLoading={isUpdatingProfile}
+                className="h-10 px-8"
+              >
+                <Save size={18} className="mr-2" /> Enregistrer
+              </Button>
             </div>
           </form>
-        </div>
+        </section>
 
         {/* Formulaire Sécurité */}
-        <div className="bg-surface rounded-xl border border-border-default shadow-sm p-8">
-          <h2 className="text-xl font-semibold mb-6 flex items-center gap-3 text-text-primary">
-            <Lock className="w-5 h-5 text-primary" />
-            Sécurité
-          </h2>
-
-          <form onSubmit={handlePasswordUpdate} className="space-y-5">
-            <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">Mot de passe actuel</label>
-                <input 
-                    type="password" 
-                    required
-                    value={passwordForm.currentPassword}
-                    onChange={e => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
-                    className="w-full px-4 py-2 rounded-lg border border-border-default bg-background text-text-primary focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+        <section className="bg-surface rounded-xl border border-border-default shadow-sm p-6 md:p-8">
+          <h3 className="text-lg font-bold text-text-primary mb-6 flex items-center gap-2">
+            <Lock size={20} className="text-primary" /> Sécurité du compte
+          </h3>
+          <form onSubmit={handlePasswordUpdate} className="space-y-6">
+            <div className="space-y-2 max-w-md">
+              <label className="text-sm font-medium text-text-secondary">
+                Mot de passe actuel
+              </label>
+              <input
+                type="password"
+                className="w-full px-4 py-2 rounded-lg border border-border-default bg-background text-text-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                value={passwordForm.currentPassword}
+                onChange={(e) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    currentPassword: e.target.value,
+                  })
+                }
+                required
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-secondary">
+                  Nouveau mot de passe
+                </label>
+                <input
+                  type="password"
+                  className="w-full px-4 py-2 rounded-lg border border-border-default bg-background text-text-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  value={passwordForm.newPassword}
+                  onChange={(e) =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      newPassword: e.target.value,
+                    })
+                  }
+                  required
                 />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-secondary">
+                  Confirmer le mot de passe
+                </label>
+                <input
+                  type="password"
+                  className="w-full px-4 py-2 rounded-lg border border-border-default bg-background text-text-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      confirmPassword: e.target.value,
+                    })
+                  }
+                  required
+                />
+              </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-1">Nouveau mot de passe</label>
-                    <input 
-                        type="password" 
-                        required
-                        minLength={6}
-                        value={passwordForm.newPassword}
-                        onChange={e => setPasswordForm({...passwordForm, newPassword: e.target.value})}
-                        className="w-full px-4 py-2 rounded-lg border border-border-default bg-background text-text-primary focus:ring-1 focus:ring-primary focus:border-primary outline-none"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-1">Confirmer le nouveau mot de passe</label>
-                    <input 
-                        type="password" 
-                        required
-                        minLength={6}
-                        value={passwordForm.confirmPassword}
-                        onChange={e => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
-                        className="w-full px-4 py-2 rounded-lg border border-border-default bg-background text-text-primary focus:ring-1 focus:ring-primary focus:border-primary outline-none"
-                    />
-                </div>
-            </div>
-
-            <div className="flex justify-end pt-2">
-                <button 
-                    type="submit" 
-                    disabled={isLoading}
-                    className="flex items-center gap-2 px-6 py-2.5 border border-border-default text-text-primary rounded-lg hover:bg-background-secondary disabled:opacity-70 transition-colors font-medium"
-                >
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
-                    Modifier le mot de passe
-                </button>
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                variant="outline"
+                isLoading={isUpdatingPassword}
+                className="h-10 px-8"
+              >
+                Changer le mot de passe
+              </Button>
             </div>
           </form>
-        </div>
+        </section>
 
         {/* Zone de Danger */}
-        <div className="bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-900/30 p-8">
-            <h2 className="text-xl font-semibold mb-2 flex items-center gap-3 text-red-600 dark:text-red-400">
-                <AlertTriangle className="w-5 h-5" />
-                Zone de Danger
-            </h2>
-            <p className="text-sm text-red-600/80 dark:text-red-400/80 mb-6">
-                La suppression de votre compte est définitive. Toutes vos données seront perdues.
-            </p>
-            <div className="flex justify-end">
-                <button 
-                    onClick={handleDeleteAccount}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
-                >
-                    <Trash2 className="w-4 h-4" />
-                    Supprimer mon compte
-                </button>
+        <section className="bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-900/30 p-6 md:p-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-red-600 dark:text-red-400 flex items-center gap-2">
+                <AlertTriangle size={20} /> Zone de danger
+              </h3>
+              <p className="text-sm text-red-600/80 dark:text-red-400/80">
+                La suppression de votre compte est définitive. Toutes vos
+                données seront désactivées.
+              </p>
             </div>
-        </div>
-
+            <Button
+              variant="danger"
+              onClick={handleDeleteAccount}
+              isLoading={isDeleting}
+              className="h-10 whitespace-nowrap"
+            >
+              <Trash2 size={18} className="mr-2" /> Supprimer le compte
+            </Button>
+          </div>
+        </section>
       </div>
     </div>
   );

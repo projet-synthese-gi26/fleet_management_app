@@ -3,19 +3,37 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useI18n } from '@/hooks/useI18n'; // Import useI18n
 
-const ProfileCard = () => (
-    <div className="flex items-center gap-3">
-        <div 
-            className="bg-center bg-no-repeat bg-cover rounded-full h-12 w-12 border-2 border-primary" 
-            style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBTS7zd9rfNIFf0b-_6YDR1-bNk7pg_8oxup0mJnDpI2VUHu7QJNxwheB7_QQxJa5_wsFz4B9HKmnT6GQs0yCF7fgv5R-FAz8SmFvAx-FWiJ_rK2ag_ZKP5dKbAdIChDY8BBLZGoNUTZ2o_B6p7qQ1T7dWwae35wTrY8Fl3s-Own22ML1-Dr9aLrMj53FB_NgadOPOIn_Zu2bavbroQzJFDzxEYFyBbR9kmz_eWLfRClDWV7ST_ei_AeKbcBRyQIVxTwU03n3idh4fn")'}}
-        >
+const ProfileCard = () => {
+
+    const { t } = useI18n();
+
+    return (
+
+        <div className="flex items-center gap-3">
+
+            <div 
+
+                className="bg-center bg-no-repeat bg-cover rounded-full h-12 w-12 border-2 border-primary" 
+
+                style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBTS7zd9rfNIFf0b-_6YDR1-bNk7pg_8oxup0mJnDpI2VUHu7QJNxwheB7_QQxJa5_wsFz4B9HKmnT6GQs0yCF7fgv5R-FAz8SmFvAx-FWiJ_rK2ag_ZKP5dKbAdIChDY8BBLZGoNUTZ2o_B6p7qQ1T7dWwae35wTrY8Fl3s-Own22ML1-Dr9aLrMj53FB_NgadOPOIn_Zu2bavbroQzJFDzxEYFyBbR9kmz_eWLfRClDWV7ST_ei_AeKbcBRyQIVxTwU03n3idh4fn")'}}
+
+            >
+
+            </div>
+
+            <div className="flex flex-col">
+
+                <h1 className="text-base font-semibold leading-tight">{t('driverName', 'driverSidebar')}</h1>
+
+                <p className="text-slate-500 dark:text-[#9dabb9] text-xs">{t('driverIdLabel', 'driverSidebar')} #88392</p>
+
+            </div>
+
         </div>
-        <div className="flex flex-col">
-            <h1 className="text-base font-semibold leading-tight">Alex Driver</h1>
-            <p className="text-slate-500 dark:text-[#9dabb9] text-xs">ID: #88392</p>
-        </div>
-    </div>
-);
+
+    );
+
+};
 
 const NavLink = ({ href, icon, label }) => {
     const pathname = usePathname();

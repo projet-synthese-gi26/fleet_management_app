@@ -15,10 +15,25 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 
+interface VehicleMock {
+  id: string;
+  licensePlate: string;
+  brand: string;
+  model: string;
+  type: string;
+  fleetId: string;
+  fleetName: string;
+  assignedDriver: { name: string } | null; // Autorise explicitement null
+  status: boolean;
+  currentSpeed: number;
+  maintenanceStatus: string;
+  currentLocation: string;
+}
+
 /* =====================
    Mock data
 ===================== */
-const mockVehicles = [
+const mockVehicles: VehicleMock[] = [
   {
     id: "veh-001",
     licensePlate: "AB-123-CD",
@@ -33,8 +48,8 @@ const mockVehicles = [
     maintenanceStatus: "UP_TO_DATE",
     currentLocation: "Paris → Rouen",
   },
-].concat(
-  Array(19)
+  // Utilisez le spread operator (...) au lieu de .concat() pour plus de clarté
+  ...Array(19)
     .fill(null)
     .map((_, i) => ({
       id: `veh-${i + 2}`,
@@ -49,8 +64,8 @@ const mockVehicles = [
       currentSpeed: Math.floor(Math.random() * 120),
       maintenanceStatus: ["UP_TO_DATE", "PENDING", "OVERDUE", "IN_PROGRESS"][i % 4],
       currentLocation: `Localisation ${i + 1}`,
-    }))
-);
+    })),
+];
 
 const vehiclesPerPage = 10;
 

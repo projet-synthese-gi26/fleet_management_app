@@ -208,28 +208,41 @@ export function Header() {
           <div className="p-4 border-t border-border-default space-y-2">
             {/* LOGIQUE DYNAMIQUE MOBILE */}
             {isAuthenticated ? (
-              <>
-                <div className="px-4 py-2 text-sm text-text-secondary">
-                  Connecté en tant que <strong>{user?.username}</strong>
+              <div className="flex items-center gap-3">
+                {/* Affichage Nom + Avatar si présent */}
+                <div className="hidden sm:flex flex-col items-end mr-2">
+                  <span className="text-sm font-bold text-text-primary">
+                    {user?.firstName} {user?.lastName}
+                  </span>
+                  <span className="text-[10px] text-text-secondary uppercase font-medium">
+                    {user?.roles[0].replace('ROLE_', '').replace('_', ' ')}
+                  </span>
                 </div>
+                
+                {user?.photoUrl ? (
+                  <img src={user.photoUrl} alt="Profil" className="size-8 rounded-full object-cover border border-border-default" />
+                ) : (
+                  <div className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs border border-primary/20">
+                    {user?.username?.charAt(0).toUpperCase()}
+                  </div>
+                )}
+
                 <Link
                   href={dashboardLink}
-                  onClick={handleNavClick}
-                  className="w-full flex items-center justify-center gap-2 rounded-lg h-12 px-5 bg-primary hover:bg-primary-hover text-white text-base font-bold transition-colors"
+                  className="flex min-w-[84px] cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-primary hover:bg-primary-hover text-white text-sm font-bold transition-colors gap-2"
                 >
-                  <span className="material-symbols-outlined">dashboard</span>
-                  <span>Accéder au Dashboard</span>
+                  <span className="material-symbols-outlined text-[18px]">dashboard</span>
+                  <span className="hidden lg:block">Dashboard</span>
                 </Link>
+
                 <button
-                  onClick={() => {
-                    logout();
-                    handleNavClick(new MouseEvent("click") as any);
-                  }}
-                  className="w-full flex items-center justify-center gap-2 rounded-lg h-12 px-5 border border-border-default text-text-primary hover:bg-background-secondary text-base font-bold transition-colors"
+                  onClick={logout}
+                  className="p-2 text-text-secondary hover:text-error transition-colors"
+                  title="Déconnexion"
                 >
-                  <span>Se déconnecter</span>
+                  <span className="material-symbols-outlined">logout</span>
                 </button>
-              </>
+              </div>
             ) : (
               <>
                 <Link

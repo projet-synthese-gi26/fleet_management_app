@@ -15,6 +15,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SignUpPage = () => {
   const { t, locale } = useI18n();
   const { register, isLoading } = useAuth();
+  
+  const [step, setStep] = useState(1);
 
   // États du formulaire
   const [firstName, setFirstName] = useState("");
@@ -44,39 +46,42 @@ const SignUpPage = () => {
     }
   };
 
-  // Fonction de validation
-  const validateForm = () => {
+  const validateStep1 = () => {
     const newErrors: Record<string, string> = {};
-
     if (!firstName.trim()) newErrors.firstName = "Le prénom est requis.";
     if (!lastName.trim()) newErrors.lastName = "Le nom est requis.";
-
     if (!username.trim()) {
       newErrors.username = "Le nom d'utilisateur est requis.";
     } else if (username.length < 3) {
       newErrors.username = "Au moins 3 caractères.";
     }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
+  const validateStep2 = () => {
+    const newErrors: Record<string, string> = {};
     if (!phone.trim()) newErrors.phone = "Le téléphone est requis.";
-
     if (!email.trim()) {
       newErrors.email = "L'email est requis.";
     } else if (!EMAIL_REGEX.test(email)) {
       newErrors.email = "Format d'email invalide.";
     }
-
     if (!role) newErrors.role = "Veuillez sélectionner un rôle.";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
+  const validateStep3 = () => {
+    const newErrors: Record<string, string> = {};
     if (!password) {
       newErrors.password = "Le mot de passe est requis.";
     } else if (password.length < 6) {
       newErrors.password = "Au moins 6 caractères.";
     }
-
     if (password !== confirmPassword) {
       newErrors.confirmPassword = "Les mots de passe ne correspondent pas.";
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -84,14 +89,13 @@ const SignUpPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!validateStep3()) {
       toast.error("Veuillez corriger les erreurs dans le formulaire.");
       return;
     }
 
-    // Normalisation des rôles selon votre spec backend
     let backendRole = "FLEET_MANAGER";
-    if (role === "admin") backendRole = "FLEET_ADMIN"; // ou ADMIN selon votre securité
+    if (role === "admin") backendRole = "FLEET_ADMIN";
     if (role === "driver") backendRole = "FLEET_DRIVER";
 
     try {
@@ -105,32 +109,28 @@ const SignUpPage = () => {
         roles: [backendRole],
         file: file || undefined,
       });
-
       toast.success("Compte créé avec succès ! Bienvenue.");
     } catch (err: any) {
-      // DEBUG : Pour voir enfin le vrai contenu de l'erreur
       console.error("Détail de l'erreur reçue:", {
         status: err.status,
         title: err.title,
         detail: err.detail,
       });
-
-      // L'intercepteur rejette maintenant un objet avec .status
       if (err.status === 409) {
         toast.error("Conflit", { description: err.detail });
-
         if (err.detail.toLowerCase().includes("email")) {
           setErrors((prev) => ({ ...prev, email: "Email déjà utilisé" }));
+          setStep(2);
         } else {
           setErrors((prev) => ({
             ...prev,
             username: "Nom d'utilisateur déjà pris",
           }));
+          setStep(1);
         }
       } else if (err.status === 400) {
         toast.error("Données invalides", { description: err.detail });
       } else {
-        // Erreur générique provenant de l'intercepteur
         toast.error(err.title || "Erreur", {
           description: err.detail || "Une erreur inconnue est survenue",
         });
@@ -155,7 +155,6 @@ const SignUpPage = () => {
       "bg-gradient-to-b from-[rgba(30,58,138,0.4)] via-[rgba(30,58,138,0.6)] to-[rgba(15,23,42,0.8)]",
   };
 
-  // Helper pour les classes d'input en erreur
   const getInputClass = (fieldName: string) => `
     form-input flex w-full min-w-0 rounded-lg 
     ${
@@ -166,13 +165,25 @@ const SignUpPage = () => {
     bg-surface-light dark:bg-surface-dark text-[#0d131b] dark:text-white 
     h-12 placeholder:text-[#9aa2b1] p-[15px] text-base font-normal transition-colors
   `;
+  
+  const nextStep = () => {
+    if (step === 1 && validateStep1()) {
+        setStep(2);
+    } else if (step === 2 && validateStep2()){
+        setStep(3)
+    }
+  }
+  
+  const prevStep = () => {
+    setStep(step > 1 ? step -1 : 1);
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row overflow-hidden">
       <AuthHeroSection {...signupHeroProps} />
 
-      <div className="flex w-full lg:w-1/2 flex-col bg-background-light dark:bg-background-dark h-screen overflow-y-auto">
-        <div className="flex-grow flex flex-col justify-center px-6 py-12 sm:px-12 xl:px-24">
+      <div className="flex w-full lg:w-1/2 flex-col bg-background-light dark:bg-background-dark">
+        <div className="flex-grow flex flex-col justify-center px-6 sm:px-12 xl:px-24">
           <div className="mx-auto w-full max-w-md flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               <h2 className="text-[#0d131b] dark:text-white text-3xl font-black leading-tight tracking-[-0.033em]">
@@ -184,55 +195,53 @@ const SignUpPage = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              {/* Nom et Prénom */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
-                    Prénom
-                  </label>
-                  <input
-                    className={getInputClass("firstName")}
-                    placeholder="Jean"
-                    value={firstName}
-                    onChange={(e) => {
-                      setFirstName(e.target.value);
-                      if (errors.firstName)
-                        setErrors({ ...errors, firstName: "" });
-                    }}
-                  />
-                  {errors.firstName && (
-                    <span className="text-xs text-red-500 flex items-center gap-1">
-                      <AlertCircle size={12} />
-                      {errors.firstName}
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
-                    Nom
-                  </label>
-                  <input
-                    className={getInputClass("lastName")}
-                    placeholder="Dupont"
-                    value={lastName}
-                    onChange={(e) => {
-                      setLastName(e.target.value);
-                      if (errors.lastName)
-                        setErrors({ ...errors, lastName: "" });
-                    }}
-                  />
-                  {errors.lastName && (
-                    <span className="text-xs text-red-500 flex items-center gap-1">
-                      <AlertCircle size={12} />
-                      {errors.lastName}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Username & Phone */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
+              {step === 1 && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
+                        Prénom
+                      </label>
+                      <input
+                        className={getInputClass("firstName")}
+                        placeholder="Jean"
+                        value={firstName}
+                        onChange={(e) => {
+                          setFirstName(e.target.value);
+                          if (errors.firstName)
+                            setErrors({ ...errors, firstName: "" });
+                        }}
+                      />
+                      {errors.firstName && (
+                        <span className="text-xs text-red-500 flex items-center gap-1">
+                          <AlertCircle size={12} />
+                          {errors.firstName}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
+                        Nom
+                      </label>
+                      <input
+                        className={getInputClass("lastName")}
+                        placeholder="Dupont"
+                        value={lastName}
+                        onChange={(e) => {
+                          setLastName(e.target.value);
+                          if (errors.lastName)
+                            setErrors({ ...errors, lastName: "" });
+                        }}
+                      />
+                      {errors.lastName && (
+                        <span className="text-xs text-red-500 flex items-center gap-1">
+                          <AlertCircle size={12} />
+                          {errors.lastName}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
                     Nom d'utilisateur
                   </label>
@@ -253,6 +262,10 @@ const SignUpPage = () => {
                     </span>
                   )}
                 </div>
+                </>
+              )}
+              {step === 2 && (
+                <>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
                     Téléphone
@@ -273,37 +286,32 @@ const SignUpPage = () => {
                     </span>
                   )}
                 </div>
-              </div>
-
-              {/* Email */}
-              <div className="flex flex-col gap-2">
-                <label
-                  className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
-                  htmlFor="email"
-                >
-                  {t("professionalEmailLabel", "authPage")}
-                </label>
-                <input
-                  className={getInputClass("email")}
-                  id="email"
-                  placeholder={t("professionalEmailPlaceholder", "authPage")}
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (errors.email) setErrors({ ...errors, email: "" });
-                  }}
-                />
-                {errors.email && (
-                  <span className="text-xs text-red-500 flex items-center gap-1">
-                    <AlertCircle size={12} />
-                    {errors.email}
-                  </span>
-                )}
-              </div>
-
-              {/* Role Select */}
-              <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2">
+                    <label
+                      className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
+                      htmlFor="email"
+                    >
+                      {t("professionalEmailLabel", "authPage")}
+                    </label>
+                    <input
+                      className={getInputClass("email")}
+                      id="email"
+                      placeholder={t("professionalEmailPlaceholder", "authPage")}
+                      type="email"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (errors.email) setErrors({ ...errors, email: "" });
+                      }}
+                    />
+                    {errors.email && (
+                      <span className="text-xs text-red-500 flex items-center gap-1">
+                        <AlertCircle size={12} />
+                        {errors.email}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
                 <label
                   className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
                   htmlFor="role"
@@ -344,9 +352,12 @@ const SignUpPage = () => {
                   </span>
                 )}
               </div>
+                </>
+              )}
 
-              {/* Photo Upload */}
-              <div className="flex flex-col gap-2">
+              {step === 3 && (
+                <>
+                <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
                   Photo de profil (Optionnel)
                 </label>
@@ -371,7 +382,6 @@ const SignUpPage = () => {
                 </div>
               </div>
 
-              {/* Password */}
               <div className="flex flex-col gap-2">
                 <label
                   className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
@@ -410,7 +420,6 @@ const SignUpPage = () => {
                 )}
               </div>
 
-              {/* Confirm Password */}
               <div className="flex flex-col gap-2">
                 <label
                   className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
@@ -448,29 +457,39 @@ const SignUpPage = () => {
                   </span>
                 )}
               </div>
-
-              {/* Signup Button */}
-              <Button
-                type="submit"
-                isLoading={isLoading}
-                className="w-full mt-4"
-              >
-                {t("signupButton", "authPage")}
-              </Button>
+                </>
+              )}
+                <div className="flex gap-4">
+                {step > 1 && (
+                    <Button
+                    onClick={prevStep}
+                    type="button"
+                    className="w-full mt-4"
+                    variant="outline"
+                  >
+                    Précédent
+                  </Button>
+                )}
+                {step < 3 ? (
+                    <Button
+                    onClick={nextStep}
+                    type="button"
+                    className="w-full mt-4"
+                  >
+                    Suivant
+                  </Button>
+                ): (
+                    <Button
+                    type="submit"
+                    isLoading={isLoading}
+                    className="w-full mt-4"
+                  >
+                    {t("signupButton", "authPage")}
+                  </Button>
+                )}
+                </div>
             </form>
 
-            <div className="relative flex py-2 items-center">
-              <div className="flex-grow border-t border-[#cfd9e7] dark:border-slate-700"></div>
-              <span className="flex-shrink-0 mx-4 text-gray-400 text-xs font-bold uppercase">
-                {t("orSeparator", "authPage")}
-              </span>
-              <div className="flex-grow border-t border-[#cfd9e7] dark:border-slate-700"></div>
-            </div>
-
-            <button className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg border border-[#cfd9e7] dark:border-slate-600 bg-white dark:bg-surface-dark h-12 px-5 text-[#0d131b] dark:text-white text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
-              <Chrome className="w-5 h-5" />
-              <span>{t("continueWithGoogle", "authPage")}</span>
-            </button>
             <p className="text-center text-sm text-[#4c6c9a] dark:text-slate-400">
               {t("alreadyAccount", "authPage")}{" "}
               <Link
@@ -481,15 +500,6 @@ const SignUpPage = () => {
               </Link>
             </p>
           </div>
-        </div>
-        <div className="p-6 flex flex-col sm:flex-row justify-center gap-6 text-center text-xs text-[#4c6c9a] dark:text-slate-500 mt-auto">
-          <Link className="hover:text-primary transition-colors" href="#">
-            {t("legalNotices", "common")}
-          </Link>
-          <Link className="hover:text-primary transition-colors" href="#">
-            {t("privacy_policy", "common")}
-          </Link>
-          <span>{t("copyright", "common")}</span>
         </div>
       </div>
     </div>

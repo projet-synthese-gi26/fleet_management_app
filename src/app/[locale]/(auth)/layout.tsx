@@ -4,7 +4,7 @@ import { Header } from '@/components/layouts/Header'; // Import the Header compo
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col min-h-screen"> {/* Added a div to wrap Header and children */}
-      <Header />
+      {/* <Header /> */}
       {children}
     </div>
   );

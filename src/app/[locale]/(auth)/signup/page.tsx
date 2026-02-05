@@ -15,7 +15,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SignUpPage = () => {
   const { t, locale } = useI18n();
   const { register, isLoading } = useAuth();
-  
+
   const [step, setStep] = useState(1);
 
   // États du formulaire
@@ -165,18 +165,18 @@ const SignUpPage = () => {
     bg-surface-light dark:bg-surface-dark text-[#0d131b] dark:text-white 
     h-12 placeholder:text-[#9aa2b1] p-[15px] text-base font-normal transition-colors
   `;
-  
+
   const nextStep = () => {
     if (step === 1 && validateStep1()) {
-        setStep(2);
-    } else if (step === 2 && validateStep2()){
-        setStep(3)
+      setStep(2);
+    } else if (step === 2 && validateStep2()) {
+      setStep(3);
     }
-  }
-  
+  };
+
   const prevStep = () => {
-    setStep(step > 1 ? step -1 : 1);
-  }
+    setStep(step > 1 ? step - 1 : 1);
+  };
 
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row overflow-hidden">
@@ -242,50 +242,50 @@ const SignUpPage = () => {
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
-                    Nom d'utilisateur
-                  </label>
-                  <input
-                    className={getInputClass("username")}
-                    placeholder="jdupont"
-                    value={username}
-                    onChange={(e) => {
-                      setUsername(e.target.value);
-                      if (errors.username)
-                        setErrors({ ...errors, username: "" });
-                    }}
-                  />
-                  {errors.username && (
-                    <span className="text-xs text-red-500 flex items-center gap-1">
-                      <AlertCircle size={12} />
-                      {errors.username}
-                    </span>
-                  )}
-                </div>
+                    <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
+                      Nom d'utilisateur
+                    </label>
+                    <input
+                      className={getInputClass("username")}
+                      placeholder="jdupont"
+                      value={username}
+                      onChange={(e) => {
+                        setUsername(e.target.value);
+                        if (errors.username)
+                          setErrors({ ...errors, username: "" });
+                      }}
+                    />
+                    {errors.username && (
+                      <span className="text-xs text-red-500 flex items-center gap-1">
+                        <AlertCircle size={12} />
+                        {errors.username}
+                      </span>
+                    )}
+                  </div>
                 </>
               )}
               {step === 2 && (
                 <>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
-                    Téléphone
-                  </label>
-                  <input
-                    className={getInputClass("phone")}
-                    placeholder="+237..."
-                    value={phone}
-                    onChange={(e) => {
-                      setPhone(e.target.value);
-                      if (errors.phone) setErrors({ ...errors, phone: "" });
-                    }}
-                  />
-                  {errors.phone && (
-                    <span className="text-xs text-red-500 flex items-center gap-1">
-                      <AlertCircle size={12} />
-                      {errors.phone}
-                    </span>
-                  )}
-                </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
+                      Téléphone
+                    </label>
+                    <input
+                      className={getInputClass("phone")}
+                      placeholder="+237..."
+                      value={phone}
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        if (errors.phone) setErrors({ ...errors, phone: "" });
+                      }}
+                    />
+                    {errors.phone && (
+                      <span className="text-xs text-red-500 flex items-center gap-1">
+                        <AlertCircle size={12} />
+                        {errors.phone}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex flex-col gap-2">
                     <label
                       className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
@@ -296,7 +296,10 @@ const SignUpPage = () => {
                     <input
                       className={getInputClass("email")}
                       id="email"
-                      placeholder={t("professionalEmailPlaceholder", "authPage")}
+                      placeholder={t(
+                        "professionalEmailPlaceholder",
+                        "authPage",
+                      )}
                       type="email"
                       value={email}
                       onChange={(e) => {
@@ -312,156 +315,163 @@ const SignUpPage = () => {
                     )}
                   </div>
                   <div className="flex flex-col gap-2">
-                <label
-                  className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
-                  htmlFor="role"
-                >
-                  {t("roleLabel", "authPage")}
-                </label>
-                <div className="relative flex w-full items-center rounded-lg">
-                  <select
-                    className={`form-select flex w-full min-w-0 rounded-lg border h-12 p-[10px] pr-12 text-base font-normal transition-colors appearance-none 
+                    <label
+                      className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
+                      htmlFor="role"
+                    >
+                      {t("roleLabel", "authPage")}
+                    </label>
+                    <div className="relative flex w-full items-center rounded-lg">
+                      <select
+                        className={`form-select flex w-full min-w-0 rounded-lg border h-12 p-[10px] pr-12 text-base font-normal transition-colors appearance-none 
                     ${errors.role ? "border-red-500 text-red-500" : "border-[#cfd9e7] dark:border-slate-600 text-[#0d131b] dark:text-white"} 
                     bg-surface-light dark:bg-surface-dark focus:border-primary focus:ring-1 focus:ring-primary`}
-                    id="role"
-                    value={role}
-                    onChange={(e) => {
-                      setRole(e.target.value);
-                      if (errors.role) setErrors({ ...errors, role: "" });
-                    }}
-                  >
-                    <option disabled value="">
-                      {t("selectRolePlaceholder", "authPage")}
-                    </option>
-                    <option value="admin">{t("roleAdmin", "authPage")}</option>
-                    <option value="driver">
-                      {t("roleDriver", "authPage")}
-                    </option>
-                    <option value="manager">
-                      {t("roleManager", "authPage")}
-                    </option>
-                  </select>
-                  <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 px-3 flex items-center justify-center text-[#4c6c9a] dark:text-slate-400 pointer-events-none">
-                    expand_more
-                  </span>
-                </div>
-                {errors.role && (
-                  <span className="text-xs text-red-500 flex items-center gap-1">
-                    <AlertCircle size={12} />
-                    {errors.role}
-                  </span>
-                )}
-              </div>
+                        id="role"
+                        value={role}
+                        onChange={(e) => {
+                          setRole(e.target.value);
+                          if (errors.role) setErrors({ ...errors, role: "" });
+                        }}
+                      >
+                        <option disabled value="">
+                          {t("selectRolePlaceholder", "authPage")}
+                        </option>
+                        <option value="admin">
+                          {t("roleAdmin", "authPage")}
+                        </option>
+                        <option value="driver">
+                          {t("roleDriver", "authPage")}
+                        </option>
+                        <option value="manager">
+                          {t("roleManager", "authPage")}
+                        </option>
+                      </select>
+                      <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 px-3 flex items-center justify-center text-[#4c6c9a] dark:text-slate-400 pointer-events-none">
+                        expand_more
+                      </span>
+                    </div>
+                    {errors.role && (
+                      <span className="text-xs text-red-500 flex items-center gap-1">
+                        <AlertCircle size={12} />
+                        {errors.role}
+                      </span>
+                    )}
+                  </div>
                 </>
               )}
 
               {step === 3 && (
                 <>
-                <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
-                  Photo de profil (Optionnel)
-                </label>
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer bg-surface-light dark:bg-surface-dark border border-[#cfd9e7] dark:border-slate-600 rounded-lg px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 transition">
-                    <Upload className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-text-primary">
-                      Choisir un fichier
-                    </span>
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                    />
-                  </label>
-                  {file && (
-                    <span className="text-sm text-success truncate max-w-[200px]">
-                      {file.name}
-                    </span>
-                  )}
-                </div>
-              </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
+                      Photo de profil (Optionnel)
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer bg-surface-light dark:bg-surface-dark border border-[#cfd9e7] dark:border-slate-600 rounded-lg px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 transition">
+                        <Upload className="w-4 h-4 text-primary" />
+                        <span className="text-sm text-text-primary">
+                          Choisir un fichier
+                        </span>
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                        />
+                      </label>
+                      {file && (
+                        <span className="text-sm text-success truncate max-w-[200px]">
+                          {file.name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-              <div className="flex flex-col gap-2">
-                <label
-                  className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
-                  htmlFor="password"
-                >
-                  {t("passwordLabel", "authPage")}
-                </label>
-                <div className="relative flex w-full items-center rounded-lg">
-                  <input
-                    className={`${getInputClass("password")} pr-12`}
-                    id="password"
-                    placeholder={t("passwordSignupPlaceholder", "authPage")}
-                    type={passwordVisible ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      if (errors.password)
-                        setErrors({ ...errors, password: "" });
-                    }}
-                  />
-                  <button
-                    className="absolute right-0 top-0 bottom-0 px-3 flex items-center justify-center text-[#4c6c9a] dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors cursor-pointer"
-                    type="button"
-                    onClick={togglePasswordVisibility}
-                  >
-                    <span className="material-symbols-outlined text-[20px]">
-                      {passwordVisible ? "visibility_off" : "visibility"}
-                    </span>
-                  </button>
-                </div>
-                {errors.password && (
-                  <span className="text-xs text-red-500 flex items-center gap-1">
-                    <AlertCircle size={12} />
-                    {errors.password}
-                  </span>
-                )}
-              </div>
+                  <div className="flex flex-col gap-2">
+                    <label
+                      className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
+                      htmlFor="password"
+                    >
+                      {t("passwordLabel", "authPage")}
+                    </label>
+                    <div className="relative flex w-full items-center rounded-lg">
+                      <input
+                        className={`${getInputClass("password")} pr-12`}
+                        id="password"
+                        placeholder={t("passwordSignupPlaceholder", "authPage")}
+                        type={passwordVisible ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (errors.password)
+                            setErrors({ ...errors, password: "" });
+                        }}
+                      />
+                      <button
+                        className="absolute right-0 top-0 bottom-0 px-3 flex items-center justify-center text-[#4c6c9a] dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors cursor-pointer"
+                        type="button"
+                        onClick={togglePasswordVisibility}
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          {passwordVisible ? "visibility_off" : "visibility"}
+                        </span>
+                      </button>
+                    </div>
+                    {errors.password && (
+                      <span className="text-xs text-red-500 flex items-center gap-1">
+                        <AlertCircle size={12} />
+                        {errors.password}
+                      </span>
+                    )}
+                  </div>
 
-              <div className="flex flex-col gap-2">
-                <label
-                  className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
-                  htmlFor="confirm-password"
-                >
-                  {t("confirmPasswordLabel", "authPage")}
-                </label>
-                <div className="relative flex w-full items-center rounded-lg">
-                  <input
-                    className={`${getInputClass("confirmPassword")} pr-12`}
-                    id="confirm-password"
-                    placeholder={t("confirmPasswordPlaceholder", "authPage")}
-                    type={confirmPasswordVisible ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      if (errors.confirmPassword)
-                        setErrors({ ...errors, confirmPassword: "" });
-                    }}
-                  />
-                  <button
-                    className="absolute right-0 top-0 bottom-0 px-3 flex items-center justify-center text-[#4c6c9a] dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors cursor-pointer"
-                    type="button"
-                    onClick={toggleConfirmPasswordVisibility}
-                  >
-                    <span className="material-symbols-outlined text-[20px]">
-                      {confirmPasswordVisible ? "visibility_off" : "visibility"}
-                    </span>
-                  </button>
-                </div>
-                {errors.confirmPassword && (
-                  <span className="text-xs text-red-500 flex items-center gap-1">
-                    <AlertCircle size={12} />
-                    {errors.confirmPassword}
-                  </span>
-                )}
-              </div>
+                  <div className="flex flex-col gap-2">
+                    <label
+                      className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
+                      htmlFor="confirm-password"
+                    >
+                      {t("confirmPasswordLabel", "authPage")}
+                    </label>
+                    <div className="relative flex w-full items-center rounded-lg">
+                      <input
+                        className={`${getInputClass("confirmPassword")} pr-12`}
+                        id="confirm-password"
+                        placeholder={t(
+                          "confirmPasswordPlaceholder",
+                          "authPage",
+                        )}
+                        type={confirmPasswordVisible ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => {
+                          setConfirmPassword(e.target.value);
+                          if (errors.confirmPassword)
+                            setErrors({ ...errors, confirmPassword: "" });
+                        }}
+                      />
+                      <button
+                        className="absolute right-0 top-0 bottom-0 px-3 flex items-center justify-center text-[#4c6c9a] dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors cursor-pointer"
+                        type="button"
+                        onClick={toggleConfirmPasswordVisibility}
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          {confirmPasswordVisible
+                            ? "visibility_off"
+                            : "visibility"}
+                        </span>
+                      </button>
+                    </div>
+                    {errors.confirmPassword && (
+                      <span className="text-xs text-red-500 flex items-center gap-1">
+                        <AlertCircle size={12} />
+                        {errors.confirmPassword}
+                      </span>
+                    )}
+                  </div>
                 </>
               )}
-                <div className="flex gap-4">
+              <div className="flex gap-4">
                 {step > 1 && (
-                    <Button
+                  <Button
                     onClick={prevStep}
                     type="button"
                     className="w-full mt-4"
@@ -471,15 +481,15 @@ const SignUpPage = () => {
                   </Button>
                 )}
                 {step < 3 ? (
-                    <Button
+                  <Button
                     onClick={nextStep}
                     type="button"
                     className="w-full mt-4"
                   >
                     Suivant
                   </Button>
-                ): (
-                    <Button
+                ) : (
+                  <Button
                     type="submit"
                     isLoading={isLoading}
                     className="w-full mt-4"
@@ -487,7 +497,7 @@ const SignUpPage = () => {
                     {t("signupButton", "authPage")}
                   </Button>
                 )}
-                </div>
+              </div>
             </form>
 
             <p className="text-center text-sm text-[#4c6c9a] dark:text-slate-400">

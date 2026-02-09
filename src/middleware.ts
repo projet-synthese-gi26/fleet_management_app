@@ -1,44 +1,41 @@
-import { User, Role } from '@/types/auth-api.types';
-import { Locale } from '@/lib/i18n/config';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+// Assure-toi que ce chemin est correct vers ta config i18n
+import { locales, defaultLocale } from "./lib/i18n/config";
 
 /**
- * Détermine la route racine en fonction du rôle le plus élevé de l'utilisateur
+ * La fonction middleware doit être exportée soit en tant que 'middleware' 
+ * soit en tant qu'export par défaut.
  */
-export const getDashboardRoute = (user: User | null, locale: Locale): string => {
-    if (!user) return `/${locale}/login`;
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-    const roles = user.roles || [];
+  // 1. Vérifie si le chemin commence déjà par une locale (ex: /fr/dashboard)
+  const pathnameHasLocale = locales.some(
+    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+  );
 
-    // 1. Super Admin & Admin vont vers l'espace d'administration globale
-    if (roles.includes('FLEET_SUPER_ADMIN') || roles.includes('FLEET_ADMIN')) {
-        return `/${locale}/admin`;
-    }
+  // Si la locale est présente, on laisse passer la requête
+  if (pathnameHasLocale) return NextResponse.next();
 
-    // 2. Le Chauffeur va vers son interface mobile-first
-    if (roles.includes('FLEET_DRIVER')) {
-        return `/${locale}/driver/dashboard`;
-    }
+  // 2. Si aucune locale n'est présente, on redirige vers la locale par défaut
+  const locale = defaultLocale;
+  
+  // On construit la nouvelle URL
+  const url = request.nextUrl.clone();
+  url.pathname = `/${locale}${pathname}`;
 
-    // 3. Par défaut, le Fleet Manager va vers son dashboard de gestion
-    return `/${locale}/dashboard`;
-};
+  // Redirection 307 (Temporaire) vers l'URL avec locale
+  return NextResponse.redirect(url);
+}
 
 /**
- * Vérifie si un utilisateur a la permission d'accéder à un préfixe de route
+ * Le matcher définit sur quelles routes le middleware s'exécute.
+ * On exclut les fichiers statiques, l'api, etc.
  */
-export const canAccess = (user: User | null, path: string): boolean => {
-    if (!user) return false;
-    const roles = user.roles;
-
-    if (path.includes('/admin')) {
-        return roles.includes('FLEET_SUPER_ADMIN') || roles.includes('FLEET_ADMIN');
-    }
-    if (path.includes('/driver')) {
-        return roles.includes('FLEET_DRIVER');
-    }
-    if (path.includes('/dashboard')) {
-        return roles.includes('FLEET_MANAGER') || roles.includes('FLEET_ADMIN');
-    }
-    
-    return true;
+export const config = {
+  matcher: [
+    // Exclure les fichiers internes de Next.js et les fichiers statiques (images, etc.)
+    "/((?!api|_next/static|_next/image|assets|favicon.ico|sw.js|.*\\..*).*)",
+  ],
 };

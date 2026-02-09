@@ -4,388 +4,132 @@ import Modal from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { useVehicleReferences } from "@/hooks/useVehicleReferences";
 import { vehicleService } from "@/services/vehicle.service";
-import { CreateVehicleDto } from "@/types/vehicle.types";
+import { fleetService } from "@/services/fleet.service";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import { useI18n } from "@/hooks/useI18n";
-import { Truck, Info, Settings, Gauge } from "lucide-react";
+import { Truck, Info, Settings, LayoutGrid } from "lucide-react";
 
-export function CreateVehicleModal({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) {
-  const { locale } = useI18n();
-  const router = useRouter();
-  const {
-    types,
-    makes,
-    manufacturers,
-    sizes,
-    fuels,
-    transmissions,
-    isLoading: refsLoading,
-  } = useVehicleReferences();
+export function CreateVehicleModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { resources, isLoading: refsLoading } = useVehicleReferences();
+  const [fleets, setFleets] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [form, setForm] = useState<CreateVehicleDto>({
-    vehicleTypeId: "", // Obligatoire (UUID)
-    brand: "My Brand", // Obligatoire
-    model: "", // Obligatoire
-    licensePlate: "", // Obligatoire
-    manufacturerName: "TOYOTA", // Obligatoire
-    sizeName: "Pickup", // Obligatoire
-    typeName: "Commercial", // Obligatoire
-    fuelType: "Diesel", // Obligatoire
-    transmissionType: "Manuelle",
-    color: "Blanc",
-    manufacturingYear: 2024,
-    tankCapacity: 60.0,
-    totalSeatNumber: 2,
-    averageFuelConsumption: 8.5,
+  // Formulaire basé sur les UUIDs (Spec 1.A)
+  const [form, setForm] = useState({
+    vehicleTypeId: "",
+    manufacturerId: "",
+    brandId: "",
+    modelId: "",
+    sizeId: "",
+    usageTypeId: "",
+    fuelTypeId: "",
+    transmissionTypeId: "",
+    colorId: "",
+    licensePlate: "",
     vehicleSerialNumber: "",
-    status: "AVAILABLE",
+    manufacturingYear: new Date().getFullYear(),
+    tankCapacity: 50,
+    totalSeatNumber: 2,
+    averageFuelConsumption: 7.0,
+    targetFleetId: "" // Pour l'assignation immédiate
   });
 
-  // Pré-remplissage par défaut une fois les refs chargées
+  // Charger les flottes du manager pour l'assignation
   useEffect(() => {
-    if (!refsLoading && types.length > 0) {
-      setForm((prev) => ({
-        ...prev,
-        vehicleTypeId: types[0].id,
-        fuelType: fuels[0]?.name || "Diesel",
-        transmissionType: transmissions[0]?.name || "Manuelle",
-      }));
+    if (isOpen) {
+      fleetService.getAllFleets().then(setFleets);
     }
-  }, [refsLoading, types, fuels, transmissions]);
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validation ultime avant envoi
-    const mandatoryFields: (keyof CreateVehicleDto)[] = [
-      "vehicleTypeId",
-      "brand",
-      "model",
-      "licensePlate",
-      "manufacturerName",
-      "sizeName",
-      "typeName",
-      "fuelType",
-    ];
-
-    const missing = mandatoryFields.filter((f) => !form[f]);
-    if (missing.length > 0) {
-      toast.error(`Champs manquants : ${missing.join(", ")}`);
-      return;
-    }
-
     setIsSubmitting(true);
+
     try {
+      // 1. Création du véhicule
       const newVehicle = await vehicleService.create(form);
-      toast.success("Véhicule créé avec succès !");
+      
+      // 2. Assigner à la flotte si sélectionnée (Spec 1.B)
+      if (form.targetFleetId) {
+        await vehicleService.assignToFleet(form.targetFleetId, newVehicle.id);
+      }
+
+      toast.success("Véhicule créé et assigné avec succès !");
       onClose();
-      router.push(`/${locale}/dashboard/vehicles/${newVehicle.id}`);
+      window.location.reload(); // Simple pour rafraîchir la liste
     } catch (error: any) {
-      console.error("Payload envoyé:", form);
-      toast.error(error.title || "Erreur 400", {
-        description:
-          error.detail || "Vérifiez la validité des champs obligatoires.",
-      });
+      toast.error(error.title || "Erreur de création", { description: error.detail });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Enregistrer un nouveau véhicule"
-    >
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6 max-h-[75vh] overflow-y-auto px-1"
-      >
-        {/* Section 1: Identification de base */}
-        <div className="space-y-4">
-          <h4 className="flex items-center gap-2 text-sm font-bold text-primary uppercase tracking-wider">
-            <Info size={16} /> Identification
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-text-secondary">
-                Catégorie Système *
-              </label>
-              <select
-                className="w-full p-2 rounded-lg border border-border-default bg-background text-sm"
-                value={form.vehicleTypeId}
-                onChange={(e) =>
-                  setForm({ ...form, vehicleTypeId: e.target.value })
-                }
-              >
-                <option value="">Choisir un type...</option>
-                {types.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-text-secondary">
-                Immatriculation *
-              </label>
-              <input
-                className="w-full p-2 rounded-lg border border-border-default bg-background text-sm font-bold uppercase"
-                placeholder="ex: LT-123-AA"
-                value={form.licensePlate}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    licensePlate: e.target.value.toUpperCase(),
-                  })
-                }
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Section 2: Marque et Modèle */}
-        <div className="space-y-4">
-          <h4 className="flex items-center gap-2 text-sm font-bold text-primary uppercase tracking-wider">
-            <Truck size={16} /> Constructeur
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-text-secondary">
-                Groupe Constructeur *
-              </label>
-              <select
-                className="w-full p-2 rounded-lg border border-border-default bg-background text-sm"
-                value={form.manufacturerName}
-                onChange={(e) =>
-                  setForm({ ...form, manufacturerName: e.target.value })
-                }
-              >
-                <option value="">Sélectionner...</option>
-                {manufacturers.map((m) => (
-                  <option key={m.id || m.name} value={m.name}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-text-secondary">
-                Marque *
-              </label>
-              <select
-                className="w-full p-2 rounded-lg border border-border-default bg-background text-sm"
-                value={form.brand}
-                onChange={(e) => setForm({ ...form, brand: e.target.value })}
-              >
-                <option value="">Choisir marque...</option>
-                {makes.map((m) => (
-                  <option key={m.id || m.name} value={m.name}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-text-secondary">
-                Modèle Précis *
-              </label>
-              <input
-                className="w-full p-2 rounded-lg border border-border-default bg-background text-sm"
-                placeholder="ex: Hilux Double Cabine"
-                value={form.model}
-                onChange={(e) => setForm({ ...form, model: e.target.value })}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-text-secondary">
-                Gabarit (Size) *
-              </label>
-              <select
-                className="w-full p-2 rounded-lg border border-border-default bg-background text-sm"
-                value={form.sizeName}
-                onChange={(e) => setForm({ ...form, sizeName: e.target.value })}
-              >
-                <option value="">Choisir taille...</option>
-                {sizes.map((s) => (
-                  <option key={s.id || s.name} value={s.name}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 3: Caractéristiques Techniques */}
-        <div className="space-y-4">
-          <h4 className="flex items-center gap-2 text-sm font-bold text-primary uppercase tracking-wider">
-            <Settings size={16} /> Spécifications
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-text-secondary">
-                Carburant *
-              </label>
-              <select
-                className="w-full p-2 rounded-lg border border-border-default bg-background text-sm"
-                value={form.fuelType}
-                onChange={(e) => setForm({ ...form, fuelType: e.target.value })}
-              >
-                {fuels.map((f) => (
-                  <option key={f.id || f.name} value={f.name}>
-                    {f.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-text-secondary">
-                Boîte de vitesse
-              </label>
-              <select
-                className="w-full p-2 rounded-lg border border-border-default bg-background text-sm"
-                value={form.transmissionType}
-                onChange={(e) =>
-                  setForm({ ...form, transmissionType: e.target.value })
-                }
-              >
-                {transmissions.map((t) => (
-                  <option key={t.id || t.name} value={t.name}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-text-secondary">
-                Année
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 rounded-lg border border-border-default bg-background text-sm"
-                value={form.manufacturingYear}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    manufacturingYear: parseInt(e.target.value),
-                  })
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-text-secondary">
-                Couleur
-              </label>
-              <input
-                className="w-full p-2 rounded-lg border border-border-default bg-background text-sm"
-                value={form.color}
-                onChange={(e) => setForm({ ...form, color: e.target.value })}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-text-secondary">
-                Usage (TypeName) *
-              </label>
-              <input
-                className="w-full p-2 rounded-lg border border-border-default bg-background text-sm"
-                value={form.typeName}
-                onChange={(e) => setForm({ ...form, typeName: e.target.value })}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-text-secondary">
-                Numéro de Châssis (VIN)
-              </label>
-              <input
-                className="w-full p-2 rounded-lg border border-border-default bg-background text-sm"
-                placeholder="Optionnel"
-                value={form.vehicleSerialNumber}
-                onChange={(e) =>
-                  setForm({ ...form, vehicleSerialNumber: e.target.value })
-                }
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Section 4: Capacités */}
-        <div className="space-y-4">
-          <h4 className="flex items-center gap-2 text-sm font-bold text-primary uppercase tracking-wider">
-            <Gauge size={16} /> Capacités
-          </h4>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-text-secondary">
-                Réservoir (L)
-              </label>
-              <input
-                type="number"
-                step="0.1"
-                className="w-full p-2 rounded-lg border bg-background text-sm"
-                value={form.tankCapacity}
-                onChange={(e) =>
-                  setForm({ ...form, tankCapacity: parseFloat(e.target.value) })
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-text-secondary">
-                Places
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 rounded-lg border bg-background text-sm"
-                value={form.totalSeatNumber}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    totalSeatNumber: parseInt(e.target.value),
-                  })
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-text-secondary">
-                Conso (L/100)
-              </label>
-              <input
-                type="number"
-                step="0.1"
-                className="w-full p-2 rounded-lg border bg-background text-sm"
-                value={form.averageFuelConsumption}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    averageFuelConsumption: parseFloat(e.target.value),
-                  })
-                }
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-3 border-t border-border-default pt-6">
-          <Button
-            variant="outline"
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
+    <Modal isOpen={isOpen} onClose={onClose} title="Nouveau Véhicule">
+      <form onSubmit={handleSubmit} className="space-y-6 max-h-[80vh] overflow-y-auto pr-2">
+        
+        {/* Section 1 : Organisation (Flotte) */}
+        <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
+          <label className="text-[11px] font-bold uppercase text-primary block mb-2">Flotte de destination *</label>
+          <select 
+            required
+            className="w-full p-2.5 rounded-lg border border-border-default bg-white text-sm"
+            value={form.targetFleetId}
+            onChange={e => setForm({...form, targetFleetId: e.target.value})}
           >
-            Annuler
-          </Button>
-          <Button type="submit" isLoading={isSubmitting} disabled={refsLoading}>
-            Créer le véhicule
-          </Button>
+            <option value="">Choisir une flotte...</option>
+            {fleets.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+          </select>
+        </div>
+
+        {/* Section 2 : Identifiants & Lookups */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold uppercase text-text-secondary">Type *</label>
+            <select required className="w-full p-2 rounded-lg border bg-background text-sm"
+              value={form.vehicleTypeId} onChange={e => setForm({...form, vehicleTypeId: e.target.value})}>
+              <option value="">Sélectionner...</option>
+              {resources?.vehicleTypes?.map((r: any) => <option key={r.id} value={r.id}>{r.label}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold uppercase text-text-secondary">Immatriculation *</label>
+            <input required className="w-full p-2 rounded-lg border bg-background text-sm uppercase" 
+              placeholder="ex: LT-123-AA" value={form.licensePlate} onChange={e => setForm({...form, licensePlate: e.target.value})}/>
+          </div>
+        </div>
+
+        {/* Section 3 : Caractéristiques (Lookups regroupés) */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {[
+            { label: "Constructeur", key: "manufacturerId", res: "manufacturers" },
+            { label: "Marque", key: "brandId", res: "brands" },
+            { label: "Modèle", key: "modelId", res: "models" },
+            { label: "Taille", key: "sizeId", res: "sizes" },
+            { label: "Usage", key: "usageTypeId", res: "usageTypes" },
+            { label: "Carburant", key: "fuelTypeId", res: "fuelTypes" },
+            { label: "Transmission", key: "transmissionTypeId", res: "transmissions" },
+            { label: "Couleur", key: "colorId", res: "colors" },
+          ].map((field) => (
+            <div key={field.key} className="space-y-1">
+              <label className="text-[11px] font-bold uppercase text-text-secondary">{field.label} *</label>
+              <select 
+                required 
+                className="w-full p-2 rounded-lg border bg-background text-sm"
+                value={(form as any)[field.key]}
+                onChange={e => setForm({...form, [field.key]: e.target.value})}
+              >
+                <option value="">...</option>
+                {resources?.[field.res]?.map((r: any) => (
+                  <option key={r.id} value={r.id}>{r.name || r.label}</option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex justify-end gap-3 pt-6 border-t">
+          <Button variant="outline" type="button" onClick={onClose}>Annuler</Button>
+          <Button type="submit" isLoading={isSubmitting} disabled={refsLoading}>Créer le véhicule</Button>
         </div>
       </form>
     </Modal>

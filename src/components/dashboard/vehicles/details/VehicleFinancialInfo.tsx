@@ -5,45 +5,66 @@ import { Vehicle } from "@/types/vehicle.types";
 import { Button } from "@/components/ui/Button";
 import { toast } from "sonner";
 
-export default function VehicleFinancialInfo({ vehicle, onUpdate, readOnly }: { vehicle: Vehicle, onUpdate: () => void, readOnly: boolean | undefined }) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [form, setForm] = useState(vehicle.financialParameters || {
-    insuranceNumber: "", insuranceExpiryDate: "", registrationDate: "",
-    purchaseDate: "", depreciationRate: 0, costPerKm: 0
-  });
+export default function VehicleFinancialInfo({
+  vehicle,
+  onUpdate,
+  readOnly,
+}: any) {
+  const [form, setForm] = useState(vehicle.financialParameters);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  const handleSave = async () => {
+    setIsSaving(true);
     try {
       await vehicleService.updateFinancial(vehicle.id, form);
-      toast.success("Paramètres financiers sauvegardés");
+      toast.success("Données financières mises à jour");
       onUpdate();
-    } catch (e: any) {
+    } catch (e) {
       toast.error("Erreur de sauvegarde");
-    } finally { setIsSubmitting(false); }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-surface p-6 rounded-xl border border-border-default grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-text-secondary uppercase">N° Assurance</label>
-        <input disabled={readOnly} className="form-input w-full p-2 rounded-lg border bg-background" value={form.insuranceNumber} onChange={e => setForm({...form, insuranceNumber: e.target.value})} />
+    <div className="bg-surface p-6 rounded-xl border border-border-default space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-text-secondary uppercase">
+            N° Police Assurance
+          </label>
+          <input
+            disabled={readOnly}
+            className="w-full p-2 rounded-lg border bg-background"
+            value={form?.insuranceNumber || ""}
+            onChange={(e) =>
+              setForm({ ...form, insuranceNumber: e.target.value })
+            }
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-text-secondary uppercase">
+            Coût au KM (FCFA)
+          </label>
+          <input
+            type="number"
+            disabled={readOnly}
+            className="w-full p-2 rounded-lg border bg-background font-mono"
+            value={form?.costPerKm || 0}
+            onChange={(e) =>
+              setForm({ ...form, costPerKm: parseFloat(e.target.value) })
+            }
+          />
+        </div>
       </div>
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-text-secondary uppercase">Expiration Assurance</label>
-        <input disabled={readOnly} type="date" className="form-input w-full p-2 rounded-lg border bg-background" value={form.insuranceExpiryDate} onChange={e => setForm({...form, insuranceExpiryDate: e.target.value})} />
-      </div>
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-text-secondary uppercase">Coût au KM (FCFA)</label>
-        <input disabled={readOnly} type="number" className="form-input w-full p-2 rounded-lg border bg-background" value={form.costPerKm} onChange={e => setForm({...form, costPerKm: parseFloat(e.target.value)})} />
-      </div>
-      
+
       {!readOnly && (
-        <div className="md:col-span-3 flex justify-end">
-          <Button type="submit" isLoading={isSubmitting}>Enregistrer les paramètres</Button>
+        <div className="flex justify-end">
+          <Button onClick={handleSave} isLoading={isSaving}>
+            Enregistrer les modifications
+          </Button>
         </div>
       )}
-    </form>
+    </div>
   );
 }

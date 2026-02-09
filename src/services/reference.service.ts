@@ -1,19 +1,21 @@
 import { apiClient } from "@/lib/api-client";
-import { VehicleTypeRef } from "@/types/vehicle.types";
+import { ResourceCatalog, ResourceItem } from "@/types/vehicle.types";
 
 export const referenceService = {
-  // Récupère tout d'un coup (Optimisé pour le formulaire)
-  getAllResources: async () => {
-    const { data } = await apiClient.get("/vehicles/resources/all");
-    return data; 
-    /* 
-       Format attendu : 
-       { brands: [...], fuelTypes: [...], manufacturers: [...], sizes: [...], etc. } 
-    */
+  /**
+   * Récupère l'intégralité des ressources du parc en un seul appel.
+   * Très utile pour initialiser les formulaires de création de véhicule.
+   */
+  getAllResources: async (): Promise<ResourceCatalog> => {
+    const { data } = await apiClient.get<ResourceCatalog>("/vehicles/resources/all");
+    return data;
   },
 
-  getLookup: async (resource: string) => {
-    const { data } = await apiClient.get(`/vehicles/lookup/${resource}`);
+  /**
+   * Récupère une liste spécifique si besoin (ex: juste les couleurs)
+   */
+  getLookup: async (resourceName: string): Promise<ResourceItem[]> => {
+    const { data } = await apiClient.get<ResourceItem[]>(`/vehicles/lookup/${resourceName}`);
     return data;
   }
 };

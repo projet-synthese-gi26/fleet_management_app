@@ -1,21 +1,30 @@
 import { UUID } from "./base.types";
 
-export type Role = 'ADMIN' | 'FLEET_MANAGER' | 'FLEET_DRIVER' | 'DRIVER' | 'ROLE_FLEET_ADMIN'; // Ajuste selon tes roles exacts backend
+/**
+ * Rôles officiels définis dans le backend (Souveraineté fleet.users)
+ */
+export type Role = 
+  | 'FLEET_SUPER_ADMIN' // Gère les Admins
+  | 'FLEET_ADMIN'       // Gère les Managers et les Ressources
+  | 'FLEET_MANAGER'     // Gère ses flottes, véhicules et chauffeurs
+  | 'FLEET_DRIVER';      // Utilise l'app mobile et conduit
 
+/**
+ * Utilisateur complet tel que renvoyé par le profil agrégé
+ */
 export interface User {
     id: UUID;
     username: string;
     email: string;
     roles: Role[];
-    permissions?: string[];
-    companyName?: string | null;
-    phone?: string;
     firstName?: string;
     lastName?: string;
-    service: string;
+    phone?: string;
     photoUrl?: string;
-    licenceNumber?: string;
-    vehicleId?: string;
+    companyName?: string | null; // Pour les Managers
+    licenceNumber?: string;      // Pour les Drivers
+    vehicleId?: string;          // Pour les Drivers (véhicule assigné)
+    service: string;             // Devrait être "FLEET_MANAGEMENT"
 }
 
 export interface LoginResponse {
@@ -25,11 +34,10 @@ export interface LoginResponse {
 }
 
 export interface LoginRequest {
-    identifier: string; // Email
+    identifier: string; // Email ou Username
     password: string;
 }
 
-// Pour l'inscription (form-data)
 export interface RegisterRequest {
     username: string;
     password: string;
@@ -37,6 +45,6 @@ export interface RegisterRequest {
     phone: string;
     firstName: string;
     lastName: string;
-    roles: string[];
-    file?: File | null; // Photo optionnelle
+    roles: Role[]; // Utilisation du type Role strict
+    file?: File | null;
 }

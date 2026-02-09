@@ -1,42 +1,44 @@
-// Driver-related types for the fleet management application
-// src/types/driver.types.ts
 import { UUID } from './base.types';
 
-export interface DriverUserProfile {
-    name: string;
-    email?: string;
-    phone?: string;
-    avatar?: string;
-}
-
-export interface AssignedVehicle {
-    vehicleId: UUID;
-    licensePlate: string;
-    brand?: string;
-    model?: string;
-    type?: string;
-    imageUrl?: string;
-}
+/**
+ * ========================================================================
+ * 1. MODÈLES DE BASE (ALIGNE SUR LE BACKEND)
+ * ========================================================================
+ */
 
 export type DriverStatus = 'ACTIVE' | 'INACTIVE';
 
+/**
+ * Modèle principal d'un Chauffeur (Agrégé par le backend)
+ * Ce type est utilisé pour l'affichage dans les tableaux et les profils.
+ */
 export interface Driver {
   userId: UUID;
-  fleetId: UUID;
-  licenceNumber: string;
-  status: DriverStatus;
-  assignedVehicleId: UUID | null;
-  photoUrl: string | null;
+  fleetId: UUID | null;      // ID de la flotte (null si indépendant)
+  licenceNumber: string;     // Numéro de permis
+  status: DriverStatus;      // État du compte
+  assignedVehicleId: UUID | null; // ID du véhicule actuellement lié
+  photoUrl: string | null;   // URL de la photo de profil (Souveraineté fleet.users)
   
-  // Champs optionnels (souvent fusionnés par le backend ou à enrichir manuellement)
+  // Champs enrichis par le backend lors de la récupération du profil
   firstName?: string;
   lastName?: string;
   email?: string;
   phone?: string;
-  vehiclePlate?: string; // Pour l'affichage dans les listes
+  vehiclePlate?: string;     // Plaque du véhicule assigné (pour l'UI)
 }
 
-export interface RegisterDriverDto {
+/**
+ * ========================================================================
+ * 2. DTOS POUR LES REQUÊTES (ENVOI AU BACKEND)
+ * ========================================================================
+ */
+
+/**
+ * Payload pour POST /fleets/{id}/drivers/register
+ * Création simultanée du compte Auth et du profil Driver
+ */
+export interface DriverRegistrationRequest {
   username: string;
   password?: string;
   email: string;
@@ -46,43 +48,44 @@ export interface RegisterDriverDto {
   licenceNumber: string;
 }
 
-export interface RecruitDriverDto {
-  identifier: string;
+/**
+ * Payload pour POST /fleets/{id}/drivers (Recrutement)
+ */
+export interface RecruitDriverRequest {
+  identifier: string; // Email ou Username du chauffeur déjà existant
 }
 
-export interface CreateDriverDto {
-    userId: UUID;
-    licenceNumber: string;
-    status?: boolean;
-}
-
-export interface UpdateDriverDto {
-    licenceNumber?: string;
-    status?: boolean;
-}
-
+/**
+ * Payload pour l'assignation de véhicule
+ */
 export interface AssignVehicleDto {
     vehicleId: UUID;
 }
 
-export interface DriverFilters {
-    status?: boolean;
-    search?: string;
-    hasVehicle?: boolean;
-    fleetId?: UUID;
-}
+/**
+ * ========================================================================
+ * 3. TYPES POUR L'INTERFACE (UI & ANALYTICS)
+ * Ces types servent pour les tableaux de bord et le suivi temps réel
+ * ========================================================================
+ */
 
+/**
+ * Statistiques de performance d'un chauffeur
+ */
 export interface DriverStatistics {
     driverId: UUID;
     totalTrips: number;
     totalDistance: number;
     totalDrivingTime: number;
     averageSpeed: number;
-    geofenceViolations: number;
+    geofenceViolations: number; // Nombre de fois où il est sorti des zones
     lastTripDate?: string;
-    safetyScore?: number;
+    safetyScore?: number;       // Score de conduite (0-100)
 }
 
+/**
+ * État d'activité instantané (pour la carte et le monitoring)
+ */
 export interface DriverActivity {
     driverId: UUID;
     currentStatus: 'idle' | 'driving' | 'on-break' | 'offline';
@@ -95,4 +98,14 @@ export interface DriverActivity {
     todayTrips: number;
     todayDistance: number;
     todayDrivingTime: number;
+}
+
+/**
+ * Filtres pour la recherche de chauffeurs dans l'interface
+ */
+export interface DriverFilters {
+    status?: DriverStatus;
+    search?: string;
+    hasVehicle?: boolean;
+    fleetId?: UUID;
 }

@@ -3,9 +3,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, LoginRequest, RegisterRequest } from '@/types/auth-api.types';
 import { authService } from '@/services/auth.service';
-import { useRouter } from 'next/navigation';
-import { useI18n } from '@/hooks/useI18n';
 import { accountService } from '@/services/account.service';
+import { useRouter, usePathname } from 'next/navigation';
+import { useI18n } from '@/hooks/useI18n';
+import { getDashboardRoute } from '@/lib/auth-utils';
 
 interface AuthContextType {
     user: User | null;
@@ -13,7 +14,6 @@ interface AuthContextType {
     isLoading: boolean;
     login: (credentials: LoginRequest) => Promise<void>;
     register: (data: RegisterRequest) => Promise<void>;
-    refreshUser: () => Promise<void>;
     logout: () => void;
 }
 
@@ -23,19 +23,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
+    const pathname = usePathname();
     const { locale } = useI18n();
 
-    // Vérifier le token au chargement de l'app
+    // Initialisation : Vérifie si une session existe au chargement de la page
     useEffect(() => {
         const initAuth = async () => {
             const token = localStorage.getItem('accessToken');
             if (token) {
                 try {
+                    // L'appel à /account déclenche la synchro mÃ©tier côté backend
                     const userData = await accountService.getProfile();
                     setUser(userData);
                 } catch (error) {
-                    console.error("Session expired or invalid", error);
-                    authService.logout();
+                    console.error("Session invalide ou expirée");
+                    logout();
                 }
             }
             setIsLoading(false);
@@ -49,17 +51,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const response = await authService.login(credentials);
             localStorage.setItem('accessToken', response.accessToken);
             localStorage.setItem('refreshToken', response.refreshToken);
-            setUser(response.user);
             
-            // Redirection intelligente selon le rôle
-            if (response.user.roles.includes('ADMIN') || response.user.roles.includes('ROLE_FLEET_ADMIN')) {
-                router.push(`/${locale}/admin`);
-            } else if (response.user.roles.includes('DRIVER') || response.user.roles.includes('FLEET_DRIVER')) {
-                router.push(`/${locale}/driver/dashboard`);
-            } else {
-                // Par défaut manager
-                router.push(`/${locale}/dashboard`);
-            }
+            // On récupère le profil complet immédiatement pour avoir les infos métier
+            const fullProfile = await accountService.getProfile();
+            setUser(fullProfile);
+            
+            // Redirection intelligente basée sur le rôle
+            router.push(getDashboardRoute(fullProfile, locale));
         } finally {
             setIsLoading(false);
         }
@@ -71,43 +69,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const response = await authService.register(data);
             localStorage.setItem('accessToken', response.accessToken);
             localStorage.setItem('refreshToken', response.refreshToken);
-            setUser(response.user);
             
-            // Redirection intelligente identique au login
-            const roles = response.user.roles || [];
-            if (roles.includes('ADMIN') || roles.includes('ROLE_FLEET_ADMIN')) {
-                router.push(`/${locale}/admin`);
-            } else if (roles.includes('DRIVER') || roles.includes('FLEET_DRIVER')) {
-                router.push(`/${locale}/driver/dashboard`);
-            } else {
-                router.push(`/${locale}/dashboard`);
-            }
+            const fullProfile = await accountService.getProfile();
+            setUser(fullProfile);
+            
+            router.push(getDashboardRoute(fullProfile, locale));
         } catch (error) {
-            // CRUCIAL : On attrape l'erreur ici pour s'assurer qu'elle est re-jetée 
-            // vers la page de signup
-            throw error; 
+            throw error; // Laissé à la gestion du composant SignUp pour les toasts
         } finally {
             setIsLoading(false);
-        }
-    };
-
-    const refreshUser = async () => {
-        try {
-            const userData = await accountService.getProfile();
-            setUser(userData);
-        } catch (error) {
-            console.error("Failed to refresh user profile", error);
         }
     };
 
     const logout = () => {
         authService.logout();
         setUser(null);
-        router.push(`/${locale}/login`);
+        // On évite la redirection infinie si on est déjà sur login
+        if (!pathname.includes('/login')) {
+            router.push(`/${locale}/login`);
+        }
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, refreshUser, logout }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout }}>
             {children}
         </AuthContext.Provider>
     );
@@ -115,8 +99,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
+    if (context === undefined) throw new Error('useAuth doit être utilisé dans un AuthProvider');
     return context;
 };

@@ -1,126 +1,134 @@
-// Trip-related types for the fleet management application
-// src/types/trip.types.ts
-
-import {
-  UUID,
-  DateString,
-  TimeString,
-  VehicleType,
-  Coordinates,
-  DateFilter,
+import { 
+  UUID, 
+  DateString, 
+  TimeString, 
+  Coordinates, 
+  VehicleType 
 } from "./base.types";
 
+/**
+ * ========================================================================
+ * 1. ÉTATS ET ÉNUMÉRATIONS
+ * ========================================================================
+ */
+
+export type TripStatus = 'SCHEDULED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
+
+/**
+ * ========================================================================
+ * 2. MODÈLES DE GÉOMÉTRIE (POUR LA CARTE)
+ * ========================================================================
+ */
+
+/**
+ * Représente un point précis sur le tracé d'un trajet
+ */
 export interface RoutePoint extends Coordinates {
-  routeId: UUID;
+  timestamp: string;
+  speed?: number;
 }
 
+/**
+ * Définit une portion de trajet ou un itinéraire théorique
+ */
 export interface Route {
-  routeId: UUID;
+  id: UUID;
   startPoint: Coordinates;
   endPoint: Coordinates;
-  distance?: number;
-  estimatedDuration?: number;
+  distance?: number;         // Distance estimée en km
+  estimatedDuration?: number; // Durée estimée en minutes
 }
 
-export type TripStatus = "SCHEDULED" | "ONGOING" | "COMPLETED" | "CANCELLED";
+/**
+ * ========================================================================
+ * 3. MODÈLE TRAJET PRINCIPAL (TRIP)
+ * ========================================================================
+ */
 
+/**
+ * Modèle de base d'un trajet tel que stocké en base
+ */
 export interface Trip {
-  id: string;
-  vehicleId: string;
-  driverId: string;
-  status: 'SCHEDULED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
-  startDate: string;
-  startTime: string;
-  endDate: string | null;
-  endTime: string | null;
+  id: UUID;
+  vehicleId: UUID;
+  driverId: UUID;
+  status: TripStatus;
+  
+  // Temporel
+  startDate: DateString;
+  startTime: TimeString;
+  endDate: DateString | null;
+  endTime: TimeString | null;
+  
+  // Métriques de fin de course (calculées par le backend)
   distanceKm: number;
   durationMinutes: number;
-  
-  // Champs additionnels pour l'affichage (à mapper ou renvoyés par DTO enrichi)
+
+  // Champs optionnels enrichis pour l'affichage rapide
   vehiclePlate?: string;
   driverName?: string;
 }
 
-export interface TelemetryData {
-  lat: number;
-  lng: number;
-  speed: number;
-}
-
-export interface StartTripRequest {
-  vehicleId?: UUID;
-}
-
-export interface CreateTripDto {
-  vehicleId: UUID;
-  driverId: UUID;
-  startDate: DateString;
-  startTime: TimeString;
-  routes?: {
-    startPoint: Coordinates;
-    endPoint: Coordinates;
-  }[];
-}
-
-export interface EndTripDto {
-  endDate: DateString;
-  endTime: TimeString;
-}
-
-export interface TripFilters extends DateFilter {
-  vehicleId?: UUID;
-  driverId?: UUID;
-  fleetId?: UUID;
-  status?: TripStatus;
-  minDistance?: number;
-  maxDistance?: number;
-}
-
-export interface TripStatistics {
-  totalTrips: number;
-  ongoingTrips: number;
-  completedTrips: number;
-  totalDistance: number;
-  totalDuration: number;
-  averageDistance: number;
-  averageDuration: number;
-  averageSpeed: number;
-}
-
+/**
+ * Modèle ultra-complet pour la page "Détails du Trajet"
+ * Inclut les infos des jointures (VÃ©hicule, Chauffeur, Alertes)
+ */
 export interface DetailedTrip extends Trip {
   vehicleInfo: {
     licensePlate: string;
-    brand?: string;
-    model?: string;
-    imageUrl?: string;
+    brand: string;
+    model: string;
+    photoUrl?: string;
   };
   driverInfo: {
-    name: string;
+    firstName: string;
+    lastName: string;
     phone?: string;
-    avatar?: string;
+    photoUrl?: string;
   };
-  fleetInfo?: {
-    id: UUID;
-    name: string;
-  };
-  startLocation?: Coordinates;
-  endLocation?: Coordinates;
-  geofenceEvents?: {
+  // Tracé GPS réel récupéré depuis Redis/Postgres
+  path: RoutePoint[];
+  
+  // Événements de Geofencing survenus pendant ce trajet
+  geofenceEvents: {
     zoneName: string;
     eventType: "ENTRY" | "EXIT";
     timestamp: string;
+    speedAtEvent?: number;
   }[];
 }
 
+/**
+ * ========================================================================
+ * 4. TÉLÉMÉTRIE ET REQUÊTES (DTOS)
+ * ========================================================================
+ */
+
+/**
+ * Données envoyées toutes les 10s par le mobile du chauffeur
+ */
+export interface TelemetryRequest {
+  lat: number;
+  lng: number;
+  speed: number; // Vitesse instantanée
+}
+
+/**
+ * Payload pour démarrer une course
+ */
+export interface StartTripRequest {
+  vehicleId?: UUID; // Requis si le chauffeur n'a pas de véhicule fixe
+}
+
+/**
+ * Format pour l'affichage dans les tableaux de l'historique
+ */
 export interface TripListItem {
   id: UUID;
-  vehicleLicensePlate: string;
+  vehiclePlate: string;
   driverName: string;
-  startDate: DateString;
-  startTime: TimeString;
-  endDate?: DateString;
-  endTime?: TimeString;
-  distance?: number;
-  duration?: number;
+  date: DateString;
+  duration: string;
+  distance: string;
   status: TripStatus;
 }

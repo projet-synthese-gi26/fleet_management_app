@@ -1,29 +1,44 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { locales, defaultLocale } from "./lib/i18n/config";
+import { User, Role } from '@/types/auth-api.types';
+import { Locale } from '@/lib/i18n/config';
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+/**
+ * Détermine la route racine en fonction du rôle le plus élevé de l'utilisateur
+ */
+export const getDashboardRoute = (user: User | null, locale: Locale): string => {
+    if (!user) return `/${locale}/login`;
 
-  // 1. Vérifie si le chemin commence déjà par une locale
-  const pathnameHasLocale = locales.some(
-    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
-  );
+    const roles = user.roles || [];
 
-  if (pathnameHasLocale) return;
+    // 1. Super Admin & Admin vont vers l'espace d'administration globale
+    if (roles.includes('FLEET_SUPER_ADMIN') || roles.includes('FLEET_ADMIN')) {
+        return `/${locale}/admin`;
+    }
 
-  // 2. Si aucune locale n'est présente, on redirige
-  const locale = defaultLocale;
-  request.nextUrl.pathname = `/${locale}${pathname}`;
+    // 2. Le Chauffeur va vers son interface mobile-first
+    if (roles.includes('FLEET_DRIVER')) {
+        return `/${locale}/driver/dashboard`;
+    }
 
-  // On utilise une redirection interne (rewrite) ou externe (redirect)
-  // redirect est préférable pour le SEO au début
-  return NextResponse.redirect(request.nextUrl);
-}
+    // 3. Par défaut, le Fleet Manager va vers son dashboard de gestion
+    return `/${locale}/dashboard`;
+};
 
-export const config = {
-  // On exclut plus explicitement les fichiers avec des extensions (images, sources, etc.)
-  matcher: [
-    "/((?!api|_next/static|_next/image|assets|favicon.ico|sw.js|.*\\..*).*)",
-  ],
+/**
+ * Vérifie si un utilisateur a la permission d'accéder à un préfixe de route
+ */
+export const canAccess = (user: User | null, path: string): boolean => {
+    if (!user) return false;
+    const roles = user.roles;
+
+    if (path.includes('/admin')) {
+        return roles.includes('FLEET_SUPER_ADMIN') || roles.includes('FLEET_ADMIN');
+    }
+    if (path.includes('/driver')) {
+        return roles.includes('FLEET_DRIVER');
+    }
+    if (path.includes('/dashboard')) {
+        return roles.includes('FLEET_MANAGER') || roles.includes('FLEET_ADMIN');
+    }
+    
+    return true;
 };

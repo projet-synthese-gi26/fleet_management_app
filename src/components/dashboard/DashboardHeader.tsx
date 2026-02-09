@@ -232,7 +232,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         <motion.header 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="sticky top-0 z-50 flex h-16 items-center justify-between bg-background/80 backdrop-blur-xl border-b border-border-default px-4 lg:px-8 shadow-sm"
+            className="sticky top-0 flex h-16 items-center justify-between bg-background/80 backdrop-blur-xl border-b border-border-default px-4 lg:px-8 shadow-sm"
         >
             
             {/* LEFT SECTION */}

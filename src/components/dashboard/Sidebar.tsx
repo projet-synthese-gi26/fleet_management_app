@@ -413,12 +413,43 @@ import {
   ChevronLeft, Activity, ChevronRight
 } from "lucide-react";
 
+<<<<<<< HEAD
 interface SidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: (val: boolean) => void;
   isMobileOpen: boolean;
   closeMobile: () => void;
 }
+=======
+const MENU_CONFIG = [
+  { 
+    title: "Supervision",
+    roles: ['FLEET_SUPER_ADMIN'],
+    items: [
+      { icon: ShieldCheck, label: "Administrateurs", path: "/admin/super/admins" },
+    ]
+  },
+  { 
+    title: "Administration",
+    roles: ['FLEET_ADMIN', 'FLEET_SUPER_ADMIN'],
+    items: [
+      { icon: UserCog, label: "Gestion Managers", path: "/admin/management/managers" },
+      { icon: Settings, label: "Ressources Parc", path: "/admin/resources" }
+    ]
+  },
+  { 
+    title: "Ma Flotte",
+    roles: ['FLEET_MANAGER'],
+    items: [
+      { icon: LayoutDashboard, label: "Vue d'ensemble", path: "/dashboard" },
+      { icon: Building2, label: "Mes Flottes", path: "/dashboard/fleets" },
+      { icon: Truck, label: "Véhicules", path: "/dashboard/vehicles" },
+      { icon: Users, label: "Chauffeurs", path: "/dashboard/drivers" },
+      { icon: MapPin, label: "Geofencing", path: "/dashboard/geofencing" }
+    ]
+  }
+];
+>>>>>>> 32336dc (envoi)
 
 export function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, closeMobile }: SidebarProps) {
   const { user, logout } = useAuth();

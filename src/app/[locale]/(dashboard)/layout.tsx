@@ -61,17 +61,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen bg-background-secondary overflow-hidden">
+<<<<<<< HEAD
       <Sidebar
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed} // <-- NOM CORRIGÉ ICI
         isMobileOpen={isMobileOpen}
         closeMobile={() => setIsMobileOpen(false)} // <-- NOM CORRIGÉ ICI
       />
+=======
+      {/* Sidebar : Doit gérer sa propre hauteur ou être fixe */}
+      <Sidebar isCollapsed={isCollapsed} />
+>>>>>>> 32336dc (envoi)
 
       <div
         className={`
             flex flex-col flex-1 h-full transition-all duration-300 ease-in-out
+<<<<<<< HEAD
             ${isCollapsed ? "lg:pl-20" : "lg:pl-72"} 
+=======
+            ${isCollapsed ? "lg:pl-40" : "lg:pl-72"}
+>>>>>>> 32336dc (envoi)
         `}
       >
         <DashboardHeader onMenuClick={() => setIsMobileOpen(true)} />

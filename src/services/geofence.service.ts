@@ -32,5 +32,12 @@ export const geofenceService = {
       params: { page, size }
     });
     return data;
+  },
+  // Récupérer les zones filtrées par flotte
+    getZonesByFleet: async (fleetId: string): Promise<any[]> => {
+    const { data } = await apiClient.get<any[]>(`/geofence/fleet/${fleetId}`, {
+      params: { _t: Date.now() } // Force le rafraîchissement réseau
+    });
+    return data;
   }
 };

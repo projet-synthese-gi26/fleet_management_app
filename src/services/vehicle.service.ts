@@ -23,6 +23,11 @@ export const vehicleService = {
     const { data } = await apiClient.get<Vehicle>(`/vehicles/${id}`);
     return data;
   },
+  // Récupérer les véhicules filtrés par flotte
+  getByFleet: async (fleetId: string): Promise<Vehicle[]> => {
+    const { data } = await apiClient.get<Vehicle[]>(`/fleets/${fleetId}/vehicles`);
+    return data;
+  },
 
   /**
    * Créer un véhicule (Utilise les UUIDs des référentiels)

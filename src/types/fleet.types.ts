@@ -10,6 +10,7 @@ export interface Fleet {
   managerUserId: UUID;
   vehicleCount: number; // Calculé par le backend
   phoneNumber?: string; // Contact dispatch
+  zoneCount?: number;
    managerName?: string;
   managerEmail?: string;
 }

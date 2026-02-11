@@ -1,5 +1,5 @@
 # Contexte du Projet : Next.js Application
-Généré le : Wed Feb 11 11:55:05 AM WAT 2026
+Généré le : Wed Feb 11 03:19:55 PM WAT 2026
 Framework : Next.js (React)
 
 ## 1. Arborescence du Projet
@@ -94,6 +94,8 @@ Framework : Next.js (React)
 │   │       │   │   ├── drivers
 │   │       │   │   │   └── page.tsx
 │   │       │   │   ├── fleets
+│   │       │   │   │   ├── [id]
+│   │       │   │   │   │   └── page.tsx
 │   │       │   │   │   └── page.tsx
 │   │       │   │   ├── geofencing
 │   │       │   │   │   └── page.tsx
@@ -149,14 +151,18 @@ Framework : Next.js (React)
 │   │   ├── auth
 │   │   │   └── AuthHeroSection.tsx
 │   │   ├── dashboard
+│   │   │   ├── AssignVehicleModal.tsx
 │   │   │   ├── DashboardHeader.tsx
 │   │   │   ├── drivers
 │   │   │   │   ├── AssignVehicleModal.tsx
 │   │   │   │   ├── DriverTable.tsx
 │   │   │   │   └── RegisterDriverModal.tsx
 │   │   │   ├── fleets
+│   │   │   │   ├── AssignVehicleToFleetModal.tsx
+│   │   │   │   ├── AssignZoneToFleetModal.tsx
 │   │   │   │   ├── FleetFormModal.tsx
-│   │   │   │   └── FleetsTable.tsx
+│   │   │   │   ├── FleetsTable.tsx
+│   │   │   │   └── RecruitDriverModal.tsx
 │   │   │   ├── Sidebar.tsx
 │   │   │   ├── trips
 │   │   │   │   └── TripsTable.tsx
@@ -169,6 +175,8 @@ Framework : Next.js (React)
 │   │   │       │   ├── VehicleMaintenanceInfo.tsx
 │   │   │       │   ├── VehicleMediaManager.tsx
 │   │   │       │   └── VehicleMiniMap.tsx
+│   │   │       ├── [id]
+│   │   │       │   └── page.tsx
 │   │   │       ├── VehicleModal.tsx
 │   │   │       └── VehicleTable.tsx
 │   │   ├── driver
@@ -301,7 +309,7 @@ Framework : Next.js (React)
 ├── todo.md
 └── tsconfig.json
 
-85 directories, 210 files
+87 directories, 216 files
 ```
 ## 2. Contenu des Fichiers
 
@@ -6365,103 +6373,100 @@ export default async function LocaleLayout({
 ### Fichier : `./src/app/[locale]/(dashboard)/dashboard/drivers/page.tsx`
 ```typescript
 "use client";
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { driverService } from "@/services/driver.service";
+import { fleetService } from "@/services/fleet.service";
 import { Driver } from "@/types/driver.types";
+import { Fleet } from "@/types/fleet.types";
 import { DriverTable } from "@/components/dashboard/drivers/DriverTable";
+import { RegisterDriverModal } from "@/components/dashboard/drivers/RegisterDriverModal";
 import { AssignVehicleModal } from "@/components/dashboard/drivers/AssignVehicleModal";
 import { Button } from "@/components/ui/Button";
 import { TableSkeleton } from "@/components/ui/skeletons/TableSkeleton";
-import { UserPlus, Search, RefreshCw, UserCheck, Link2, Unlink } from "lucide-react";
+import { UserPlus, Search, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DriversPage() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [fleets, setFleets] = useState<Fleet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   
-  // États pour les modales
-  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
+  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
 
-  const fetchDrivers = async () => {
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await driverService.getDrivers();
-      setDrivers(data);
-    } catch (error) {
-      toast.error("Erreur de chargement des chauffeurs");
+      const [d, f] = await Promise.all([driverService.getDrivers(), fleetService.listMyFleets()]);
+      setDrivers(d);
+      setFleets(f);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { fetchDrivers(); }, []);
+  useEffect(() => { loadData(); }, [loadData]);
 
-  const handleUnassign = async (driver: Driver) => {
-    if (!confirm(`Libérer le chauffeur ${driver.firstName} ?`)) return;
+  const handleRecruit = async () => {
+    const iden = prompt("Email ou Username du chauffeur :");
+    if (!iden || fleets.length === 0) return;
     try {
-      await driverService.unassignVehicle(driver.userId);
-      toast.success("Véhicule libéré");
-      fetchDrivers();
-    } catch (error: any) {
-      toast.error("Erreur", { description: error.detail });
-    }
+      await driverService.recruitExisting(fleets[0].id, iden);
+      toast.success("Chauffeur recruté");
+      loadData();
+    } catch (e) { toast.error("Chauffeur introuvable"); }
   };
 
-  const filtered = drivers.filter(d => 
-    d.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    d.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    d.licenceNumber.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleUnassign = async (d: Driver) => {
+    if (!confirm("Libérer ce chauffeur ?")) return;
+    await driverService.unassignVehicle(d.userId);
+    loadData();
+  };
+
+  const handleRemove = async (d: Driver) => {
+    if (!d.fleetId || !confirm("Retirer de la flotte ?")) return;
+    await driverService.removeFromFleet(d.fleetId, d.userId);
+    loadData();
+  };
+
+  const filtered = drivers.filter(d => `${d.firstName} ${d.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-black text-text-primary tracking-tight">Gestion des Chauffeurs</h1>
-          <p className="text-text-secondary">Gérez vos effectifs et les affectations de véhicules.</p>
+          <h1 className="text-3xl font-black text-slate-800 tracking-tight">Gestion des Chauffeurs</h1>
+          <p className="text-slate-500 text-sm">Pilotez vos effectifs et leurs assignations.</p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" className="gap-2"><UserCheck size={18} /> Recruter</Button>
-          <Button className="gap-2 shadow-primary"><UserPlus size={18} /> Nouveau Chauffeur</Button>
+          <Button variant="outline" onClick={handleRecruit} className="gap-2 h-11 rounded-xl"><UserCheck size={18} /> Recruter</Button>
+          <Button onClick={() => setIsRegisterOpen(true)} className="gap-2 h-11 rounded-xl shadow-primary"><UserPlus size={18} /> Nouveau</Button>
         </div>
       </div>
 
-      <div className="flex items-center gap-4 bg-surface p-4 rounded-2xl border border-border-default shadow-sm">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary" size={18} />
-          <input 
-            className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-border-default bg-background outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-            placeholder="Rechercher par nom ou n° de permis..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Button variant="outline" onClick={fetchDrivers} className="h-11 w-11 p-0">
-          <RefreshCw size={18} className={isLoading ? "animate-spin" : ""} />
-        </Button>
+      <div className="relative max-w-md">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+        <input className="w-full pl-12 pr-4 py-3 rounded-2xl border border-slate-100 bg-white shadow-sm outline-none focus:ring-2 focus:ring-primary/20" 
+               placeholder="Rechercher..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
       </div>
 
-      <div className="bg-surface rounded-2xl border border-border-default shadow-sm overflow-hidden">
-        {isLoading ? (
-          <TableSkeleton rows={6} columns={5} />
-        ) : (
+      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+        {isLoading ? <TableSkeleton rows={8} columns={5} /> : (
           <DriverTable 
             drivers={filtered} 
             onAssign={(d) => { setSelectedDriver(d); setIsAssignOpen(true); }}
             onUnassign={handleUnassign}
+            onRemove={handleRemove}
           />
         )}
       </div>
 
-      <AssignVehicleModal 
-        isOpen={isAssignOpen} 
-        onClose={() => setIsAssignOpen(false)} 
-        driver={selectedDriver} 
-        onSuccess={fetchDrivers} 
-      />
+      {fleets.length > 0 && (
+        <RegisterDriverModal isOpen={isRegisterOpen} onClose={() => setIsRegisterOpen(false)} fleetId={fleets[0].id} onSuccess={loadData} />
+      )}
+      <AssignVehicleModal isOpen={isAssignOpen} onClose={() => setIsAssignOpen(false)} driver={selectedDriver} onSuccess={loadData} />
     </div>
   );
 }```
@@ -6639,36 +6644,57 @@ export default function PaymentsPage() {
 ### Fichier : `./src/app/[locale]/(dashboard)/dashboard/fleets/page.tsx`
 ```typescript
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { fleetService } from "@/services/fleet.service";
+import { geofenceService } from "@/services/geofence.service"; // Import ajouté
 import { Fleet, CreateFleetDto } from "@/types/fleet.types";
 import { FleetsTable } from "@/components/dashboard/fleets/FleetsTable";
 import { FleetFormModal } from "@/components/dashboard/fleets/FleetFormModal";
 import { TableSkeleton } from "@/components/ui/skeletons/TableSkeleton";
 import { Button } from "@/components/ui/Button";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, LayoutGrid, Search } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ManagerFleetsPage() {
   const [fleets, setFleets] = useState<Fleet[]>([]);
+  const [zones, setZones] = useState<any[]>([]); // Pour le comptage
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFleet, setSelectedFleet] = useState<Fleet | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const fetchMyFleets = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await fleetService.getAllFleets();
-      setFleets(data);
+      // Chargement parallèle flottes + zones pour synchroniser les compteurs
+      const [fleetsData, zonesData] = await Promise.all([
+        fleetService.getAllFleets(),
+        geofenceService.getMyZones()
+      ]);
+      setFleets(fleetsData);
+      setZones(zonesData);
+    } catch (error) {
+      toast.error("Erreur de récupération des données");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchMyFleets();
-  }, [fetchMyFleets]);
+    fetchData();
+  }, [fetchData]);
+
+  // ÉTAPE CLÉ : Enrichissement des flottes avec le nombre de zones en local
+  const enrichedFleets = useMemo(() => {
+    return fleets
+      .filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      .map(fleet => ({
+        ...fleet,
+        // On compte combien de zones pointent vers cette flotte
+        zoneCount: zones.filter(z => z.fleetId === fleet.id).length
+      }));
+  }, [fleets, zones, searchTerm]);
 
   const handleCreateOrUpdate = async (data: CreateFleetDto) => {
     setIsSubmitting(true);
@@ -6681,7 +6707,7 @@ export default function ManagerFleetsPage() {
         toast.success("Nouvelle flotte créée");
       }
       setIsModalOpen(false);
-      fetchMyFleets();
+      fetchData();
     } catch (error: any) {
       toast.error(error.detail || "Erreur lors de l'opération");
     } finally {
@@ -6694,54 +6720,60 @@ export default function ManagerFleetsPage() {
     try {
       await fleetService.deleteFleet(fleet.id);
       toast.success("Flotte supprimée");
-      setFleets((prev) => prev.filter((f) => f.id !== fleet.id));
+      fetchData();
     } catch (error: any) {
-      toast.error("Erreur", { description: error.detail });
+      toast.error("Suppression impossible", { description: error.detail });
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 animate-fade-in">
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Mes Flottes</h1>
-          <p className="text-sm text-text-secondary">
-            Gérez vos flottes de véhicules personnelles
+          <h1 className="text-3xl font-black text-text-primary tracking-tight">Répertoire des Flottes</h1>
+          <p className="text-text-secondary text-sm font-medium">
+            Gérez vos centres logistiques et surveillez vos zones d'activité.
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setSelectedFleet(null);
-            setIsModalOpen(true);
-          }}
-          className="gap-2"
-        >
-          <Plus size={18} /> Créer une flotte
+        <Button onClick={() => { setSelectedFleet(null); setIsModalOpen(true); }} className="gap-2 shadow-primary px-6">
+          <Plus size={18} /> Nouvelle Flotte
         </Button>
       </div>
 
-      <div className="bg-surface rounded-xl border border-border-default shadow-sm overflow-hidden min-h-[300px]">
+      {/* SEARCH & REFRESH */}
+      <div className="flex items-center gap-4 bg-surface p-4 rounded-2xl border border-border-default shadow-sm">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary" size={18} />
+          <input 
+            className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-border-default bg-background outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            placeholder="Rechercher une flotte par son nom..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Button variant="outline" onClick={fetchData} className="h-11 w-11 p-0 shrink-0">
+          <RefreshCw size={18} className={isLoading ? "animate-spin" : ""} />
+        </Button>
+      </div>
+
+      {/* TABLEAU */}
+      <div className="min-h-[400px]">
         {isLoading ? (
-          <TableSkeleton rows={4} columns={5} />
-        ) : fleets.length > 0 ? (
+          <TableSkeleton rows={5} columns={5} />
+        ) : enrichedFleets.length > 0 ? (
           <FleetsTable
-            fleets={fleets}
+            fleets={enrichedFleets}
             isAdminView={false}
-            onEdit={(f) => {
-              setSelectedFleet(f);
-              setIsModalOpen(true);
-            }}
+            onEdit={(f) => { setSelectedFleet(f); setIsModalOpen(true); }}
             onDelete={handleDelete}
           />
         ) : (
-          <div className="p-20 text-center flex flex-col items-center">
-            <p className="text-text-tertiary mb-4">
-              Vous n'avez pas encore de flotte.
-            </p>
-            <Button variant="outline" onClick={fetchMyFleets}>
-              <RefreshCw size={14} className="mr-2" />
-              Actualiser
-            </Button>
+          <div className="p-20 text-center flex flex-col items-center bg-surface rounded-2xl border-2 border-dashed border-border-default">
+            <LayoutGrid size={48} className="text-text-disabled mb-4 opacity-20" />
+            <p className="text-text-secondary font-bold">Aucune flotte trouvée</p>
+            <p className="text-text-tertiary text-sm mb-6">Commencez par créer une flotte pour y assigner des véhicules.</p>
+            <Button onClick={() => setIsModalOpen(true)}>Créer ma première flotte</Button>
           </div>
         )}
       </div>
@@ -6755,8 +6787,161 @@ export default function ManagerFleetsPage() {
       />
     </div>
   );
-}
-```
+}```
+
+---
+### Fichier : `./src/app/[locale]/(dashboard)/dashboard/fleets/[id]/page.tsx`
+```typescript
+"use client";
+
+import React, { useEffect, useState, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { fleetService } from "@/services/fleet.service";
+import { vehicleService } from "@/services/vehicle.service";
+import { geofenceService } from "@/services/geofence.service";
+import { PageLoader } from "@/components/ui/Spinner";
+import { 
+  ArrowLeft, Truck, Shield, ChevronRight, MapPin, 
+  Calendar, Info, Plus, Users, Unlink 
+} from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/Button";
+
+// On importera les modales que nous allons créer juste après
+import { AssignVehicleToFleetModal } from "@/components/dashboard/fleets/AssignVehicleToFleetModal";
+
+import { RecruitDriverModal } from "@/components/dashboard/fleets/RecruitDriverModal";
+import { AssignZoneToFleetModal } from "@/components/dashboard/fleets/AssignZoneToFleetModal";
+
+export default function FleetDetailPage() {
+  const { id, locale } = useParams();
+  const router = useRouter();
+  
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // États des modales
+  const [activeModal, setActiveModal] = useState<"vehicle" | "driver" | "zone" | null>(null);
+
+  const loadAllData = useCallback(async () => {
+    try {
+      const [fleet, vehicles, zones] = await Promise.all([
+        fleetService.getAllFleets().then(list => list.find(f => f.id === id)),
+        vehicleService.getByFleet(id as string),
+        geofenceService.getZonesByFleet(id as string)
+      ]);
+      setData({ fleet, vehicles, zones });
+    } catch (error) {
+      toast.error("Erreur de chargement");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => { if (id) loadAllData(); }, [id, loadAllData]);
+
+  if (isLoading) return <PageLoader />;
+
+  return (
+    <div className="space-y-8 animate-fade-in">
+      {/* HEADER */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button onClick={() => router.back()} className="p-2 hover:bg-surface rounded-full border border-border-default">
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-3xl font-black text-text-primary">{data.fleet.name}</h1>
+            <p className="text-sm text-text-tertiary">Configuration et ressources de la flotte</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* SECTION VÉHICULES */}
+        <div className="bg-surface rounded-2xl border border-border-default overflow-hidden shadow-sm">
+          <div className="p-5 border-b border-border-default flex justify-between items-center bg-background-secondary/30">
+            <h3 className="font-bold text-text-primary flex items-center gap-2">
+              <Truck size={20} className="text-primary" /> Véhicules ({data.vehicles.length})
+            </h3>
+            <button onClick={() => setActiveModal("vehicle")} className="p-1.5 bg-primary text-white rounded-lg hover:bg-primary-hover transition-all">
+                <Plus size={16} />
+            </button>
+          </div>
+          <div className="divide-y divide-border-default max-h-[400px] overflow-y-auto">
+            {data.vehicles.map((vhc: any) => (
+              <div key={vhc.id} className="p-4 flex items-center justify-between hover:bg-background-secondary group">
+                <Link href={`/${locale}/dashboard/vehicles/${vhc.id}`} className="flex items-center gap-3 flex-1">
+                  <div className="size-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400">
+                    <Truck size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-text-primary uppercase">{vhc.licensePlate}</p>
+                    <p className="text-[10px] text-text-tertiary font-bold">{vhc.brand} {vhc.model}</p>
+                  </div>
+                </Link>
+                <button 
+                    onClick={async () => {
+                        if(confirm("Détacher ce véhicule ?")) {
+                            await fleetService.detachVehicle(id as string, vhc.id);
+                            loadAllData();
+                        }
+                    }}
+                    className="p-2 text-text-tertiary hover:text-error opacity-0 group-hover:opacity-100 transition-all"
+                >
+                    <Unlink size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* SECTION GEOFENCING */}
+        <div className="bg-surface rounded-2xl border border-border-default overflow-hidden shadow-sm">
+          <div className="p-5 border-b border-border-default flex justify-between items-center bg-background-secondary/30">
+            <h3 className="font-bold text-text-primary flex items-center gap-2">
+              <Shield size={20} className="text-success" /> Geofencing ({data.zones.length})
+            </h3>
+            <button onClick={() => setActiveModal("zone")} className="p-1.5 bg-success text-white rounded-lg hover:bg-success-dark transition-all">
+                <Plus size={16} />
+            </button>
+          </div>
+          <div className="divide-y divide-border-default">
+            {data.zones.map((zone: any) => (
+              <div key={zone.id} className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                   <div className="size-10 rounded-lg bg-success/5 flex items-center justify-center text-success/60">
+                      <MapPin size={20} />
+                   </div>
+                   <p className="text-sm font-bold text-text-primary">{zone.title || zone.name}</p>
+                </div>
+                <Link href={`/${locale}/dashboard/geofencing`} className="text-primary"><ChevronRight size={18} /></Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* MODALES D'ACTION */}
+      <AssignVehicleToFleetModal 
+        isOpen={activeModal === "vehicle"} 
+        onClose={() => setActiveModal(null)} 
+        fleetId={id as string}
+        onSuccess={loadAllData}
+      />
+      
+      <AssignZoneToFleetModal 
+        isOpen={activeModal === "zone"} 
+        onClose={() => setActiveModal(null)} 
+        fleetId={id as string}
+        onSuccess={loadAllData}
+      />
+
+    </div>
+  );
+}```
 
 ---
 ### Fichier : `./src/app/[locale]/(dashboard)/dashboard/vehicles/page.tsx`
@@ -12590,37 +12775,27 @@ export function CreateZoneModal({ isOpen, onClose, geometry, fleets, managerId, 
 ### Fichier : `./src/components/dashboard/drivers/DriverTable.tsx`
 ```typescript
 "use client";
-
 import React from "react";
-import { 
-  User, 
-  CreditCard, 
-  Truck, 
-  Link2, 
-  Unlink, 
-  MoreVertical, 
-  Mail, 
-  Phone 
-} from "lucide-react";
+import { User, CreditCard, Truck, Link2, Unlink, Mail, Phone, Trash2, MoreVertical } from "lucide-react";
 import { Driver } from "@/types/driver.types";
+import StatusBadge from "@/components/admin/fleet-managers/StatusBadge";
 
-interface DriverTableProps {
+interface Props {
   drivers: Driver[];
-  // On aligne les noms des props sur ce que tu as utilisé dans ta page
   onAssign: (d: Driver) => void; 
   onUnassign: (d: Driver) => void;
-  isAdminView?: boolean;
+  onRemove: (d: Driver) => void;
 }
 
-export function DriverTable({ drivers, onAssign, onUnassign, isAdminView }: DriverTableProps) {
+export function DriverTable({ drivers, onAssign, onUnassign, onRemove }: Props) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
-        <thead className="bg-background-secondary/50 border-b border-border-default text-text-secondary font-bold uppercase text-[10px] tracking-widest">
+        <thead className="bg-background-secondary/50 border-b border-border-default text-text-tertiary font-bold uppercase text-[10px] tracking-widest">
           <tr>
             <th className="px-6 py-4">Chauffeur</th>
             <th className="px-6 py-4">Contact & Permis</th>
-            <th className="px-6 py-4">Véhicule Assigné</th>
+            <th className="px-6 py-4">Véhicule Actuel</th>
             <th className="px-6 py-4">Statut</th>
             <th className="px-6 py-4 text-right">Actions</th>
           </tr>
@@ -12628,10 +12803,9 @@ export function DriverTable({ drivers, onAssign, onUnassign, isAdminView }: Driv
         <tbody className="divide-y divide-border-default bg-surface">
           {drivers.map((driver) => (
             <tr key={driver.userId} className="hover:bg-background-secondary/30 transition-colors group">
-              {/* Colonne 1 : Identité */}
               <td className="px-6 py-4">
                 <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden shrink-0">
+                  <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden shrink-0 shadow-sm">
                     {driver.photoUrl ? (
                       <img src={driver.photoUrl} alt="" className="size-full object-cover" />
                     ) : (
@@ -12639,32 +12813,26 @@ export function DriverTable({ drivers, onAssign, onUnassign, isAdminView }: Driv
                     )}
                   </div>
                   <div>
-                    <p className="font-bold text-text-primary">
-                      {driver.firstName} {driver.lastName}
-                    </p>
-                    <p className="text-[10px] font-mono text-text-tertiary uppercase">
-                      ID: {driver.userId.substring(0, 8)}
-                    </p>
+                    <p className="font-bold text-text-primary">{driver.firstName} {driver.lastName}</p>
+                    <p className="text-[10px] font-mono text-text-tertiary uppercase">ID: {driver.userId.substring(0, 8)}</p>
                   </div>
                 </div>
               </td>
 
-              {/* Colonne 2 : Contact & Permis */}
               <td className="px-6 py-4">
                 <div className="space-y-1">
                   <p className="text-xs text-text-secondary flex items-center gap-2">
                     <CreditCard size={12} className="text-text-tertiary" /> {driver.licenceNumber}
                   </p>
                   <p className="text-[11px] text-text-tertiary flex items-center gap-2">
-                    <Mail size={12} /> {driver.email || "N/A"}
+                    <Mail size={12} /> {driver.email}
                   </p>
                 </div>
               </td>
 
-              {/* Colonne 3 : Véhicule */}
               <td className="px-6 py-4">
                 {driver.assignedVehicleId ? (
-                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-primary/5 border border-primary/10 text-primary font-bold text-xs uppercase">
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-primary/5 border border-primary/10 text-primary font-bold text-[10px] uppercase">
                     <Truck size={14} />
                     {driver.vehiclePlate || "Assigné"}
                   </div>
@@ -12673,39 +12841,39 @@ export function DriverTable({ drivers, onAssign, onUnassign, isAdminView }: Driv
                 )}
               </td>
 
-              {/* Colonne 4 : Statut */}
               <td className="px-6 py-4">
-                <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-tighter ${
-                  driver.status === 'ACTIVE' 
-                    ? 'bg-success/10 text-success' 
-                    : 'bg-slate-100 text-slate-400'
-                }`}>
-                  {driver.status}
-                </span>
+                <StatusBadge 
+                    status={driver.status} 
+                    color={driver.status === 'ACTIVE' ? 'green' : 'gray'} 
+                />
               </td>
 
-              {/* Colonne 5 : Actions */}
               <td className="px-6 py-4 text-right">
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-1">
                   {driver.assignedVehicleId ? (
                     <button 
                       onClick={() => onUnassign(driver)}
-                      className="p-2 hover:bg-error/10 text-error rounded-lg transition-colors" 
-                      title="Libérer le chauffeur"
+                      className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-all" 
+                      title="Libérer le véhicule"
                     >
                       <Unlink size={18} />
                     </button>
                   ) : (
                     <button 
                       onClick={() => onAssign(driver)}
-                      className="p-2 hover:bg-primary/10 text-primary rounded-lg transition-colors" 
+                      className="p-2 text-primary hover:bg-primary/5 rounded-lg transition-all" 
                       title="Assigner un véhicule"
                     >
                       <Link2 size={18} />
                     </button>
                   )}
-                  <button className="p-2 hover:bg-background-secondary text-text-tertiary rounded-lg">
-                    <MoreVertical size={18} />
+                  
+                  <button 
+                    onClick={() => onRemove(driver)}
+                    className="p-2 text-text-tertiary hover:text-error hover:bg-error/5 rounded-lg transition-all"
+                    title="Retirer de la flotte"
+                  >
+                    <Trash2 size={18} />
                   </button>
                 </div>
               </td>
@@ -12721,7 +12889,6 @@ export function DriverTable({ drivers, onAssign, onUnassign, isAdminView }: Driv
 ### Fichier : `./src/components/dashboard/drivers/AssignVehicleModal.tsx`
 ```typescript
 "use client";
-
 import React, { useState, useEffect } from "react";
 import Modal from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -12729,42 +12896,34 @@ import { vehicleService } from "@/services/vehicle.service";
 import { driverService } from "@/services/driver.service";
 import { Vehicle } from "@/types/vehicle.types";
 import { Driver } from "@/types/driver.types";
-import { Truck, Search, CheckCircle2, AlertCircle } from "lucide-react";
+import { Truck, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-interface Props {
-  isOpen: boolean;
-  onClose: () => void;
-  driver: Driver | null;
-  onSuccess: () => void;
-}
-
-export function AssignVehicleModal({ isOpen, onClose, driver, onSuccess }: Props) {
+export function AssignVehicleModal({ isOpen, onClose, driver, onSuccess }: any) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Charger les véhicules de la même flotte
   useEffect(() => {
-    if (isOpen && driver?.fleetId) {
+    if (isOpen) {
       setIsLoading(true);
-      vehicleService.getAll() // Le backend filtre déjà par manager
-        .then(data => setVehicles(data.filter(v => v.fleetId === driver.fleetId)))
+      vehicleService.getAll()
+        .then(data => setVehicles(data.filter(v => v.status === 'AVAILABLE')))
         .finally(() => setIsLoading(false));
     }
-  }, [isOpen, driver]);
+  }, [isOpen]);
 
   const handleAssign = async () => {
     if (!driver || !selectedId) return;
     setIsSubmitting(true);
     try {
       await driverService.assignVehicle(driver.userId, selectedId);
-      toast.success("Assignation réussie !");
+      toast.success("Véhicule assigné");
       onSuccess();
       onClose();
     } catch (error: any) {
-      toast.error("Erreur", { description: error.detail });
+      toast.error("Erreur d'assignation");
     } finally {
       setIsSubmitting(false);
     }
@@ -12773,41 +12932,29 @@ export function AssignVehicleModal({ isOpen, onClose, driver, onSuccess }: Props
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Assigner un véhicule à ${driver?.firstName}`}>
       <div className="space-y-4">
-        <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl flex gap-3 items-start">
-          <AlertCircle className="text-amber-600 shrink-0" size={18} />
-          <p className="text-[11px] text-amber-800 leading-relaxed">
-            Note : Si le véhicule est déjà assigné, l'ancien chauffeur sera automatiquement libéré.
-          </p>
-        </div>
-
-        <div className="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-          {vehicles.map(v => (
-            <div 
-              key={v.id}
-              onClick={() => setSelectedId(v.id)}
-              className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-                selectedId === v.id ? 'border-primary bg-primary/5 shadow-sm' : 'border-border-default hover:bg-background-secondary'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${v.status === 'AVAILABLE' ? 'bg-success/10 text-success' : 'bg-slate-100 text-slate-400'}`}>
-                  <Truck size={18} />
+        {isLoading ? (
+          <div className="py-10 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
+        ) : (
+          <div className="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+            {vehicles.map(v => (
+              <div key={v.id} onClick={() => setSelectedId(v.id)} 
+                   className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${selectedId === v.id ? 'border-primary bg-primary/5' : 'border-slate-100 hover:bg-slate-50'}`}>
+                <div className="flex items-center gap-3">
+                  <Truck size={18} className="text-slate-400" />
+                  <div>
+                    <p className="text-sm font-bold text-slate-700 uppercase">{v.licensePlate}</p>
+                    <p className="text-[10px] text-slate-400">{v.brand} {v.model}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-text-primary uppercase">{v.licensePlate}</p>
-                  <p className="text-[10px] text-text-tertiary">{v.brand} {v.model}</p>
-                </div>
+                {selectedId === v.id && <CheckCircle2 size={18} className="text-primary" />}
               </div>
-              {selectedId === v.id && <CheckCircle2 size={18} className="text-primary" />}
-            </div>
-          ))}
-        </div>
-
+            ))}
+            {vehicles.length === 0 && <p className="text-center text-slate-400 text-sm py-4">Aucun véhicule disponible.</p>}
+          </div>
+        )}
         <div className="flex justify-end gap-3 pt-4 border-t">
           <Button variant="outline" onClick={onClose}>Annuler</Button>
-          <Button onClick={handleAssign} isLoading={isSubmitting} disabled={!selectedId}>
-            Confirmer l'assignation
-          </Button>
+          <Button onClick={handleAssign} isLoading={isSubmitting} disabled={!selectedId}>Confirmer</Button>
         </div>
       </div>
     </Modal>
@@ -12822,175 +12969,78 @@ import React, { useState } from "react";
 import Modal from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { driverService } from "@/services/driver.service";
-import { RegisterDriverDto } from "@/types/driver.types";
+import { DriverRegistrationRequest } from "@/types/driver.types";
 import { toast } from "sonner";
-import { User, Mail, Phone, CreditCard, Lock, UserPlus } from "lucide-react";
+import { User, Mail, Phone, CreditCard, Camera, Upload } from "lucide-react";
 
-interface RegisterDriverModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  fleetId: string;
-  onSuccess: () => void;
-}
-
-export function RegisterDriverModal({
-  isOpen,
-  onClose,
-  fleetId,
-  onSuccess,
-}: RegisterDriverModalProps) {
+export function RegisterDriverModal({ isOpen, onClose, fleetId, onSuccess }: any) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [form, setForm] = useState<RegisterDriverDto>({
+  const [file, setFile] = useState<File | null>(null);
+  const [form, setForm] = useState<DriverRegistrationRequest>({
     username: "",
-    password: "Password123!", // Mot de passe temporaire par défaut
     email: "",
     phone: "",
     firstName: "",
     lastName: "",
     licenceNumber: "",
+    password: "Password123!"
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fleetId) {
-      toast.error("Veuillez sélectionner une flotte d'abord.");
-      return;
-    }
-
     setIsSubmitting(true);
     try {
-      await driverService.registerInFleet(fleetId, form);
-      toast.success("Chauffeur inscrit avec succès !");
+      await driverService.registerInFleet(fleetId, form, file || undefined);
+      toast.success("Chauffeur inscrit avec succès");
       onSuccess();
       onClose();
-      // Reset form
-      setForm({
-        username: "",
-        password: "Password123!",
-        email: "",
-        phone: "",
-        firstName: "",
-        lastName: "",
-        licenceNumber: "",
-      });
     } catch (error: any) {
-      toast.error(error.title || "Erreur", { description: error.detail });
+      toast.error("Erreur", { description: error.detail });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Inscrire un nouveau chauffeur"
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-text-secondary uppercase">
-              Prénom
-            </label>
-            <input
-              className="w-full p-2 rounded-lg border border-border-default bg-background"
-              value={form.firstName}
-              onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-              required
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-text-secondary uppercase">
-              Nom
-            </label>
-            <input
-              className="w-full p-2 rounded-lg border border-border-default bg-background"
-              value={form.lastName}
-              onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-              required
-            />
-          </div>
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-text-secondary uppercase">
-            Nom d'utilisateur (Login)
+    <Modal isOpen={isOpen} onClose={onClose} title="Inscrire un nouveau chauffeur">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="flex justify-center">
+          <label className="relative cursor-pointer group">
+            <div className="size-24 rounded-[2rem] bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden group-hover:border-primary transition-all">
+              {file ? <img src={URL.createObjectURL(file)} className="size-full object-cover" /> : <Camera className="text-slate-300" size={32} />}
+            </div>
+            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-[2rem]">
+                <Upload className="text-white" size={20} />
+            </div>
+            <input type="file" className="hidden" accept="image/*" onChange={e => setFile(e.target.files?.[0] || null)} />
           </label>
-          <div className="relative">
-            <User
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
-              size={16}
-            />
-            <input
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-border-default bg-background"
-              placeholder="ex: m.diop2024"
-              value={form.username}
-              onChange={(e) => setForm({ ...form, username: e.target.value })}
-              required
-            />
-          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-text-secondary uppercase">
-              Email
-            </label>
-            <input
-              type="email"
-              className="w-full p-2 rounded-lg border border-border-default bg-background"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              required
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-text-secondary uppercase">
-              Téléphone
-            </label>
-            <input
-              className="w-full p-2 rounded-lg border border-border-default bg-background"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              required
-            />
-          </div>
+        <div className="grid grid-cols-2 gap-4">
+          <input required className="p-2.5 rounded-xl border bg-background text-sm" placeholder="Prénom" value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})} />
+          <input required className="p-2.5 rounded-xl border bg-background text-sm" placeholder="Nom" value={form.lastName} onChange={e => setForm({...form, lastName: e.target.value})} />
         </div>
 
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-text-secondary uppercase">
-            Numéro de Permis
-          </label>
-          <div className="relative">
-            <CreditCard
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
-              size={16}
-            />
-            <input
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-border-default bg-background"
-              placeholder="ex: PERMIS-12345"
-              value={form.licenceNumber}
-              onChange={(e) =>
-                setForm({ ...form, licenceNumber: e.target.value })
-              }
-              required
-            />
-          </div>
+        <input required type="email" className="w-full p-2.5 rounded-xl border bg-background text-sm" placeholder="Email professionnel" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+        
+        <div className="grid grid-cols-2 gap-4">
+          <input required className="p-2.5 rounded-xl border bg-background text-sm" placeholder="Nom d'utilisateur" value={form.username} onChange={e => setForm({...form, username: e.target.value})} />
+          <input required className="p-2.5 rounded-xl border bg-background text-sm" placeholder="N° de Permis" value={form.licenceNumber} onChange={e => setForm({...form, licenceNumber: e.target.value})} />
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-border-default">
-          <Button variant="outline" type="button" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button type="submit" isLoading={isSubmitting} className="gap-2">
-            <UserPlus size={18} /> Créer le compte chauffeur
-          </Button>
+        <div className="relative">
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input required className="w-full pl-10 p-2.5 rounded-xl border bg-background text-sm" placeholder="Téléphone" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <Button variant="outline" type="button" onClick={onClose}>Annuler</Button>
+          <Button type="submit" isLoading={isSubmitting}>Confirmer l'inscription</Button>
         </div>
       </form>
     </Modal>
   );
-}
-```
+}```
 
 ---
 ### Fichier : `./src/components/dashboard/DashboardHeader.tsx`
@@ -13165,110 +13215,12 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
 ---
 ### Fichier : `./src/components/dashboard/fleets/FleetsTable.tsx`
 ```typescript
-// "use client";
-// import React from "react";
-// import { Building2, Edit, Trash2, Truck, Phone, User } from "lucide-react";
-// import { Fleet } from "@/types/fleet.types";
-
-// interface FleetsTableProps {
-//   fleets: Fleet[];
-//   isAdminView?: boolean;
-//   onEdit: (fleet: Fleet) => void;
-//   onDelete: (fleet: Fleet) => void;
-// }
-
-// export function FleetsTable({ fleets, isAdminView, onEdit, onDelete }: FleetsTableProps) {
-//   return (
-//     <div className="overflow-x-auto">
-//       <table className="w-full text-left text-sm">
-//         <thead className="bg-background-secondary border-b border-border-default text-text-secondary font-bold uppercase text-[10px] tracking-widest">
-//           <tr>
-//             <th className="px-6 py-4">Nom de la flotte</th>
-//             {isAdminView && <th className="px-6 py-4">Manager / Propriétaire</th>}
-//             <th className="px-6 py-4">Véhicules</th>
-//             <th className="px-6 py-4">Contact</th>
-//             <th className="px-6 py-4">Création</th>
-//             <th className="px-6 py-4 text-right">Actions</th>
-//           </tr>
-//         </thead>
-//         <tbody className="divide-y divide-border-default bg-surface">
-//           {fleets.map((fleet) => (
-//             <tr key={fleet.id} className="hover:bg-background-secondary/50 transition-colors group">
-//               <td className="px-6 py-4">
-//                 <div className="flex items-center gap-3">
-//                   <div className="p-2 rounded-lg bg-primary/10 text-primary">
-//                     <Building2 size={18} />
-//                   </div>
-//                   <span className="font-bold text-text-primary">{fleet.name}</span>
-//                 </div>
-//               </td>
-              
-//               {isAdminView && (
-//                 <td className="px-6 py-4">
-//                   <div className="flex flex-col">
-//                     <span className="text-text-primary font-medium flex items-center gap-1">
-//                       <User size={12} className="text-text-tertiary" /> {fleet.managerName || 'Manager Inconnu'}
-//                     </span>
-//                     <span className="text-[10px] text-text-tertiary">{fleet.managerEmail}</span>
-//                   </div>
-//                 </td>
-//               )}
-
-//               <td className="px-6 py-4">
-//                 <div className="flex items-center gap-2 text-text-secondary">
-//                   <Truck size={16} />
-//                   <span className="font-medium">{fleet.vehicleCount}</span>
-//                 </div>
-//               </td>
-              
-//               <td className="px-6 py-4 text-text-secondary">
-//                 {fleet.phoneNumber || <span className="text-text-disabled italic">N/A</span>}
-//               </td>
-              
-//               <td className="px-6 py-4 text-text-tertiary">
-//                 {new Date(fleet.creationDate).toLocaleDateString()}
-//               </td>
-
-//               <td className="px-6 py-4 text-right">
-//                 <div className="flex justify-end gap-2">
-//                   <button onClick={() => onEdit(fleet)} className="p-2 hover:text-primary transition-colors"><Edit size={16} /></button>
-//                   <button onClick={() => onDelete(fleet)} className="p-2 hover:text-error transition-colors"><Trash2 size={16} /></button>
-//                 </div>
-//               </td>
-//             </tr>
-//           ))}
-//         </tbody>
-//       </table>
-//     </div>
-//   );
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use client";
 import React from "react";
-import { Building2, Edit, Trash2, Truck, User } from "lucide-react";
+import { Building2, Edit, Trash2, Truck, Eye, Shield } from "lucide-react";
 import { Fleet } from "@/types/fleet.types";
+import { useRouter } from "next/navigation";
+import { useI18n } from "@/hooks/useI18n";
 
 interface FleetsTableProps {
   fleets: Fleet[];
@@ -13278,59 +13230,70 @@ interface FleetsTableProps {
 }
 
 export function FleetsTable({ fleets, isAdminView, onEdit, onDelete }: FleetsTableProps) {
+  const router = useRouter();
+  const { locale } = useI18n();
+
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_12px_-2px_rgba(0,0,0,.08)] overflow-hidden">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">
-              <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nom</th>
-              {isAdminView && <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Manager</th>}
-              <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Véhicules</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contact</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Créé le</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+              <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nom de la flotte</th>
+              <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Véhicules</th>
+              <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Zones Geofence</th>
+              <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact</th>
+              <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
             </tr>
           </thead>
-          <tbody>
-            {fleets.map((fleet, i) => (
-              <tr key={fleet.id} className={`transition-colors duration-150 hover:bg-slate-50 ${i !== 0 ? 'border-t border-slate-100' : ''}`}>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center">
-                      <Building2 size={16} className="text-slate-600" />
+          <tbody className="divide-y divide-slate-100">
+            {fleets.map((fleet) => (
+              <tr key={fleet.id} className="hover:bg-slate-50/80 transition-colors group">
+                <td className="px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-sm">
+                      <Building2 size={20} />
                     </div>
-                    <span className="text-[13px] font-bold text-slate-700">{fleet.name}</span>
+                    <span className="text-sm font-bold text-slate-700">{fleet.name}</span>
                   </div>
                 </td>
-                {isAdminView && (
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-1.5">
-                      <User size={13} className="text-slate-400" />
-                      <span className="text-[13px] font-medium text-slate-600">{fleet.managerName || '—'}</span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 mt-0.5">{fleet.managerEmail}</p>
-                  </td>
-                )}
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-1.5 text-slate-500">
-                    <Truck size={14} />
-                    <span className="text-[13px] font-semibold">{fleet.vehicleCount}</span>
+                
+                <td className="px-5 py-4 text-center">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 font-bold text-xs">
+                    <Truck size={14} /> {fleet.vehicleCount}
                   </div>
                 </td>
-                <td className="px-5 py-3.5 text-[13px] text-slate-500">
-                  {fleet.phoneNumber || <span className="italic text-slate-400">—</span>}
+
+                <td className="px-5 py-4 text-center">
+                  <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold text-xs ${fleet.zoneCount && fleet.zoneCount > 0 ? 'bg-success/10 text-success' : 'bg-slate-100 text-slate-400'}`}>
+                    <Shield size={14} /> {fleet.zoneCount || 0}
+                  </div>
                 </td>
-                <td className="px-5 py-3.5 text-[12px] text-slate-400">
-                  {new Date(fleet.creationDate).toLocaleDateString()}
+
+                <td className="px-5 py-4 text-sm text-slate-500">
+                  {fleet.phoneNumber || <span className="italic opacity-50">Non renseigné</span>}
                 </td>
-                <td className="px-5 py-3.5 text-right">
-                  <div className="flex justify-end gap-1">
-                    <button onClick={() => onEdit(fleet)} className="w-8 h-8 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
-                      <Edit size={16} />
+
+                <td className="px-6 py-4 text-right">
+                  <div className="flex justify-end gap-2">
+                    <button 
+                      onClick={() => router.push(`/${locale}/dashboard/fleets/${fleet.id}`)}
+                      className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
+                      title="Détails"
+                    >
+                      <Eye size={18} />
                     </button>
-                    <button onClick={() => onDelete(fleet)} className="w-8 h-8 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
-                      <Trash2 size={16} />
+                    <button 
+                      onClick={() => onEdit(fleet)} 
+                      className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button 
+                      onClick={() => onDelete(fleet)} 
+                      className="p-2 text-slate-400 hover:text-error hover:bg-error/5 rounded-lg transition-all"
+                    >
+                      <Trash2 size={18} />
                     </button>
                   </div>
                 </td>
@@ -13340,6 +13303,206 @@ export function FleetsTable({ fleets, isAdminView, onEdit, onDelete }: FleetsTab
         </table>
       </div>
     </div>
+  );
+}
+
+```
+
+---
+### Fichier : `./src/components/dashboard/fleets/AssignZoneToFleetModal.tsx`
+```typescript
+"use client";
+
+import React, { useState, useEffect } from "react";
+import Modal from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { geofenceService } from "@/services/geofence.service";
+import { GeofenceZone } from "@/types/geofence.types";
+import { toast } from "sonner";
+import { MapPin, Shield, CheckCircle2, Loader2 } from "lucide-react";
+
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+  fleetId: string;
+  onSuccess: () => void;
+}
+
+export function AssignZoneToFleetModal({ isOpen, onClose, fleetId, onSuccess }: Props) {
+  const [zones, setZones] = useState<GeofenceZone[]>([]);
+  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchZones = async () => {
+        setIsLoading(true);
+        try {
+          const myZones = await geofenceService.getMyZones();
+          // On filtre pour ne proposer que les zones qui ne sont pas déjà sur cette flotte
+          setZones(myZones.filter(z => z.fleetId !== fleetId));
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchZones();
+    }
+  }, [isOpen, fleetId]);
+
+  const handleAssign = async () => {
+    if (!selectedZoneId) return;
+    setIsSubmitting(true);
+    try {
+      // Appel : PATCH /api/v1/geofence/{zoneId}/assign-fleet/{fleetId}
+      await geofenceService.assignToFleet(selectedZoneId, fleetId);
+      toast.success("Zone assignée !", { 
+        description: "Tous les véhicules de la flotte sont désormais surveillés." 
+      });
+      onSuccess();
+      onClose();
+    } catch (error) {
+      toast.error("Erreur de liaison");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Assigner une zone de surveillance">
+      <div className="space-y-6">
+        <p className="text-xs text-text-secondary font-medium">
+          Choisissez une zone existante pour y appliquer les règles de Geofencing de cette flotte.
+        </p>
+
+        {isLoading ? (
+          <div className="py-12 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
+        ) : (
+          <div className="max-h-64 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+            {zones.map((zone) => (
+              <div
+                key={zone.id}
+                onClick={() => setSelectedZoneId(zone.id)}
+                className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between group ${
+                  selectedZoneId === zone.id 
+                    ? "border-primary bg-primary/5 shadow-sm" 
+                    : "border-border-default hover:bg-background-secondary"
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`size-10 rounded-xl flex items-center justify-center transition-colors ${
+                    selectedZoneId === zone.id ? "bg-primary text-white" : "bg-slate-100 text-slate-400 group-hover:text-primary"
+                  }`}>
+                    <MapPin size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-text-primary">{zone.title || "Zone sans nom"}</p>
+                    <p className="text-[10px] font-black uppercase text-text-tertiary tracking-widest">{zone.type}</p>
+                  </div>
+                </div>
+                {selectedZoneId === zone.id && <CheckCircle2 size={20} className="text-primary" />}
+              </div>
+            ))}
+
+            {zones.length === 0 && !isLoading && (
+              <div className="text-center py-10 opacity-50">
+                <Shield size={32} className="mx-auto mb-2" />
+                <p className="text-sm">Aucune zone disponible à assigner.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <Button variant="outline" type="button" onClick={onClose}>Annuler</Button>
+          <Button onClick={handleAssign} isLoading={isSubmitting} disabled={!selectedZoneId} className="gap-2">
+            <Shield size={18} /> Activer la surveillance
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}```
+
+---
+### Fichier : `./src/components/dashboard/fleets/RecruitDriverModal.tsx`
+```typescript
+"use client";
+
+import React, { useState } from "react";
+import Modal from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { fleetService } from "@/services/fleet.service";
+import { toast } from "sonner";
+import { UserPlus, Search, Mail, AlertCircle } from "lucide-react";
+
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+  fleetId: string;
+  onSuccess: () => void;
+}
+
+export function RecruitDriverModal({ isOpen, onClose, fleetId, onSuccess }: Props) {
+  const [identifier, setIdentifier] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!identifier.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      // Appel : POST /api/v1/fleets/{id}/drivers
+      await fleetService.recruitDriver(fleetId, identifier.trim());
+      toast.success("Chauffeur intégré avec succès !");
+      setIdentifier("");
+      onSuccess();
+      onClose();
+    } catch (error: any) {
+      toast.error("Recrutement impossible", { 
+        description: error.detail || "L'utilisateur est introuvable ou n'est pas un chauffeur." 
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Recruter un chauffeur">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 flex gap-3">
+          <AlertCircle className="text-primary shrink-0" size={20} />
+          <p className="text-xs text-primary font-medium leading-relaxed">
+            Saisissez l'adresse email ou le nom d'utilisateur d'un chauffeur déjà inscrit sur la plateforme pour l'ajouter à votre flotte.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase text-text-tertiary tracking-widest px-1">
+            Identifiant du chauffeur
+          </label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" size={18} />
+            <input
+              required
+              autoFocus
+              className="w-full pl-10 pr-4 py-3 rounded-xl border border-border-default bg-background outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              placeholder="email@example.com ou @username"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <Button variant="outline" type="button" onClick={onClose}>Annuler</Button>
+          <Button type="submit" isLoading={isSubmitting} className="gap-2 shadow-primary">
+            <UserPlus size={18} /> Intégrer à la flotte
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }```
 
@@ -13454,79 +13617,133 @@ export function FleetFormModal({
 ```
 
 ---
+### Fichier : `./src/components/dashboard/fleets/AssignVehicleToFleetModal.tsx`
+```typescript
+"use client";
+import React, { useState, useEffect } from "react";
+import Modal from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { vehicleService } from "@/services/vehicle.service";
+import { fleetService } from "@/services/fleet.service";
+import { Truck, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
+
+export function AssignVehicleToFleetModal({ isOpen, onClose, fleetId, onSuccess }: any) {
+  const [availableVehicles, setAvailableVehicles] = useState<any[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Charger les véhicules qui n'ont pas encore de flotte
+      vehicleService.getAll().then(list => {
+        setAvailableVehicles(list.filter((v: any) => !v.fleetId));
+      });
+    }
+  }, [isOpen]);
+
+  const handleAssign = async () => {
+    if (!selectedId) return;
+    setIsLoading(true);
+    try {
+      await fleetService.assignVehicle(fleetId, selectedId);
+      toast.success("Véhicule assigné");
+      onSuccess();
+      onClose();
+    } catch (e) {
+      toast.error("Erreur d'assignation");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Assigner un véhicule libre">
+      <div className="space-y-4">
+        <p className="text-xs text-text-tertiary uppercase font-bold">Sélectionnez un véhicule dans votre inventaire global :</p>
+        <div className="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+          {availableVehicles.map(v => (
+            <div 
+              key={v.id} 
+              onClick={() => setSelectedId(v.id)}
+              className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${selectedId === v.id ? 'border-primary bg-primary/5' : 'border-border-default hover:bg-background-secondary'}`}
+            >
+              <div className="flex items-center gap-3">
+                <Truck size={18} className="text-text-tertiary" />
+                <span className="text-sm font-bold text-text-primary uppercase">{v.licensePlate}</span>
+              </div>
+              {selectedId === v.id && <CheckCircle2 size={18} className="text-primary" />}
+            </div>
+          ))}
+          {availableVehicles.length === 0 && <p className="text-sm italic text-center py-4">Aucun véhicule libre disponible.</p>}
+        </div>
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <Button variant="outline" onClick={onClose}>Annuler</Button>
+          <Button onClick={handleAssign} isLoading={isLoading} disabled={!selectedId}>Confirmer l'ajout</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}```
+
+---
 ### Fichier : `./src/components/dashboard/vehicles/details/VehicleFinancialInfo.tsx`
 ```typescript
 "use client";
 import React, { useState } from "react";
 import { vehicleService } from "@/services/vehicle.service";
-import { Vehicle } from "@/types/vehicle.types";
 import { Button } from "@/components/ui/Button";
 import { toast } from "sonner";
+import { ShieldCheck, Banknote, Calendar } from "lucide-react";
 
-export default function VehicleFinancialInfo({
-  vehicle,
-  onUpdate,
-  readOnly,
-}: any) {
-  const [form, setForm] = useState(vehicle.financialParameters);
+export default function VehicleFinancialInfo({ vehicle, onUpdate, readOnly }: any) {
   const [isSaving, setIsSaving] = useState(false);
+  const [form, setForm] = useState(vehicle.financialParameters || {
+    insuranceNumber: "",
+    costPerKm: 0,
+    depreciationRate: 0
+  });
 
-  const handleSave = async () => {
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSaving(true);
     try {
       await vehicleService.updateFinancial(vehicle.id, form);
-      toast.success("Données financières mises à jour");
+      toast.success("Paramètres financiers enregistrés");
       onUpdate();
-    } catch (e) {
-      toast.error("Erreur de sauvegarde");
+    } catch (error) {
+      toast.error("Erreur de mise à jour");
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="bg-surface p-6 rounded-xl border border-border-default space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <form onSubmit={handleSave} className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-2">
-          <label className="text-xs font-bold text-text-secondary uppercase">
-            N° Police Assurance
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+            <ShieldCheck size={14} /> N° Police Assurance
           </label>
-          <input
-            disabled={readOnly}
-            className="w-full p-2 rounded-lg border bg-background"
-            value={form?.insuranceNumber || ""}
-            onChange={(e) =>
-              setForm({ ...form, insuranceNumber: e.target.value })
-            }
-          />
+          <input disabled={readOnly} className="w-full p-3 rounded-2xl border bg-slate-50 font-bold" 
+                 value={form.insuranceNumber} onChange={e => setForm({...form, insuranceNumber: e.target.value})} />
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-bold text-text-secondary uppercase">
-            Coût au KM (FCFA)
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+            <Banknote size={14} /> Coût au Kilomètre (FCFA)
           </label>
-          <input
-            type="number"
-            disabled={readOnly}
-            className="w-full p-2 rounded-lg border bg-background font-mono"
-            value={form?.costPerKm || 0}
-            onChange={(e) =>
-              setForm({ ...form, costPerKm: parseFloat(e.target.value) })
-            }
-          />
+          <input type="number" disabled={readOnly} className="w-full p-3 rounded-2xl border bg-slate-50 font-bold" 
+                 value={form.costPerKm} onChange={e => setForm({...form, costPerKm: parseFloat(e.target.value)})} />
         </div>
       </div>
-
       {!readOnly && (
-        <div className="flex justify-end">
-          <Button onClick={handleSave} isLoading={isSaving}>
-            Enregistrer les modifications
-          </Button>
+        <div className="flex justify-end pt-4 border-t">
+          <Button type="submit" isLoading={isSaving} className="px-10">Enregistrer les données</Button>
         </div>
       )}
-    </div>
+    </form>
   );
-}
-```
+}```
 
 ---
 ### Fichier : `./src/components/dashboard/vehicles/details/VehicleLiveStatus.tsx`
@@ -13754,56 +13971,65 @@ export default function VehicleMiniMap({ lat, lng }: { lat: number; lng: number 
 "use client";
 import React, { useState } from "react";
 import { vehicleService } from "@/services/vehicle.service";
-import { Vehicle, MaintenanceParameters } from "@/types/vehicle.types";
 import { Button } from "@/components/ui/Button";
 import { toast } from "sonner";
-import { Wrench, AlertTriangle, CheckCircle, Battery } from "lucide-react";
+import { Wrench, Battery, Activity } from "lucide-react";
 
 export default function VehicleMaintenanceInfo({ vehicle, onUpdate, readOnly }: any) {
-  const [form, setForm] = useState(vehicle.maintenanceParameters);
-  // ... logique identique à Financial ...
+  const [isSaving, setIsSaving] = useState(false);
+  const [form, setForm] = useState(vehicle.maintenanceParameters || {
+    engineStatus: "OK",
+    batteryHealth: 100,
+    maintenanceStatus: "UP_TO_DATE"
+  });
 
-  const handleSave = async () => {
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
     try {
       await vehicleService.updateMaintenance(vehicle.id, form);
-      toast.success("Données de maintenance mises à jour");
+      toast.success("Carnet de santé mis à jour");
       onUpdate();
-    } catch (e) {
-      toast.error("Erreur de sauvegarde");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Card Engine Status */}
-          <div className="bg-surface p-4 rounded-xl border border-border-default">
-             <label className="text-[10px] font-bold text-text-tertiary uppercase">État Moteur</label>
-             <select 
-               disabled={readOnly}
-               className="w-full mt-1 font-bold text-primary bg-transparent"
-               value={form?.engineStatus}
-               onChange={e => setForm({...form, engineStatus: e.target.value})}
-             >
-                <option value="OK">Opérationnel</option>
-                <option value="NEEDS_SERVICE">Révision requise</option>
-                <option value="OUT_OF_SERVICE">Hors-service</option>
-             </select>
+    <form onSubmit={handleSave} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+          <label className="text-[10px] font-black text-slate-400 uppercase mb-4 block">État du Moteur</label>
+          <select disabled={readOnly} className="w-full p-2 bg-transparent font-bold text-lg outline-none"
+                  value={form.engineStatus} onChange={e => setForm({...form, engineStatus: e.target.value})}>
+            <option value="OK">Parfait (OK)</option>
+            <option value="NEEDS_SERVICE">Révision requise</option>
+            <option value="OUT_OF_SERVICE">Hors-service</option>
+          </select>
+        </div>
+
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+          <label className="text-[10px] font-black text-slate-400 uppercase mb-4 block">Santé Batterie</label>
+          <div className="flex items-center gap-4">
+            <Battery className={form.batteryHealth > 20 ? "text-emerald-500" : "text-red-500"} />
+            <input type="range" disabled={readOnly} className="flex-1 accent-primary" 
+                   value={form.batteryHealth} onChange={e => setForm({...form, batteryHealth: parseInt(e.target.value)})} />
+            <span className="font-black text-xl">{form.batteryHealth}%</span>
           </div>
-          {/* Santé Batterie */}
-          <div className="bg-surface p-4 rounded-xl border border-border-default">
-             <label className="text-[10px] font-bold text-text-tertiary uppercase">Santé Batterie</label>
-             <div className="flex items-center gap-4">
-                <input 
-                  type="range" disabled={readOnly} className="flex-1"
-                  value={form?.batteryHealth} onChange={e => setForm({...form, batteryHealth: parseInt(e.target.value)})}
-                />
-                <span className="font-bold">{form?.batteryHealth}%</span>
-             </div>
-          </div>
-       </div>
-       {!readOnly && <Button onClick={handleSave}>Mettre à jour le carnet</Button>}
-    </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+          <label className="text-[10px] font-black text-slate-400 uppercase mb-4 block">Statut Maintenance</label>
+          <select disabled={readOnly} className="w-full p-2 bg-transparent font-bold text-lg outline-none"
+                  value={form.maintenanceStatus} onChange={e => setForm({...form, maintenanceStatus: e.target.value})}>
+            <option value="UP_TO_DATE">À jour</option>
+            <option value="PENDING">En attente</option>
+            <option value="OVERDUE">Retard critique</option>
+          </select>
+        </div>
+      </div>
+      {!readOnly && <div className="flex justify-end"><Button type="submit" isLoading={isSaving}>Mettre à jour le carnet</Button></div>}
+    </form>
   );
 }```
 
@@ -13811,192 +14037,151 @@ export default function VehicleMaintenanceInfo({ vehicle, onUpdate, readOnly }: 
 ### Fichier : `./src/components/dashboard/vehicles/details/VehicleGeneralInfo.tsx`
 ```typescript
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { vehicleService } from "@/services/vehicle.service";
+import { driverService } from "@/services/driver.service";
 import { Vehicle } from "@/types/vehicle.types";
+import { Driver } from "@/types/driver.types";
 import { Button } from "@/components/ui/Button";
+import { useResources } from "@/hooks/useRessources";
 import { toast } from "sonner";
-import { Truck, Hash, PaintBucket, Calendar, Building, Settings } from "lucide-react";
+import { Save, Hash, PaintBucket, Tag, Truck, Loader2, UserCheck, UserMinus, User } from "lucide-react";
 
-interface VehicleGeneralInfoProps {
-  vehicle: Vehicle;
-  onUpdate: () => void;
-  readOnly?: boolean;
-}
-
-export default function VehicleGeneralInfo({
-  vehicle,
-  onUpdate,
-  readOnly = false,
-}: VehicleGeneralInfoProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export default function VehicleGeneralInfo({ vehicle, onUpdate }: { vehicle: Vehicle, onUpdate: () => void }) {
+  const { catalog, isLoading: refsLoading } = useResources();
+  const [isSaving, setIsSaving] = useState(false);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  
   const [form, setForm] = useState({
     licensePlate: vehicle.licensePlate,
-    color: vehicle.color,
-    model: vehicle.model,
     brand: vehicle.brand,
-    manufacturingYear: vehicle.manufacturingYear,
+    model: vehicle.model,
+    color: vehicle.color,
+    status: vehicle.status
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    driverService.getDrivers().then(setDrivers).catch(() => console.error("Erreur drivers"));
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setIsSaving(true);
     try {
-      await vehicleService.update(vehicle.id, form);
-      toast.success("Informations mises à jour avec succès");
+      await vehicleService.patchOperationalData(vehicle.id, form);
+      toast.success("Informations mises à jour");
       onUpdate();
-    } catch (error: any) {
-      toast.error("Erreur lors de la mise à jour");
+    } catch (error) {
+      toast.error("Erreur de sauvegarde");
     } finally {
-      setIsSubmitting(false);
+      setIsSaving(false);
     }
   };
 
+  const handleAssignDriver = async (driverId: string) => {
+    try {
+      await driverService.assignVehicle(driverId, vehicle.id);
+      toast.success("Chauffeur assigné");
+      onUpdate();
+    } catch (e) {
+      toast.error("Échec de l'assignation");
+    }
+  };
+
+  const handleUnassignDriver = async () => {
+    if (!vehicle.currentDriverId) return;
+    try {
+      await driverService.unassignVehicle(vehicle.currentDriverId);
+      toast.success("Véhicule libéré");
+      onUpdate();
+    } catch (e) {
+      toast.error("Erreur lors de la libération");
+    }
+  };
+
+  if (refsLoading) return <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>;
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 
-                        flex items-center justify-center">
-            <Settings className="text-blue-600" size={20} />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">Informations Générales</h3>
-            <p className="text-sm text-gray-500">Détails d'identification du véhicule</p>
-          </div>
-        </div>
-        {!readOnly && (
-          <div className="text-sm font-medium text-gray-500">
-            {vehicle.licensePlate}
-          </div>
-        )}
-      </div>
-
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Immatriculation */}
-          <div className="space-y-3">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Hash className="w-4 h-4" />
-              Immatriculation
-            </label>
-            <input
-              disabled={readOnly}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white
-                       text-gray-900 font-semibold uppercase tracking-wider
-                       outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
-                       transition-all duration-200 disabled:bg-gray-50 disabled:text-gray-600"
-              value={form.licensePlate}
-              onChange={(e) =>
-                setForm({ ...form, licensePlate: e.target.value.toUpperCase() })
-              }
-              placeholder="AA-123-BB"
-            />
+      <form onSubmit={handleSave} className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Hash size={14} /> Immatriculation</label>
+            <input className="w-full p-3 rounded-2xl border bg-slate-50 font-black uppercase outline-none focus:ring-2 focus:ring-primary/20" 
+                   value={form.licensePlate} onChange={e => setForm({...form, licensePlate: e.target.value.toUpperCase()})} />
           </div>
 
-          {/* Couleur */}
-          <div className="space-y-3">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <PaintBucket className="w-4 h-4" />
-              Couleur
-            </label>
-            <input
-              disabled={readOnly}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white
-                       text-gray-900 outline-none focus:ring-2 focus:ring-blue-500/20 
-                       focus:border-blue-500 transition-all duration-200 disabled:bg-gray-50"
-              value={form.color}
-              onChange={(e) => setForm({ ...form, color: e.target.value })}
-              placeholder="Noir"
-            />
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Tag size={14} /> Marque</label>
+            <select className="w-full p-3 rounded-2xl border bg-slate-50 font-bold outline-none"
+                    value={form.brand} onChange={e => setForm({...form, brand: e.target.value})}>
+              {catalog?.brands.map(b => <option key={b.id} value={b.label}>{b.label}</option>)}
+            </select>
           </div>
 
-          {/* Marque */}
-          <div className="space-y-3">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Building className="w-4 h-4" />
-              Marque
-            </label>
-            <input
-              disabled={readOnly}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white
-                       text-gray-900 outline-none focus:ring-2 focus:ring-blue-500/20 
-                       focus:border-blue-500 transition-all duration-200 disabled:bg-gray-50"
-              value={form.brand}
-              onChange={(e) => setForm({ ...form, brand: e.target.value })}
-              placeholder="Toyota"
-            />
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Truck size={14} /> Modèle</label>
+            <select className="w-full p-3 rounded-2xl border bg-slate-50 font-bold outline-none"
+                    value={form.model} onChange={e => setForm({...form, model: e.target.value})}>
+              {catalog?.models.map(m => <option key={m.id} value={m.label}>{m.label}</option>)}
+            </select>
           </div>
 
-          {/* Modèle */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-700">Modèle</label>
-            <input
-              disabled={readOnly}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white
-                       text-gray-900 outline-none focus:ring-2 focus:ring-blue-500/20 
-                       focus:border-blue-500 transition-all duration-200 disabled:bg-gray-50"
-              value={form.model}
-              onChange={(e) => setForm({ ...form, model: e.target.value })}
-              placeholder="Hilux"
-            />
-          </div>
-
-          {/* Année de fabrication */}
-          <div className="space-y-3">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Calendar className="w-4 h-4" />
-              Année de fabrication
-            </label>
-            <input
-              disabled={readOnly}
-              type="number"
-              min="1900"
-              max={new Date().getFullYear() + 1}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white
-                       text-gray-900 outline-none focus:ring-2 focus:ring-blue-500/20 
-                       focus:border-blue-500 transition-all duration-200 disabled:bg-gray-50"
-              value={form.manufacturingYear}
-              onChange={(e) => setForm({ ...form, manufacturingYear: parseInt(e.target.value) })}
-              placeholder="2023"
-            />
-          </div>
-
-          {/* Véhicule Type (Exemple d'autre champ) */}
-          <div className="space-y-3">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Truck className="w-4 h-4" />
-              Type de véhicule
-            </label>
-            <select
-              disabled={readOnly}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white
-                       text-gray-900 outline-none focus:ring-2 focus:ring-blue-500/20 
-                       focus:border-blue-500 transition-all duration-200 disabled:bg-gray-50"
-            >
-              <option value="LIGHT">Véhicule Léger</option>
-              <option value="HEAVY">Poids Lourd</option>
-              <option value="SPECIAL">Véhicule Spécial</option>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><PaintBucket size={14} /> Couleur</label>
+            <select className="w-full p-3 rounded-2xl border bg-slate-50 font-bold outline-none"
+                    value={form.color} onChange={e => setForm({...form, color: e.target.value})}>
+              {catalog?.colors.map(c => <option key={c.id} value={c.label}>{c.label}</option>)}
             </select>
           </div>
         </div>
 
-        {!readOnly && (
-          <div className="flex justify-end pt-6 mt-6 border-t border-gray-100">
-            <Button
-              type="submit"
-              isLoading={isSubmitting}
-              className="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 
-                       text-white font-semibold hover:from-blue-700 hover:to-blue-800 
-                       shadow-lg shadow-blue-500/25 transition-all duration-200"
-            >
-              Enregistrer les modifications
-            </Button>
-          </div>
-        )}
+        <div className="flex justify-end pt-4 border-t">
+          <Button type="submit" isLoading={isSaving} className="px-10 shadow-primary">Enregistrer les modifications</Button>
+        </div>
       </form>
+
+      {/* SECTION ASSIGNATION CHAUFFEUR */}
+      <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+        <h4 className="text-sm font-black text-slate-800 uppercase mb-6 flex items-center gap-2">
+          <UserCheck size={20} className="text-primary" /> Chauffeur Assigné
+        </h4>
+        
+        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+          {vehicle.currentDriverId ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-sm">
+                  <User size={24} />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-slate-700">Véhicule en service</p>
+                  <p className="text-[10px] font-mono text-slate-400 uppercase">ID Chauffeur: {vehicle.currentDriverId}</p>
+                </div>
+              </div>
+              <Button variant="outline" onClick={handleUnassignDriver} className="h-10 text-red-500 border-red-100 hover:bg-red-50">
+                <UserMinus size={18} className="mr-2" /> Libérer le véhicule
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <select 
+                className="flex-1 w-full p-3 rounded-xl border bg-white text-sm font-bold outline-none shadow-sm"
+                onChange={(e) => handleAssignDriver(e.target.value)}
+                defaultValue=""
+              >
+                <option value="" disabled>Choisir un chauffeur libre...</option>
+                {drivers.filter(d => !d.assignedVehicleId).map(d => (
+                  <option key={d.userId} value={d.userId}>{d.firstName} {d.lastName} ({d.licenceNumber})</option>
+                ))}
+              </select>
+              <p className="text-[10px] text-slate-400 font-bold uppercase text-center sm:text-left">
+                L'assignation verrouille le véhicule pour ce chauffeur.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }```
@@ -14005,79 +14190,48 @@ export default function VehicleGeneralInfo({
 ### Fichier : `./src/components/dashboard/vehicles/details/VehicleMediaManager.tsx`
 ```typescript
 "use client";
-
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { vehicleService } from "@/services/vehicle.service";
-import { Vehicle } from "@/types/vehicle.types";
 import { toast } from "sonner";
-import { Upload, Trash2, FileText, CheckCircle, Image as ImageIcon, Plus, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Upload, Trash2, Image as ImageIcon, Loader2, FileCheck, Plus } from "lucide-react";
 
-interface Props {
-  vehicle: Vehicle;
-  onUpdate: () => void;
-  readOnly?: boolean;
-}
+export default function VehicleMediaManager({ vehicle, onUpdate, readOnly }: any) {
+  const [loading, setLoading] = useState<string | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
-export default function VehicleMediaManager({ vehicle, onUpdate, readOnly }: Props) {
-  const [uploadingType, setUploadingType] = useState<string | null>(null);
-
-  // Gère l'upload pour les docs administratifs
-  const handleAdminUpload = async (type: 'vin' | 'registration', file: File) => {
-    setUploadingType(type);
+  const handleUpload = async (type: 'vin' | 'registration' | 'gallery', file: File) => {
+    setLoading(type);
     try {
-      await vehicleService.uploadMedia(vehicle.id, type, file);
-      toast.success(`${type === 'vin' ? 'Photo VIN' : 'Carte Grise'} mise à jour`);
+      if (type === 'gallery') {
+        await vehicleService.addGalleryImage(vehicle.id, file);
+        toast.success("Image ajoutée à la galerie");
+      } else {
+        await vehicleService.uploadAdminDoc(vehicle.id, type, file);
+        toast.success("Document administratif mis à jour");
+      }
       onUpdate();
     } catch (e: any) {
-      toast.error("Erreur d'upload", { description: e.status === 413 ? "Fichier trop lourd (>2Mo)" : e.detail });
+      toast.error("Erreur d'upload", { description: e.detail || "Vérifiez la taille du fichier" });
     } finally {
-      setUploadingType(null);
+      setLoading(null);
+      // Reset de l'input pour permettre de re-sélectionner le même fichier si besoin
+      if (galleryInputRef.current) galleryInputRef.current.value = "";
     }
   };
 
-  // Gère l'ajout à la galerie
-  const handleGalleryAdd = async (file: File) => {
-    setUploadingType('gallery');
-    try {
-      await vehicleService.addToGallery(vehicle.id, file);
-      toast.success("Image ajoutée à la galerie");
-      onUpdate();
-    } catch (e: any) {
-      toast.error("Erreur galerie", { description: e.detail });
-    } finally {
-      setUploadingType(null);
-    }
-  };
-
-  const AdminMediaCard = ({ title, url, type }: { title: string, url?: string, type: 'vin' | 'registration' }) => (
-    <div className="bg-surface p-5 rounded-2xl border border-border-default space-y-4">
+  const DocCard = ({ title, url, type }: any) => (
+    <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
       <div className="flex justify-between items-center">
-        <h4 className="text-xs font-bold uppercase tracking-widest text-text-secondary">{title}</h4>
-        {url && <CheckCircle size={16} className="text-success" />}
+        <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{title}</h4>
+        {url && <FileCheck size={16} className="text-emerald-500" />}
       </div>
-      
-      <div className="aspect-video relative rounded-xl bg-background-secondary border-2 border-dashed border-border-default flex flex-col items-center justify-center overflow-hidden group">
-        {url ? (
-          <>
-            <img src={url} className="object-cover size-full" alt={title} />
-            {!readOnly && (
-              <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 backdrop-blur-sm">
-                <Upload className="text-white mb-2" />
-                <span className="text-white text-xs font-bold">Remplacer</span>
-                <input type="file" className="hidden" accept="image/*" 
-                       onChange={(e) => e.target.files?.[0] && handleAdminUpload(type, e.target.files[0])} />
-              </label>
-            )}
-          </>
-        ) : (
-          <label className={`flex flex-col items-center gap-2 p-4 text-center ${readOnly ? "" : "cursor-pointer hover:bg-background-tertiary transition-colors w-full h-full justify-center"}`}>
-            {uploadingType === type ? <Loader2 className="animate-spin text-primary" /> : <Upload className="text-text-tertiary" />}
-            <span className="text-xs text-text-tertiary font-medium">
-                {readOnly ? "Aucun document" : "Cliquez pour uploader"}
-            </span>
-            {!readOnly && <input type="file" className="hidden" accept="image/*" 
-                                onChange={(e) => e.target.files?.[0] && handleAdminUpload(type, e.target.files[0])} />}
+      <div className="aspect-video bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden relative group">
+        {url ? <img src={url} className="size-full object-cover" alt={title} /> : <Upload className="text-slate-300" />}
+        {!readOnly && (
+          <label className="absolute inset-0 bg-primary/80 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-all text-white backdrop-blur-sm">
+            {loading === type ? <Loader2 className="animate-spin" /> : <Upload size={24} />}
+            <span className="text-[10px] font-black mt-2 tracking-widest">REMPLACER</span>
+            <input type="file" className="hidden" accept="image/*" onChange={e => e.target.files?.[0] && handleUpload(type, e.target.files[0])} />
           </label>
         )}
       </div>
@@ -14086,54 +14240,61 @@ export default function VehicleMediaManager({ vehicle, onUpdate, readOnly }: Pro
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* 1. Documents Officiels */}
+      {/* 1. Documents Administratifs */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <AdminMediaCard title="Photo du Châssis (VIN)" url={vehicle.serialNumberPhotoUrl} type="vin" />
-        <AdminMediaCard title="Carte Grise / Immatriculation" url={vehicle.registrationPhotoUrl} type="registration" />
+        <DocCard title="Photo du Châssis (VIN)" url={vehicle.serialNumberPhotoUrl} type="vin" />
+        <DocCard title="Carte Grise / Immatriculation" url={vehicle.registrationPhotoUrl} type="registration" />
       </div>
-
+      
       {/* 2. Galerie d'illustration */}
-      <div className="bg-surface p-6 rounded-2xl border border-border-default space-y-6">
-        <div className="flex justify-between items-center border-b border-border-default pb-4">
-          <div className="flex items-center gap-3">
-            <ImageIcon className="text-primary" size={20} />
-            <h4 className="text-sm font-bold uppercase tracking-wider text-text-primary">Galerie d'illustration</h4>
+      <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h4 className="text-sm font-black uppercase text-slate-800 flex items-center gap-2">
+              <ImageIcon size={20} className="text-primary" /> Galerie d'illustration
+            </h4>
+            <p className="text-xs text-slate-400 mt-1">Photos du véhicule sous différents angles</p>
           </div>
           {!readOnly && (
-            <label className="relative flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg text-xs font-bold cursor-pointer hover:bg-primary/20 transition-colors">
-               {uploadingType === 'gallery' ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-               AJOUTER UNE PHOTO
-               <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleGalleryAdd(e.target.files[0])} />
+            <label className="cursor-pointer bg-primary text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg hover:shadow-primary/30 transition-all flex items-center gap-2">
+              {loading === 'gallery' ? <Loader2 size={14} className="animate-spin" /> : <Plus size={16} />}
+              Ajouter une photo
+              <input 
+                ref={galleryInputRef}
+                type="file" 
+                className="hidden" 
+                accept="image/*" 
+                onChange={e => e.target.files?.[0] && handleUpload('gallery', e.target.files[0])} 
+              />
             </label>
           )}
         </div>
-        
-        {vehicle.illustrationImages?.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {vehicle.illustrationImages.map((imgUrl, idx) => (
-              <div key={idx} className="aspect-square relative rounded-xl overflow-hidden group border border-border-default shadow-sm hover:shadow-md transition-all">
-                <img src={imgUrl} className="object-cover size-full" alt="Illustration" />
+
+        {vehicle.illustrationImages && vehicle.illustrationImages.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+            {vehicle.illustrationImages.map((img: string, i: number) => (
+              <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-slate-100 relative group shadow-sm hover:shadow-md transition-all">
+                <img src={img} className="size-full object-cover" alt={`Illustration ${i}`} />
                 {!readOnly && (
                   <button 
-                    onClick={async () => {
-                        if(confirm("Supprimer cette image ?")) {
-                            await vehicleService.deleteGalleryImage(vehicle.id, idx.toString()); // Note: Assure-toi que le backend attend l'index ou un ID réel
-                            onUpdate();
-                            toast.success("Image supprimée");
-                        }
+                    onClick={() => {
+                      if(confirm("Supprimer cette image de la galerie ?")) {
+                        // Note: On passe l'index si le backend n'a pas d'ID unique par image dans ce flux
+                        vehicleService.deleteGalleryImage(vehicle.id, i.toString()).then(onUpdate);
+                      }
                     }}
-                    className="absolute top-2 right-2 p-2 bg-red-600/90 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all transform translate-y-[-10px] group-hover:translate-y-0"
+                    className="absolute top-3 right-3 p-2 bg-red-500 text-white rounded-xl opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 shadow-lg"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={16} />
                   </button>
                 )}
               </div>
             ))}
           </div>
         ) : (
-          <div className="py-12 flex flex-col items-center justify-center text-text-disabled border-2 border-dashed border-border-default rounded-xl">
-            <ImageIcon size={40} className="mb-2 opacity-20" />
-            <p className="text-sm font-medium">Aucune photo d'illustration</p>
+          <div className="py-16 flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-100 rounded-[2rem]">
+            <ImageIcon size={48} className="mb-4 opacity-20" />
+            <p className="text-sm font-bold uppercase tracking-widest">Aucune photo dans la galerie</p>
           </div>
         )}
       </div>
@@ -14144,191 +14305,76 @@ export default function VehicleMediaManager({ vehicle, onUpdate, readOnly }: Pro
 ---
 ### Fichier : `./src/components/dashboard/vehicles/VehicleTable.tsx`
 ```typescript
-// "use client";
-// import React from "react";
-// import { Truck, MoreVertical, Fuel, Gauge, User, Eye, Edit, Trash2 } from "lucide-react";
-// import { Vehicle } from "@/types/vehicle.types";
-// import StatusBadge from "@/components/admin/fleet-managers/StatusBadge";
-
-// interface VehicleTableProps {
-//   vehicles: Vehicle[];
-//   isAdminView?: boolean;
-//   onView: (v: Vehicle) => void;
-//   onEdit?: (v: Vehicle) => void;
-//   onDelete?: (v: Vehicle) => void;
-// }
-
-// export function VehicleTable({ vehicles, isAdminView, onView, onEdit, onDelete }: VehicleTableProps) {
-//   return (
-//     <div className="overflow-x-auto">
-//       <table className="w-full text-left text-sm">
-//         <thead className="bg-background-secondary border-b border-border-default text-text-secondary font-bold uppercase text-[10px] tracking-widest">
-//           <tr>
-//             <th className="px-6 py-4">Véhicule</th>
-//             <th className="px-6 py-4">Statut</th>
-//             <th className="px-6 py-4">Technique</th>
-//             {isAdminView && <th className="px-6 py-4">Propriétaire</th>}
-//             {!isAdminView && <th className="px-6 py-4 text-right">Actions</th>}
-//           </tr>
-//         </thead>
-//         <tbody className="divide-y divide-border-default">
-//           {vehicles.map((v) => (
-//             <tr key={v.id} className="hover:bg-background-secondary/50 transition-colors">
-//               <td className="px-6 py-4">
-//                 <div className="flex items-center gap-3">
-//                   <div className="size-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden border border-border-default">
-//                     {v.photoUrl ? <img src={v.photoUrl} className="object-cover size-full" /> : <Truck size={20} className="text-text-tertiary" />}
-//                   </div>
-//                   <div>
-//                     <p className="font-bold text-text-primary uppercase">{v.licensePlate}</p>
-//                     <p className="text-xs text-text-secondary">{v.brand} {v.model} ({v.manufacturingYear})</p>
-//                   </div>
-//                 </div>
-//               </td>
-//               <td className="px-6 py-4">
-//                 <StatusBadge 
-//                   status={v.status} 
-//                   color={v.status === 'AVAILABLE' ? 'green' : v.status === 'ON_TRIP' ? 'blue' : 'orange'} 
-//                 />
-//               </td>
-//               <td className="px-6 py-4">
-//                 <div className="flex gap-4 text-text-secondary">
-//                   <div className="flex items-center gap-1" title="Capacité Réservoir">
-//                     <Fuel size={14} /> <span className="text-xs font-medium">{v.tankCapacity}L</span>
-//                   </div>
-//                   <div className="flex items-center gap-1" title="Consommation Moyenne">
-//                     <Gauge size={14} /> <span className="text-xs font-medium">{v.averageFuelConsumption}L/100</span>
-//                   </div>
-//                 </div>
-//               </td>
-//               {isAdminView && (
-//                 <td className="px-6 py-4">
-//                    <div className="flex items-center gap-2">
-//                       <div className="size-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">M</div>
-//                       <span className="text-xs font-medium text-text-secondary">Manager ID: {v.managerId.substring(0,8)}...</span>
-//                    </div>
-//                 </td>
-//               )}
-//               <td className="px-6 py-4 text-right">
-//                 <div className="flex justify-end gap-2">
-//                   <button onClick={() => onView(v)} className="p-2 hover:bg-slate-100 rounded-lg text-text-secondary" title="Détails">
-//                     <Eye size={18} />
-//                   </button>
-//                   {!isAdminView && (
-//                     <>
-//                       <button onClick={() => onEdit?.(v)} className="p-2 hover:bg-primary/10 hover:text-primary rounded-lg text-text-secondary">
-//                         <Edit size={18} />
-//                       </button>
-//                       <button onClick={() => onDelete?.(v)} className="p-2 hover:bg-error/10 hover:text-error rounded-lg text-text-secondary">
-//                         <Trash2 size={18} />
-//                       </button>
-//                     </>
-//                   )}
-//                 </div>
-//               </td>
-//             </tr>
-//           ))}
-//         </tbody>
-//       </table>
-//     </div>
-//   );
-// }
-
-
-
-
-
-
-
-
-
-
-
 "use client";
 import React from "react";
-import { Truck, Fuel, Gauge, Eye, Edit, Trash2 } from "lucide-react";
+import { Truck, Fuel, Gauge, Eye, Trash2, User } from "lucide-react";
 import { Vehicle } from "@/types/vehicle.types";
 import StatusBadge from "@/components/admin/fleet-managers/StatusBadge";
 
-interface VehicleTableProps {
+interface Props {
   vehicles: Vehicle[];
-  isAdminView?: boolean;
   onView: (v: Vehicle) => void;
-  onEdit?: (v: Vehicle) => void;
   onDelete?: (v: Vehicle) => void;
 }
 
-export function VehicleTable({ vehicles, isAdminView, onView, onEdit, onDelete }: VehicleTableProps) {
+export function VehicleTable({ vehicles, onView, onDelete }: Props) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_2px_12px_-2px_rgba(0,0,0,.08)] overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-slate-100 bg-slate-50">
-              <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Véhicule</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Statut</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Technique</th>
-              {isAdminView && <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Propriétaire</th>}
-              <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {vehicles.map((v, i) => (
-              <tr key={v.id} className={`transition-colors duration-150 hover:bg-slate-50 ${i !== 0 ? 'border-t border-slate-100' : ''}`}>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
-                      {v.photoUrl ? <img src={v.photoUrl} className="object-cover size-full" alt="" /> : <Truck size={18} className="text-slate-400" />}
-                    </div>
-                    <div>
-                      <p className="text-[13px] font-bold text-slate-800 uppercase tracking-wide">{v.licensePlate}</p>
-                      <p className="text-[11px] text-slate-400">{v.brand} {v.model} · {v.manufacturingYear}</p>
-                    </div>
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-slate-50 border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px] tracking-widest">
+          <tr>
+            <th className="px-6 py-4">Véhicule</th>
+            <th className="px-6 py-4">Statut</th>
+            <th className="px-6 py-4">Technique</th>
+            <th className="px-6 py-4">Chauffeur</th>
+            <th className="px-6 py-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100 bg-white">
+          {vehicles.map((v) => (
+            <tr key={v.id} className="hover:bg-slate-50/50 transition-colors group">
+              <td className="px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="size-10 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 shrink-0">
+                    {v.photoUrl ? <img src={v.photoUrl} className="size-full object-cover" /> : <Truck size={20} className="text-slate-400" />}
                   </div>
-                </td>
-                <td className="px-5 py-3.5">
-                  <StatusBadge status={v.status} color={v.status === 'AVAILABLE' ? 'green' : v.status === 'ON_TRIP' ? 'blue' : 'orange'} />
-                </td>
-                <td className="px-5 py-3.5">
-                  <div className="flex gap-4 text-slate-500">
-                    <div className="flex items-center gap-1.5">
-                      <Fuel size={13} /> <span className="text-[12px] font-medium">{v.tankCapacity}L</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Gauge size={13} /> <span className="text-[12px] font-medium">{v.averageFuelConsumption}L/100</span>
-                    </div>
+                  <div>
+                    <p className="font-bold text-slate-800 uppercase">{v.licensePlate}</p>
+                    <p className="text-[10px] text-slate-400 font-medium">{v.brand} {v.model}</p>
                   </div>
-                </td>
-                {isAdminView && (
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px] font-bold">M</div>
-                      <span className="text-[11px] text-slate-400 font-mono">Manager {v.managerId.substring(0,8)}…</span>
-                    </div>
-                  </td>
+                </div>
+              </td>
+              <td className="px-6 py-4">
+                <StatusBadge 
+                  status={v.status} 
+                  color={v.status === 'AVAILABLE' ? 'green' : v.status === 'ON_TRIP' ? 'blue' : 'orange'} 
+                />
+              </td>
+              <td className="px-6 py-4">
+                <div className="flex gap-4 text-slate-500">
+                  <div className="flex items-center gap-1"><Fuel size={14} /> <span className="text-xs font-bold">{v.tankCapacity}L</span></div>
+                  <div className="flex items-center gap-1"><Gauge size={14} /> <span className="text-xs font-bold">{v.averageFuelConsumption}L</span></div>
+                </div>
+              </td>
+              <td className="px-6 py-4">
+                {v.currentDriverId ? (
+                  <div className="flex items-center gap-2 text-primary font-bold text-xs">
+                    <User size={14} /> Assigné
+                  </div>
+                ) : (
+                  <span className="text-slate-300 italic text-xs">Non assigné</span>
                 )}
-                <td className="px-5 py-3.5 text-right">
-                  <div className="flex justify-end gap-1">
-                    <button onClick={() => onView(v)} className="w-8 h-8 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors" title="Détails">
-                      <Eye size={16} />
-                    </button>
-                    {!isAdminView && (
-                      <>
-                        <button onClick={() => onEdit?.(v)} className="w-8 h-8 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
-                          <Edit size={16} />
-                        </button>
-                        <button onClick={() => onDelete?.(v)} className="w-8 h-8 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
-                          <Trash2 size={16} />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              </td>
+              <td className="px-6 py-4 text-right">
+                <div className="flex justify-end gap-2">
+                  <button onClick={() => onView(v)} className="p-2 hover:bg-primary/10 text-primary rounded-lg transition-all"><Eye size={18} /></button>
+                  <button onClick={() => onDelete?.(v)} className="p-2 hover:bg-red-50 text-red-400 rounded-lg transition-all"><Trash2 size={18} /></button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }```
@@ -14338,36 +14384,25 @@ export function VehicleTable({ vehicles, isAdminView, onView, onEdit, onDelete }
 ```typescript
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Modal from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { useResources } from "@/hooks/useRessources";
 import { vehicleService } from "@/services/vehicle.service";
-import { CreateVehicleDto } from "@/types/vehicle.types";
+import { CreateVehicleDto, ResourceCatalog } from "@/types/vehicle.types";
 import { toast } from "sonner";
-import { 
-  Truck, 
-  Hash, 
-  Settings, 
-  Info, 
-  Fuel, 
-  Users, 
-  Gauge, 
-  Calendar 
-} from "lucide-react";
+import { Truck, Settings, Hash, Fuel, Users, Gauge, Calendar, Loader2 } from "lucide-react";
 
-interface CreateVehicleModalProps {
+interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void; // Callback pour rafraîchir la liste des véhicules
+  onSuccess: () => void;
 }
 
-export function CreateVehicleModal({ isOpen, onClose, onSuccess }: CreateVehicleModalProps) {
-  // 1. Récupération des référentiels souverains via notre hook
-  const { catalog, isLoading: refsLoading } = useResources();
+export function CreateVehicleModal({ isOpen, onClose, onSuccess }: Props) {
+  const [catalog, setCatalog] = useState<ResourceCatalog | null>(null);
+  const [isLoadingRefs, setIsLoadingRefs] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 2. État du formulaire aligné sur le CreateVehicleDto du backend
   const [form, setForm] = useState<CreateVehicleDto>({
     vehicleTypeId: "" as any,
     manufacturerId: "" as any,
@@ -14386,56 +14421,43 @@ export function CreateVehicleModal({ isOpen, onClose, onSuccess }: CreateVehicle
     averageFuelConsumption: 7.5
   });
 
-  /**
-   * Soumission du formulaire au backend
-   */
+  useEffect(() => {
+    if (isOpen) {
+      vehicleService.getResourceCatalog()
+        .then(setCatalog)
+        .catch(() => toast.error("Erreur de chargement des référentiels"))
+        .finally(() => setIsLoadingRefs(false));
+    }
+  }, [isOpen]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Vérification basique que tous les IDs sont sélectionnés
-    const requiredIds = [
-      form.vehicleTypeId, form.manufacturerId, form.brandId, 
-      form.modelId, form.fuelTypeId, form.colorId
-    ];
-    
-    if (requiredIds.some(id => !id)) {
-      toast.error("Veuillez remplir tous les champs obligatoires.");
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       await vehicleService.create(form);
-      toast.success("Véhicule enregistré avec succès !");
-      onSuccess(); // Rafraîchir le tableau parent
-      onClose();   // Fermer la modale
+      toast.success("Véhicule enrôlé avec succès");
+      onSuccess();
+      onClose();
     } catch (error: any) {
-      toast.error("Erreur de création", { 
-        description: error.detail || "Une erreur est survenue lors de l'enregistrement." 
-      });
+      toast.error("Erreur", { description: error.detail });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  /**
-   * Sous-composant pour générer les listes déroulantes proprement
-   */
-  const ResourceSelect = ({ label, name, items, icon: Icon }: any) => (
-    <div className="space-y-1.5">
-      <label className="text-[10px] font-bold uppercase text-text-tertiary tracking-widest flex items-center gap-1.5">
-        {Icon && <Icon size={12} />}
-        {label} *
+  const SelectField = ({ label, name, items, icon: Icon }: any) => (
+    <div className="space-y-1">
+      <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest flex items-center gap-1">
+        {Icon && <Icon size={12} />} {label}
       </label>
       <select 
         required
-        disabled={refsLoading}
-        className="w-full p-2.5 rounded-xl border border-border-default bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-50"
+        className="w-full p-2 rounded-xl border border-border-default bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
         value={(form as any)[name]}
         onChange={e => setForm({...form, [name]: e.target.value})}
       >
-        <option value="">Choisir...</option>
-        {items.map((item: any) => (
+        <option value="">Sélectionner...</option>
+        {items?.map((item: any) => (
           <option key={item.id} value={item.id}>{item.label}</option>
         ))}
       </select>
@@ -14443,106 +14465,65 @@ export function CreateVehicleModal({ isOpen, onClose, onSuccess }: CreateVehicle
   );
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Enrôler un nouveau véhicule">
-      <form onSubmit={handleSubmit} className="space-y-8 max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
-        
-        {/* SECTION 1 : IDENTIFICATION (Plaque & VIN) */}
-        <div className="bg-primary/5 p-5 rounded-2xl border border-primary/10 space-y-4">
-          <h4 className="text-xs font-bold text-primary uppercase flex items-center gap-2">
-            <Hash size={14} /> Identification Unique
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase text-text-secondary tracking-widest">Plaque d'immatriculation</label>
-              <input 
-                required
-                className="w-full p-2.5 rounded-xl border border-border-default bg-white text-sm font-black uppercase tracking-wider focus:border-primary outline-none transition-all"
-                placeholder="LT-123-AA"
-                value={form.licensePlate}
-                onChange={e => setForm({...form, licensePlate: e.target.value.toUpperCase()})}
-              />
+    <Modal isOpen={isOpen} onClose={onClose} title="Enrôler un véhicule">
+      {isLoadingRefs ? (
+        <div className="py-20 flex flex-col items-center gap-3">
+          <Loader2 className="animate-spin text-primary" />
+          <p className="text-sm text-text-tertiary">Chargement des référentiels...</p>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6 max-h-[75vh] overflow-y-auto pr-2 custom-scrollbar">
+          
+          <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-primary uppercase tracking-widest">Plaque d'immatriculation</label>
+              <input required className="w-full p-2 rounded-xl border-primary/20 bg-white font-black uppercase" 
+                     placeholder="LT-123-AA" value={form.licensePlate} onChange={e => setForm({...form, licensePlate: e.target.value.toUpperCase()})} />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase text-text-secondary tracking-widest">N° de Châssis (VIN)</label>
-              <input 
-                required
-                className="w-full p-2.5 rounded-xl border border-border-default bg-white text-sm font-mono focus:border-primary outline-none transition-all"
-                placeholder="ABC123456789..."
-                value={form.vehicleSerialNumber}
-                onChange={e => setForm({...form, vehicleSerialNumber: e.target.value})}
-              />
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-primary uppercase tracking-widest">N° Châssis (VIN)</label>
+              <input required className="w-full p-2 rounded-xl border-primary/20 bg-white font-mono" 
+                     placeholder="VIN..." value={form.vehicleSerialNumber} onChange={e => setForm({...form, vehicleSerialNumber: e.target.value})} />
             </div>
           </div>
-        </div>
 
-        {/* SECTION 2 : CONFIGURATION (Référentiels du Backend) */}
-        <div className="space-y-4">
-          <h4 className="text-xs font-bold text-text-primary uppercase flex items-center gap-2 px-1">
-            <Settings size={14} /> Caractéristiques Techniques
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-5">
-            <ResourceSelect label="Type de véhicule" name="vehicleTypeId" items={catalog?.vehicleTypes || []} />
-            <ResourceSelect label="Constructeur" name="manufacturerId" items={catalog?.manufacturers || []} />
-            <ResourceSelect label="Marque" name="brandId" items={catalog?.brands || []} />
-            <ResourceSelect label="Modèle" name="modelId" items={catalog?.models || []} />
-            <ResourceSelect label="Énergie" name="fuelTypeId" items={catalog?.fuelTypes || []} icon={Fuel} />
-            <ResourceSelect label="Transmission" name="transmissionTypeId" items={catalog?.transmissionTypes || []} />
-            <ResourceSelect label="Couleur" name="colorId" items={catalog?.colors || []} />
-            <ResourceSelect label="Gabarit" name="sizeId" items={catalog?.sizes || []} />
-            <ResourceSelect label="Usage" name="usageTypeId" items={catalog?.usages || []} />
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <SelectField label="Type" name="vehicleTypeId" items={catalog?.vehicleTypes} icon={Truck} />
+            <SelectField label="Marque" name="brandId" items={catalog?.brands} />
+            <SelectField label="Modèle" name="modelId" items={catalog?.models} />
+            <SelectField label="Énergie" name="fuelTypeId" items={catalog?.fuelTypes} icon={Fuel} />
+            <SelectField label="Transmission" name="transmissionTypeId" items={catalog?.transmissionTypes} />
+            <SelectField label="Couleur" name="colorId" items={catalog?.colors} />
+            <SelectField label="Constructeur" name="manufacturerId" items={catalog?.manufacturers} />
+            <SelectField label="Gabarit" name="sizeId" items={catalog?.sizes} />
+            <SelectField label="Usage" name="usageTypeId" items={catalog?.usages} />
           </div>
-        </div>
 
-        {/* SECTION 3 : PARAMÈTRES OPÉRATIONNELS */}
-        <div className="pt-6 border-t border-border-default">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-text-tertiary uppercase flex items-center gap-1">
-                <Calendar size={12} /> Année
-              </label>
-              <input type="number" className="w-full p-2.5 rounded-xl border bg-background text-sm font-bold" 
-                     value={form.manufacturingYear} onChange={e => setForm({...form, manufacturingYear: parseInt(e.target.value)})} />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-text-tertiary uppercase">Année</label>
+              <input type="number" className="w-full p-2 rounded-xl border bg-background" value={form.manufacturingYear} onChange={e => setForm({...form, manufacturingYear: parseInt(e.target.value)})} />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-text-tertiary uppercase flex items-center gap-1">
-                <Fuel size={12} /> Réservoir (L)
-              </label>
-              <input type="number" step="0.1" className="w-full p-2.5 rounded-xl border bg-background text-sm font-bold" 
-                     value={form.tankCapacity} onChange={e => setForm({...form, tankCapacity: parseFloat(e.target.value)})} />
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-text-tertiary uppercase">Réservoir (L)</label>
+              <input type="number" className="w-full p-2 rounded-xl border bg-background" value={form.tankCapacity} onChange={e => setForm({...form, tankCapacity: parseInt(e.target.value)})} />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-text-tertiary uppercase flex items-center gap-1">
-                <Users size={12} /> Places
-              </label>
-              <input type="number" className="w-full p-2.5 rounded-xl border bg-background text-sm font-bold" 
-                     value={form.totalSeatNumber} onChange={e => setForm({...form, totalSeatNumber: parseInt(e.target.value)})} />
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-text-tertiary uppercase">Places</label>
+              <input type="number" className="w-full p-2 rounded-xl border bg-background" value={form.totalSeatNumber} onChange={e => setForm({...form, totalSeatNumber: parseInt(e.target.value)})} />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-text-tertiary uppercase flex items-center gap-1">
-                <Gauge size={12} /> Conso Moy.
-              </label>
-              <input type="number" step="0.1" className="w-full p-2.5 rounded-xl border bg-background text-sm font-bold" 
-                     value={form.averageFuelConsumption} onChange={e => setForm({...form, averageFuelConsumption: parseFloat(e.target.value)})} />
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-text-tertiary uppercase">Conso (L/100)</label>
+              <input type="number" step="0.1" className="w-full p-2 rounded-xl border bg-background" value={form.averageFuelConsumption} onChange={e => setForm({...form, averageFuelConsumption: parseFloat(e.target.value)})} />
             </div>
           </div>
-        </div>
 
-        {/* ACTIONS FINALES */}
-        <div className="flex justify-end gap-3 pt-6 sticky bottom-0 bg-surface pb-2">
-          <Button variant="outline" type="button" onClick={onClose} className="h-11 px-6">
-            Annuler
-          </Button>
-          <Button 
-            type="submit" 
-            isLoading={isSubmitting} 
-            disabled={refsLoading}
-            className="h-11 px-10 shadow-primary"
-          >
-            <Truck size={18} className="mr-2" />
-            Enregistrer le véhicule
-          </Button>
-        </div>
-      </form>
+          <div className="flex justify-end gap-3 pt-4 sticky bottom-0 bg-white pb-2">
+            <Button variant="outline" type="button" onClick={onClose}>Annuler</Button>
+            <Button type="submit" isLoading={isSubmitting} className="shadow-primary px-8">Enregistrer le véhicule</Button>
+          </div>
+        </form>
+      )}
     </Modal>
   );
 }```
@@ -14845,6 +14826,102 @@ export function VehicleModal({ vehicle, onClose }: VehicleModalProps) {
 }```
 
 ---
+### Fichier : `./src/components/dashboard/vehicles/[id]/page.tsx`
+```typescript
+"use client";
+
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { vehicleService } from "@/services/vehicle.service";
+import { Vehicle } from "@/types/vehicle.types";
+import { PageLoader } from "@/components/ui/Spinner";
+import { toast } from "sonner";
+import { ArrowLeft, Info, ShieldCheck, Wrench, Image as ImageIcon, Activity } from "lucide-react";
+
+import VehicleGeneralInfo from "@/components/dashboard/vehicles/details/VehicleGeneralInfo";
+import VehicleFinancialInfo from "@/components/dashboard/vehicles/details/VehicleFinancialInfo";
+import VehicleMaintenanceInfo from "@/components/dashboard/vehicles/details/VehicleMaintenanceInfo";
+import VehicleMediaManager from "@/components/dashboard/vehicles/details/VehicleMediaManager";
+import VehicleLiveStatus from "@/components/dashboard/vehicles/details/VehicleLiveStatus";
+
+export default function VehicleDetailsPage() {
+  const { id } = useParams();
+  const router = useRouter();
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("general");
+
+  const fetchVehicle = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const data = await vehicleService.getById(id as string);
+      setVehicle(data);
+    } catch (error: any) {
+      toast.error("Erreur", { description: "Impossible de charger le véhicule." });
+      router.back();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id, router]);
+
+  useEffect(() => { if (id) fetchVehicle(); }, [id, fetchVehicle]);
+
+  if (isLoading) return <PageLoader />;
+  if (!vehicle) return null;
+
+  const tabs = [
+    { id: "general", label: "Général", icon: Info },
+    { id: "financial", label: "Financier", icon: ShieldCheck },
+    { id: "maintenance", label: "Maintenance", icon: Wrench },
+    { id: "media", label: "Photos & Docs", icon: ImageIcon },
+  ];
+
+  return (
+    <div className="space-y-6 animate-fade-in pb-10">
+      {/* Header */}
+      <div className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+        <button onClick={() => router.back()} className="p-2 hover:bg-slate-50 rounded-xl border border-slate-200 transition-all">
+          <ArrowLeft size={20} />
+        </button>
+        <div>
+          <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight">{vehicle.licensePlate}</h1>
+          <p className="text-xs text-slate-400 font-bold uppercase">{vehicle.brand} {vehicle.model} • {vehicle.manufacturingYear}</p>
+        </div>
+      </div>
+
+      {/* Tabs Navigation */}
+      <div className="flex gap-2 p-1 bg-slate-100 w-fit rounded-2xl border border-slate-200">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+              activeTab === tab.id ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            <tab.icon size={14} />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="mt-6">
+        {activeTab === "general" && (
+          <div className="space-y-6">
+            <VehicleLiveStatus vehicleId={vehicle.id} />
+            <VehicleGeneralInfo vehicle={vehicle} onUpdate={fetchVehicle} />
+          </div>
+        )}
+        {activeTab === "financial" && <VehicleFinancialInfo vehicle={vehicle} onUpdate={fetchVehicle} />}
+        {activeTab === "maintenance" && <VehicleMaintenanceInfo vehicle={vehicle} onUpdate={fetchVehicle} />}
+        {activeTab === "media" && <VehicleMediaManager vehicle={vehicle} onUpdate={fetchVehicle} />}
+      </div>
+    </div>
+  );
+}```
+
+---
 ### Fichier : `./src/components/dashboard/trips/TripsTable.tsx`
 ```typescript
 // "use client";
@@ -15012,6 +15089,11 @@ export function TripsTable({ trips, onViewDetails }: TripsTableProps) {
     </div>
   );
 }```
+
+---
+### Fichier : `./src/components/dashboard/AssignVehicleModal.tsx`
+```typescript
+```
 
 ---
 ### Fichier : `./src/components/dashboard/Sidebar.tsx`
@@ -18661,6 +18743,13 @@ export const geofenceService = {
       params: { page, size }
     });
     return data;
+  },
+  // Récupérer les zones filtrées par flotte
+    getZonesByFleet: async (fleetId: string): Promise<any[]> => {
+    const { data } = await apiClient.get<any[]>(`/geofence/fleet/${fleetId}`, {
+      params: { _t: Date.now() } // Force le rafraîchissement réseau
+    });
+    return data;
   }
 };```
 
@@ -18772,7 +18861,10 @@ export const driverService = {
    */
   removeFromFleet: async (fleetId: UUID, userId: UUID): Promise<void> => {
     await apiClient.delete(`/fleets/${fleetId}/drivers/${userId}`);
-  }
+  },
+
+ 
+
 };```
 
 ---
@@ -18824,6 +18916,19 @@ export const fleetService = {
    getAllFleets: async (): Promise<Fleet[]> => {
     const { data } = await apiClient.get<Fleet[]>("/fleets");
     return data;
+  },
+  assignVehicle: async (fleetId: string, vehicleId: string): Promise<void> => {
+    await apiClient.post(`/fleets/${fleetId}/vehicles`, { vehicleId });
+  },
+
+  // 10c. Recruter un chauffeur (par email/username)
+  recruitDriver: async (fleetId: string, identifier: string): Promise<void> => {
+    await apiClient.post(`/fleets/${fleetId}/drivers`, { identifier });
+  },
+  
+  // Détacher (optionnel pour la gestion)
+  detachVehicle: async (fleetId: string, vehicleId: string): Promise<void> => {
+    await apiClient.delete(`/fleets/${fleetId}/vehicles/${vehicleId}`);
   }
 };```
 
@@ -18875,71 +18980,74 @@ export const tripService = {
 ### Fichier : `./src/services/vehicle.service.ts`
 ```typescript
 import { apiClient } from "@/lib/api-client";
-import { 
-  Vehicle, 
-  CreateVehicleDto, 
-  VehiclePatchRequest, 
-  OperationalParameters 
-} from "@/types/vehicle.types";
+import { Vehicle, CreateVehicleDto, ResourceCatalog } from "@/types/vehicle.types";
 import { UUID } from "@/types/base.types";
 
 export const vehicleService = {
-  /**
-   * 09a. Lister les véhicules du manager
-   */
+  // --- 09a. GESTION DU PARC ---
   getAll: async (): Promise<Vehicle[]> => {
     const { data } = await apiClient.get<Vehicle[]>("/vehicles");
     return data;
   },
 
-  /**
-   * Récupérer le "Master Object" (Détails complets + Paramètres agrégés)
-   */
   getById: async (id: UUID): Promise<Vehicle> => {
     const { data } = await apiClient.get<Vehicle>(`/vehicles/${id}`);
     return data;
   },
+  // Récupérer les véhicules filtrés par flotte
+  getByFleet: async (fleetId: string): Promise<Vehicle[]> => {
+    const { data } = await apiClient.get<Vehicle[]>(`/fleets/${fleetId}/vehicles`);
+    return data;
+  },
 
-  /**
-   * Créer un véhicule (Utilise les UUIDs des référentiels)
-   */
   create: async (payload: CreateVehicleDto): Promise<Vehicle> => {
     const { data } = await apiClient.post<Vehicle>("/vehicles", payload);
     return data;
   },
 
-  /**
-   * 09b. Gestion des Médias (Multipart/form-data)
-   * Type: 'vin' (Châssis) ou 'registration' (Carte Grise)
-   */
-  uploadAdminDoc: async (vehicleId: UUID, type: 'vin' | 'registration', file: File): Promise<void> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    await apiClient.put(`/vehicles/${vehicleId}/media/${type}`, formData);
+  delete: async (id: UUID): Promise<void> => {
+    await apiClient.delete(`/vehicles/${id}`);
   },
 
-  /**
-   * Ajouter une photo à la galerie d'illustration (Relation 1-N)
-   */
-  addGalleryImage: async (vehicleId: UUID, file: File): Promise<void> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    await apiClient.post(`/vehicles/${vehicleId}/media/gallery`, formData);
+  updateFinancial: async (id: UUID, params: any): Promise<void> => {
+    await apiClient.put(`/vehicles/${id}/financial-parameters`, params);
   },
 
-  /**
-   * 09c. Récupérer la télémétrie en temps réel
-   */
-  getLiveStatus: async (vehicleId: UUID): Promise<OperationalParameters> => {
-    const { data } = await apiClient.get<OperationalParameters>(`/vehicles/${vehicleId}/operational`);
+  updateMaintenance: async (id: UUID, params: any): Promise<void> => {
+    await apiClient.put(`/vehicles/${id}/maintenance-parameters`, params);
+  },
+
+  // --- 09b. MÉDIAS & DOCUMENTS (Noms synchronisés avec l'UI) ---
+  uploadAdminDoc: async (id: UUID, type: 'vin' | 'registration', file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    await apiClient.put(`/vehicles/${id}/media/${type}`, formData);
+  },
+
+  addGalleryImage: async (id: UUID, file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    await apiClient.post(`/vehicles/${id}/media/gallery`, formData);
+  },
+
+  deleteGalleryImage: async (vehicleId: UUID, imageId: string): Promise<void> => {
+    await apiClient.delete(`/vehicles/${vehicleId}/media/gallery/${imageId}`);
+  },
+
+  // --- 09c. OPÉRATIONNEL (DRIVER) ---
+  getOperationalData: async (id: UUID): Promise<any> => {
+    const { data } = await apiClient.get(`/vehicles/${id}/operational`);
     return data;
   },
 
-  /**
-   * Supprimer définitivement un véhicule
-   */
-  delete: async (id: UUID): Promise<void> => {
-    await apiClient.delete(`/vehicles/${id}`);
+  patchOperationalData: async (id: UUID, updates: any): Promise<void> => {
+    await apiClient.patch(`/vehicles/${id}/operational`, updates);
+  },
+
+  // --- 09d. RÉFÉRENTIELS ---
+  getResourceCatalog: async (): Promise<ResourceCatalog> => {
+    const { data } = await apiClient.get<ResourceCatalog>("/vehicles/resources/all");
+    return data;
   }
 };```
 
@@ -19426,6 +19534,7 @@ export interface Fleet {
   managerUserId: UUID;
   vehicleCount: number; // Calculé par le backend
   phoneNumber?: string; // Contact dispatch
+  zoneCount?: number;
    managerName?: string;
   managerEmail?: string;
 }
@@ -19687,23 +19796,15 @@ export interface CreateAdminRequest {
 ```typescript
 import { UUID, DateString } from "./base.types";
 
-/**
- * ========================================================================
- * 1. RÉFÉRENTIELS SOUVERAINS (LOOKUPS)
- * Ces types correspondent aux tables gérées par l'Admin (Marques, Couleurs...)
- * ========================================================================
- */
+export type VehicleStatus = "AVAILABLE" | "ON_TRIP" | "MAINTENANCE";
 
 export interface ResourceItem {
   id: UUID;
-  code: string;   // Identifiant technique (ex: "TOYOTA")
-  label: string;  // Libellé affiché (ex: "Toyota Motors")
+  code: string;
+  label: string;
   description?: string;
 }
 
-/**
- * Catalogue complet renvoyé par /api/v1/vehicles/resources/all
- */
 export interface ResourceCatalog {
   vehicleTypes: ResourceItem[];
   manufacturers: ResourceItem[];
@@ -19716,106 +19817,35 @@ export interface ResourceCatalog {
   colors: ResourceItem[];
 }
 
-/**
- * ========================================================================
- * 2. PARAMÈTRES DÉTAILLÉS (RELATIONS 1-1)
- * ========================================================================
- */
-
-export interface FinancialParameters {
-  insuranceNumber?: string;
-  insuranceExpiryDate?: DateString;
-  registrationDate?: DateString;
-  purchaseDate?: DateString;
-  depreciationRate?: number; // Taux d'amortissement en %
-  costPerKm?: number;        // Coût estimé au kilomètre
-}
-
-export type EngineStatus = "OK" | "NEEDS_SERVICE" | "OUT_OF_SERVICE";
-export type MaintenanceStatus = "UP_TO_DATE" | "PENDING" | "OVERDUE";
-
-export interface MaintenanceParameters {
-  lastMaintenanceDate?: DateString;
-  nextMaintenanceDue?: DateString;
-  engineStatus: EngineStatus;
-  batteryHealth: number; // Pourcentage 0-100
-  maintenanceStatus: MaintenanceStatus;
-}
-
-export interface OperationalParameters {
-  status: boolean;           // true = en service, false = hors service
-  currentSpeed: number;      // km/h
-  fuelLevel: string;         // ex: "75%"
-  mileage: number;           // Kilométrage total
-  odometerReading: number;   // Lecture odomètre
-  bearing: number;           // Direction (0-360°)
-  timestamp: string;         // Dernière mise à jour télémétrie
-  currentLocation?: {
-    latitude: number;
-    longitude: number;
-  };
-}
-
-/**
- * ========================================================================
- * 3. MODÈLE VÉHICULE PRINCIPAL (MASTER OBJECT)
- * ========================================================================
- */
-
-export type VehicleStatus = "AVAILABLE" | "ON_TRIP" | "MAINTENANCE";
-
 export interface Vehicle {
   id: UUID;
-  fleetId: UUID | null;      // Null si le véhicule est indépendant
-  managerId: UUID;           // Propriétaire (Fleet Manager)
+  fleetId: UUID | null;
+  managerId: UUID;
   currentDriverId: UUID | null;
-  vehicleTypeId: UUID;       // Lien vers le référentiel type
-
-  // Identification
-  licensePlate: string;      // Plaque d'immatriculation unique
-  vehicleSerialNumber: string; // VIN / Numéro de châssis
-
-  // Caractéristiques issues des référentiels
+  vehicleTypeId: UUID;
+  licensePlate: string;
+  vehicleSerialNumber: string;
   brand: string;
   model: string;
   manufacturingYear: number;
   transmissionType: string;
   fuelType: string;
   color: string;
-  
-  // Capacités techniques
   tankCapacity: number;
   totalSeatNumber: number;
   averageFuelConsumption: number;
-
-  // Statut opérationnel global
   status: VehicleStatus;
-
-  // Médias et Documents (URLs)
   photoUrl?: string;
   serialNumberPhotoUrl?: string;
   registrationPhotoUrl?: string;
-  illustrationImages: string[]; // Galerie photo (Relation 1-N)
-
-  // Sous-objets agrégés par le backend
-  financialParameters?: FinancialParameters;
-  maintenanceParameters?: MaintenanceParameters;
-  operationalParameters?: OperationalParameters;
-
-  // Identifiant technique pour le moteur de Geofencing
+  illustrationImages: string[];
+  // Paramètres agrégés
+  financialParameters?: any; 
+  maintenanceParameters?: any;
+  operationalParameters?: any;
   geofenceRemoteId?: string;
 }
 
-/**
- * ========================================================================
- * 4. DTOS (DATA TRANSFER OBJECTS) POUR LES REQUÊTES
- * ========================================================================
- */
-
-/**
- * Payload pour la création (POST /api/v1/vehicles)
- * Utilise exclusivement des UUIDs pour les ressources
- */
 export interface CreateVehicleDto {
   vehicleTypeId: UUID;
   manufacturerId: UUID;
@@ -19832,18 +19862,6 @@ export interface CreateVehicleDto {
   tankCapacity: number;
   totalSeatNumber: number;
   averageFuelConsumption: number;
-}
-
-/**
- * Payload pour la mise à jour partielle (PATCH /api/v1/vehicles/{id})
- */
-export interface VehiclePatchRequest {
-  brand?: string;
-  model?: string;
-  licensePlate?: string;
-  vehicleSerialNumber?: string;
-  color?: string;
-  status?: VehicleStatus;
 }```
 
 ---

@@ -23,24 +23,24 @@ export const TripProvider = ({ children }: { children: React.ReactNode }) => {
   // 🔄 RECOVERY : Au chargement, on vérifie si une course est déjà en cours sur le serveur
   useEffect(() => {
     const initTrip = async () => {
-      const activeTrip = await tripService.getMyActiveTrip();
-      if (activeTrip) {
-        setCurrentTrip(activeTrip);
-        startTelemetryLoop(activeTrip.id);
+      try {
+        const activeTrip = await tripService.getMyActiveTrip();
+        if (activeTrip) {
+          setCurrentTrip(activeTrip);
+          startTelemetryLoop(activeTrip.id);
+        }
+      } catch (e) {
+        console.error("Erreur recovery trip");
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     initTrip();
     return () => stopTelemetryLoop();
   }, []);
 
-  /**
-   * Démarre la boucle d'envoi GPS (Télémétrie)
-   */
   const startTelemetryLoop = (tripId: string) => {
     stopTelemetryLoop();
-    log("📡 Démarrage de la télémétrie GPS...");
-
     telemetryInterval.current = setInterval(() => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -51,11 +51,11 @@ export const TripProvider = ({ children }: { children: React.ReactNode }) => {
               speed: pos.coords.speed || 0
             }).catch(err => console.error("Erreur télémétrie:", err));
           },
-          (err) => console.warn("GPS non disponible:", err.message),
+          (err) => console.warn("GPS non disponible"),
           { enableHighAccuracy: true }
         );
       }
-    }, 10000); // Envoi toutes les 10 secondes (aligné sur le backend)
+    }, 10000); // 10 secondes
   };
 
   const stopTelemetryLoop = () => {
@@ -82,7 +82,7 @@ export const TripProvider = ({ children }: { children: React.ReactNode }) => {
       const finalTrip = await tripService.endTrip(currentTrip.id);
       stopTelemetryLoop();
       setCurrentTrip(null);
-      toast.success(`Course terminée. Distance : ${finalTrip.distanceKm} km.`);
+      toast.success(`Course terminée. Distance : ${finalTrip.distanceKm?.toFixed(1)} km.`);
     } catch (err: any) {
       toast.error("Erreur lors de la clôture", { description: err.detail });
     }
@@ -100,5 +100,3 @@ export const useTrip = () => {
   if (!context) throw new Error('useTrip doit être utilisé dans un TripProvider');
   return context;
 };
-
-function log(msg: string) { console.log(`%c[TRIP] ${msg}`, "color: #136dec; font-weight: bold;"); }

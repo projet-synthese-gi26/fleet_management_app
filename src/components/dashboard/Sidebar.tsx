@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   LayoutDashboard, Truck, Users, ShieldCheck, 
   Settings, LogOut, Building2, MapPin, UserCog, 
-  ChevronLeft, Activity, ChevronRight
+  ChevronLeft, Activity, ChevronRight, Route
 } from "lucide-react";
 
 interface SidebarProps {
@@ -149,6 +149,7 @@ const MENU_CONFIG = [
         { icon: Building2, label: "Mes Flottes", path: "/dashboard/fleets" },
         { icon: Truck, label: "Véhicules", path: "/dashboard/vehicles" },
         { icon: Users, label: "Chauffeurs", path: "/dashboard/drivers" },
+        { icon: Route, label: "Trajets", path: "/dashboard/trips" }, 
         { icon: MapPin, label: "Geofencing", path: "/dashboard/geofencing" }
       ]
     }

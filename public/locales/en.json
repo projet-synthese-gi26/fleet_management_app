@@ -14,7 +14,10 @@
     "copyright": "© 2024 Logistics Cameroon",
     "cancel": "Cancel",
     "add": "Add",
-    "close": "Close"
+    "close": "Close",
+    "next": "Next",
+    "back": "Back",
+    "chooseFile": "Choose File"
   },
   "landing": {
     "hero_title": "Total Control Over Your Fleet. Anywhere in Cameroon.",
@@ -156,7 +159,27 @@
     "fullNamePlaceholder": "Enter your full name",
     "passwordMismatch": "Passwords do not match.",
     "signupSuccess": "Signup successful! You can now log in.",
-    "signupError": "Signup failed. Please try again later."
+    "signupError": "Signup failed. Please try again later.",
+    "identifierPlaceholder": "Ex: m.mbarga@yowyob.cm ou m.mbarga",
+  "firstNamePlaceholder": "Ex: Ibrahim",
+  "lastNamePlaceholder": "Ex: Kamga",
+  "usernamePlaceholder": "Ex: i.kamga",
+  "phonePlaceholder": "Ex: +237 6xx xxx xxx",
+    "firstNameLabel": "First Name",
+    "lastNameLabel": "Last Name",
+    "usernameLabel": "Username",
+    "phoneLabel": "Phone",
+    "errorFirstNameRequired": "First name is required.",
+    "errorLastNameRequired": "Last name is required.",
+    "errorUsernameRequired": "Username is required.",
+    "errorUsernameShort": "At least 3 characters.",
+    "errorEmailRequired": "Email is required.",
+    "errorEmailInvalid": "Invalid email format.",
+    "errorRoleRequired": "Please select a role.",
+    "errorPasswordRequired": "Password is required.",
+    "errorPasswordShort": "At least 6 characters.",
+    "errorPasswordsMismatch": "Passwords do not match."
+  
   },
   "driverDashboardPage": {
     "modalReportIssueTitle": "Report an Issue",

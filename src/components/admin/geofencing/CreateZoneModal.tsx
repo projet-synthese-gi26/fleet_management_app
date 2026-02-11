@@ -13,10 +13,11 @@ interface Props {
   onClose: () => void;
   geometry: any; // Données spatiales temporaires
   fleets: Fleet[];
+  managerId: string;
   onSuccess: () => void;
 }
 
-export function CreateZoneModal({ isOpen, onClose, geometry, fleets, onSuccess }: Props) {
+export function CreateZoneModal({ isOpen, onClose, geometry, fleets, managerId, onSuccess }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     title: "",
@@ -33,7 +34,7 @@ export function CreateZoneModal({ isOpen, onClose, geometry, fleets, onSuccess }
 
     try {
       // 1. Création de la zone
-      const payload = { ...form, ...geometry };
+      const payload = { ...form, ...geometry, fleetManagerId : managerId };
       const newZone = await geofenceService.createZone(payload);
 
       // 2. Assignation immédiate à la flotte si sélectionnée

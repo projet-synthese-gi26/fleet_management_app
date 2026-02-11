@@ -39,5 +39,10 @@ export const fleetService = {
    */
   deleteFleet: async (id: string): Promise<void> => {
     await apiClient.delete(`/fleets/${id}`);
+  },
+
+   getAllFleets: async (): Promise<Fleet[]> => {
+    const { data } = await apiClient.get<Fleet[]>("/fleets");
+    return data;
   }
 };

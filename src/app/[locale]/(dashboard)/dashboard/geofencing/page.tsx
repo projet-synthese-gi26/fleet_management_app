@@ -9,10 +9,12 @@ import { Fleet } from "@/types/fleet.types";
 import { toast } from "sonner";
 import { Shield, MapPin, Trash2, Layers } from "lucide-react";
 import { CreateZoneModal } from "@/components/admin/geofencing/CreateZoneModal";
+import { useAuth } from "@/contexts/AuthContext"; // Importez le hook auth
 
 const GeofenceMap = dynamic(() => import("@/components/map/GeofenceMap"), { ssr: false });
 
 export default function GeofencingPage() {
+  const { user } = useAuth(); 
   const [zones, setZones] = useState<GeofenceZone[]>([]);
   const [fleets, setFleets] = useState<Fleet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,7 +24,9 @@ export default function GeofencingPage() {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [z, f] = await Promise.all([geofenceService.getMyZones(), fleetService.listMyFleets()]);
+      const [z, f] = await Promise.all([
+        geofenceService.getMyZones(), 
+        fleetService.listMyFleets()]);
       setZones(z);
       setFleets(f);
     } catch (e) {
@@ -87,6 +91,7 @@ export default function GeofencingPage() {
           onClose={() => { setIsModalOpen(false); setTempGeometry(null); }}
           geometry={tempGeometry}
           fleets={fleets}
+          managerId={user?.id || ""}
           onSuccess={() => { loadData(); setIsModalOpen(false); setTempGeometry(null); }}
         />
       )}

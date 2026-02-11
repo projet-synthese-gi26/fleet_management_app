@@ -15,6 +15,7 @@ interface AuthContextType {
     login: (credentials: LoginRequest) => Promise<void>;
     register: (data: RegisterRequest) => Promise<void>;
     logout: () => void;
+    refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,6 +26,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const router = useRouter();
     const pathname = usePathname();
     const { locale } = useI18n();
+    const refreshUser = async () => {
+    try {
+        const updatedProfile = await accountService.getProfile();
+        setUser(updatedProfile);
+    } catch (error) {
+        console.error("Impossible de rafraîchir le profil");
+    }
+};
+
 
     // Initialisation : Vérifie si une session existe au chargement de la page
     useEffect(() => {
@@ -91,7 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout, refreshUser }}>
             {children}
         </AuthContext.Provider>
     );

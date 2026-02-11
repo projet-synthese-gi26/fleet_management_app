@@ -25,6 +25,8 @@ export interface User {
     licenceNumber?: string;      // Pour les Drivers
     vehicleId?: string;          // Pour les Drivers (véhicule assigné)
     service: string;             // Devrait être "FLEET_MANAGEMENT"
+     isActive: boolean;
+    lastLoginAt: string | null; 
 }
 
 export interface LoginResponse {

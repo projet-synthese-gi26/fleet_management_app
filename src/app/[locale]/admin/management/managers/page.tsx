@@ -8,11 +8,24 @@ import { Button } from "@/components/ui/Button";
 import { toast } from "sonner";
 import Link from "next/link";
 import { 
-  Building2, Mail, Phone, ShieldCheck, 
-  ShieldAlert, Search, RefreshCw, Users, Eye,
-  ChevronLeft, ChevronRight
+  Mail, Phone, ShieldCheck, 
+  ShieldAlert, Search, Users, Eye,
+  ChevronLeft, ChevronRight, Clock, Power, PlusCircle, X
 } from "lucide-react";
 import { useParams } from "next/navigation";
+import { ResourceModal } from "@/components/admin/resources/ResourceModal";
+
+const RESOURCE_CATEGORIES = [
+  { id: "vehicle-types", label: "Type de véhicule" },
+  { id: "manufacturers", label: "Constructeur" },
+  { id: "brands", label: "Marque" },
+  { id: "models", label: "Modèle" },
+  { id: "fuel-types", label: "Carburant" },
+  { id: "colors", label: "Couleur" },
+  { id: "sizes", label: "Gabarit" },
+  { id: "usages", label: "Usage" },
+  { id: "transmissions", label: "Transmission" },
+];
 
 export default function AdminManagersPage() {
   const { locale } = useParams();
@@ -20,9 +33,12 @@ export default function AdminManagersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   
-  // --- PAGINATION ---
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+
+  // Gestion des ressources
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<{id: string, label: string} | null>(null);
 
   const fetchManagers = async () => {
     try {
@@ -40,126 +56,127 @@ export default function AdminManagersPage() {
 
   const handleToggleStatus = async (manager: FleetManager) => {
     try {
-      await adminManagementService.toggleManagerStatus(manager.userId);
-      toast.success(`Statut de ${manager.companyName} mis à jour`);
+      await adminManagementService.toggleManagerStatus(manager.id);
+      toast.success(`Statut mis à jour`);
       fetchManagers(); 
     } catch (error: any) {
       toast.error("Action échouée");
     }
   };
 
-  // --- LOGIQUE DE FILTRAGE ET PAGINATION ---
   const filteredManagers = managers.filter(m => 
-    m.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.email.toLowerCase().includes(searchTerm.toLowerCase())
+    m.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredManagers.length / pageSize);
-  const paginatedManagers = filteredManagers.slice(
-    (currentPage - 1) * pageSize, 
-    currentPage * pageSize
-  );
+  const paginatedManagers = filteredManagers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* HEADER & STATS */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-black text-text-primary tracking-tight">Gestion des Managers</h1>
-          <p className="text-text-secondary">Supervisez les entreprises et leurs flottes actives.</p>
+          <p className="text-text-secondary">Supervisez les entreprises et gérez les ressources système.</p>
         </div>
-        <div className="bg-primary/5 border border-primary/10 p-4 rounded-2xl flex items-center gap-4">
+        <div className="bg-primary/5 border border-primary/10 p-4 rounded-2xl flex items-center gap-4 shadow-sm">
           <div className="size-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
-            <Building2 size={20} />
+            <Users size={20} />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-text-tertiary uppercase">Total Entreprises</p>
+            <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Total Managers</p>
             <p className="text-xl font-black text-text-primary">{managers.length}</p>
           </div>
         </div>
       </div>
 
-      {/* BARRE DE RECHERCHE */}
       <div className="relative max-w-md">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary" size={18} />
         <input 
           type="text"
-          placeholder="Rechercher une entreprise, un nom ou email..."
+          placeholder="Rechercher un manager..."
           className="w-full pl-12 pr-4 py-3 rounded-xl border border-border-default bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all"
           value={searchTerm}
           onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
         />
       </div>
 
-      {/* TABLEAU */}
-      <div className="bg-surface rounded-2xl border border-border-default shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         {isLoading ? (
-          <TableSkeleton rows={10} columns={5} />
+          <TableSkeleton rows={10} columns={4} />
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
-                <thead className="bg-background-secondary/50 border-b border-border-default">
+                <thead className="bg-slate-50 border-b border-slate-100">
                   <tr>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Entreprise / Manager</th>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Contact</th>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary text-center">Flottes</th>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Statut</th>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary text-right">Actions</th>
+                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Entreprise / Manager</th>
+                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Contact</th>
+                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Statut & Connexion</th>
+                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border-default">
+                <tbody className="divide-y divide-slate-100">
                   {paginatedManagers.map((m) => (
-                    <tr key={m.userId} className="hover:bg-background-secondary/30 transition-colors group">
+                    <tr key={m.id} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="size-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 border border-border-default overflow-hidden">
+                          <div className="size-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 overflow-hidden shrink-0 border border-slate-200">
                             {m.photoUrl ? <img src={m.photoUrl} className="size-full object-cover" /> : <Users size={20} />}
                           </div>
-                          <div>
-                            <p className="font-bold text-text-primary">{m.companyName}</p>
-                            <p className="text-xs text-text-tertiary">{m.firstName} {m.lastName}</p>
+                          <div className="min-w-0">
+                            <p className="font-bold text-slate-800 truncate">{m.companyName}</p>
+                            <p className="text-xs text-slate-400 truncate">{m.firstName} {m.lastName}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="space-y-0.5">
-                          <p className="text-sm text-text-secondary flex items-center gap-2"><Mail size={12} /> {m.email}</p>
-                          <p className="text-xs text-text-tertiary flex items-center gap-2"><Phone size={12} /> {m.phone}</p>
+                          <p className="text-xs text-slate-600 flex items-center gap-2"><Mail size={12} className="text-slate-400" /> {m.email}</p>
+                          <p className="text-xs text-slate-400 flex items-center gap-2"><Phone size={12} className="text-slate-400" /> {m.phone}</p>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-black text-primary bg-primary/5 px-3 py-1 rounded-lg border border-primary/10">
-                          {m.fleetCount}
-                        </span>
-                      </td>
                       <td className="px-6 py-4">
-                        {/* CORRECTION LOGIQUE STATUT (Case Insensitive) */}
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase border ${
-                          m.status?.toUpperCase() === 'ACTIVE' 
-                            ? 'bg-success/10 text-success border-success/20' 
-                            : 'bg-error/10 text-error border-error/20'
-                        }`}>
-                          {m.status?.toUpperCase() === 'ACTIVE' ? <ShieldCheck size={12} /> : <ShieldAlert size={12} />}
-                          {m.status?.toUpperCase() === 'ACTIVE' ? 'Actif' : 'Suspendu'}
-                        </span>
+                        <div className="flex flex-col gap-1.5">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase border w-fit ${
+                            m.isActive 
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                              : 'bg-red-50 text-red-600 border-red-100'
+                          }`}>
+                            {m.isActive ? <ShieldCheck size={12} /> : <ShieldAlert size={12} />}
+                            {m.isActive ? 'Actif' : 'Suspendu'}
+                          </span>
+                          {m.lastLoginAt && (
+                            <p className="text-[9px] text-slate-400 flex items-center gap-1">
+                              <Clock size={10} /> {new Date(m.lastLoginAt).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-1">
                           <Link 
-                            href={`/${locale}/admin/management/managers/${m.userId}`}
-                            className="p-2 text-text-tertiary hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                            href={`/${locale}/admin/management/managers/${m.id}`}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
                           >
-                            <Eye size={18} />
+                            <Eye size={16} />
                           </Link>
+
+                          <button 
+                            onClick={() => setIsPickerOpen(true)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50 transition-all"
+                          >
+                            <PlusCircle size={16} />
+                          </button>
+
                           <button 
                             onClick={() => handleToggleStatus(m)}
-                            className={`p-2 rounded-lg transition-colors ${
-                              m.status?.toUpperCase() === 'ACTIVE' ? 'text-error hover:bg-error/10' : 'text-success hover:bg-success/10'
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
+                              m.isActive ? 'text-red-400 hover:bg-red-50' : 'text-emerald-400 hover:bg-emerald-50'
                             }`}
                           >
-                            <RefreshCw size={18} />
+                            <Power size={16} />
                           </button>
                         </div>
                       </td>
@@ -169,32 +186,53 @@ export default function AdminManagersPage() {
               </table>
             </div>
 
-            {/* --- BARRE DE PAGINATION --- */}
-            <div className="p-4 border-t border-border-default bg-background-secondary/30 flex items-center justify-between">
-              <p className="text-xs text-text-tertiary font-medium">
-                Affichage de {paginatedManagers.length} sur {filteredManagers.length} entreprises
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+              <p className="text-[10px] font-bold text-slate-400 uppercase">
+                {filteredManagers.length} Managers au total
               </p>
               <div className="flex items-center gap-2">
-                <button 
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(prev => prev - 1)}
-                  className="p-2 rounded-lg border border-border-default hover:bg-white disabled:opacity-30 transition-all"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <span className="text-xs font-bold px-4">Page {currentPage} / {totalPages || 1}</span>
-                <button 
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  onClick={() => setCurrentPage(prev => prev + 1)}
-                  className="p-2 rounded-lg border border-border-default hover:bg-white disabled:opacity-30 transition-all"
-                >
-                  <ChevronRight size={16} />
-                </button>
+                <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)} className="p-1.5 rounded-lg border border-slate-200 hover:bg-white disabled:opacity-30"><ChevronLeft size={16} /></button>
+                <span className="text-xs font-bold text-slate-600 px-2">Page {currentPage} / {totalPages || 1}</span>
+                <button disabled={currentPage === totalPages || totalPages === 0} onClick={() => setCurrentPage(prev => prev + 1)} className="p-1.5 rounded-lg border border-slate-200 hover:bg-white disabled:opacity-30"><ChevronRight size={16} /></button>
               </div>
             </div>
           </>
         )}
       </div>
+
+      {/* MODALE DE SÉLECTION DE TYPE DE RESSOURCE */}
+      {isPickerOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-scale-in">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-black text-slate-800">Ajouter une ressource</h3>
+              <button onClick={() => setIsPickerOpen(false)} className="p-2 hover:bg-slate-100 rounded-full"><X size={20}/></button>
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              {RESOURCE_CATEGORIES.map(cat => (
+                <button 
+                  key={cat.id}
+                  onClick={() => { setActiveCategory(cat); setIsPickerOpen(false); }}
+                  className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 hover:border-primary hover:bg-primary/5 transition-all group"
+                >
+                  <span className="text-sm font-bold text-slate-600 group-hover:text-primary">{cat.label}</span>
+                  <PlusCircle size={18} className="text-slate-300 group-hover:text-primary" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODALE DE CRÉATION RÉELLE */}
+      {activeCategory && (
+        <ResourceModal 
+          isOpen={true} 
+          onClose={() => setActiveCategory(null)} 
+          category={activeCategory} 
+          onSuccess={() => { toast.success("Ressource ajoutée"); setActiveCategory(null); }} 
+        />
+      )}
     </div>
   );
 }

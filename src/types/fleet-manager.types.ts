@@ -1,16 +1,15 @@
 import { UUID } from "./base.types";
 
-/**
- * Représente un gestionnaire de flotte (Client B2B) vu par l'administrateur
- */
 export interface FleetManager {
-  userId: UUID;
+  id: UUID;            // Changé de userId à id pour matcher le JSON
+  username: string;    // Ajouté (présent dans le JSON)
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  companyName: string;      // Nom de l'entreprise (Souveraineté fleet.fleet_managers)
-  status: 'ACTIVE' | 'INACTIVE'; // Statut du compte
-  fleetCount: number;       // Nombre réel de flottes gérées (calculé par le backend)
+  companyName: string;
+  isActive: boolean;   // Ajouté (via notre modif backend)
+  lastLoginAt: string | null; 
   photoUrl?: string;
+  fleetCount: number;  // Sera à 0 tant qu'on ne modifie pas le service, mais le type est prêt
 }

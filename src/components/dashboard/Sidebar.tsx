@@ -126,11 +126,11 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, closeMobile
 
 const MENU_CONFIG = [
     { 
-      title: "Supervision",
+      title: "Supervision et Gestion des admins",
       roles: ['SUPER_ADMIN', 'FLEET_SUPER_ADMIN'],
       items: [
         { icon: ShieldCheck, label: "Administrateurs", path: "/admin/super/admins" },
-        { icon: Activity, label: "Santé Système", path: "/admin/diagnostic" }
+        { icon: Activity, label: "Santé du Système", path: "/admin/diagnostic" }
       ]
     },
     { 

@@ -55,5 +55,8 @@ export const driverService = {
    */
   removeFromFleet: async (fleetId: UUID, userId: UUID): Promise<void> => {
     await apiClient.delete(`/fleets/${fleetId}/drivers/${userId}`);
-  }
+  },
+
+ 
+
 };

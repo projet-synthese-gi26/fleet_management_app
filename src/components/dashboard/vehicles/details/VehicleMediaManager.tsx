@@ -1,77 +1,46 @@
 "use client";
-
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { vehicleService } from "@/services/vehicle.service";
-import { Vehicle } from "@/types/vehicle.types";
 import { toast } from "sonner";
-import { Upload, Trash2, FileText, CheckCircle, Image as ImageIcon, Plus, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Upload, Trash2, Image as ImageIcon, Loader2, FileCheck, Plus } from "lucide-react";
 
-interface Props {
-  vehicle: Vehicle;
-  onUpdate: () => void;
-  readOnly?: boolean;
-}
+export default function VehicleMediaManager({ vehicle, onUpdate, readOnly }: any) {
+  const [loading, setLoading] = useState<string | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
-export default function VehicleMediaManager({ vehicle, onUpdate, readOnly }: Props) {
-  const [uploadingType, setUploadingType] = useState<string | null>(null);
-
-  // Gère l'upload pour les docs administratifs
-  const handleAdminUpload = async (type: 'vin' | 'registration', file: File) => {
-    setUploadingType(type);
+  const handleUpload = async (type: 'vin' | 'registration' | 'gallery', file: File) => {
+    setLoading(type);
     try {
-      await vehicleService.uploadMedia(vehicle.id, type, file);
-      toast.success(`${type === 'vin' ? 'Photo VIN' : 'Carte Grise'} mise à jour`);
+      if (type === 'gallery') {
+        await vehicleService.addGalleryImage(vehicle.id, file);
+        toast.success("Image ajoutée à la galerie");
+      } else {
+        await vehicleService.uploadAdminDoc(vehicle.id, type, file);
+        toast.success("Document administratif mis à jour");
+      }
       onUpdate();
     } catch (e: any) {
-      toast.error("Erreur d'upload", { description: e.status === 413 ? "Fichier trop lourd (>2Mo)" : e.detail });
+      toast.error("Erreur d'upload", { description: e.detail || "Vérifiez la taille du fichier" });
     } finally {
-      setUploadingType(null);
+      setLoading(null);
+      // Reset de l'input pour permettre de re-sélectionner le même fichier si besoin
+      if (galleryInputRef.current) galleryInputRef.current.value = "";
     }
   };
 
-  // Gère l'ajout à la galerie
-  const handleGalleryAdd = async (file: File) => {
-    setUploadingType('gallery');
-    try {
-      await vehicleService.addToGallery(vehicle.id, file);
-      toast.success("Image ajoutée à la galerie");
-      onUpdate();
-    } catch (e: any) {
-      toast.error("Erreur galerie", { description: e.detail });
-    } finally {
-      setUploadingType(null);
-    }
-  };
-
-  const AdminMediaCard = ({ title, url, type }: { title: string, url?: string, type: 'vin' | 'registration' }) => (
-    <div className="bg-surface p-5 rounded-2xl border border-border-default space-y-4">
+  const DocCard = ({ title, url, type }: any) => (
+    <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
       <div className="flex justify-between items-center">
-        <h4 className="text-xs font-bold uppercase tracking-widest text-text-secondary">{title}</h4>
-        {url && <CheckCircle size={16} className="text-success" />}
+        <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{title}</h4>
+        {url && <FileCheck size={16} className="text-emerald-500" />}
       </div>
-      
-      <div className="aspect-video relative rounded-xl bg-background-secondary border-2 border-dashed border-border-default flex flex-col items-center justify-center overflow-hidden group">
-        {url ? (
-          <>
-            <img src={url} className="object-cover size-full" alt={title} />
-            {!readOnly && (
-              <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 backdrop-blur-sm">
-                <Upload className="text-white mb-2" />
-                <span className="text-white text-xs font-bold">Remplacer</span>
-                <input type="file" className="hidden" accept="image/*" 
-                       onChange={(e) => e.target.files?.[0] && handleAdminUpload(type, e.target.files[0])} />
-              </label>
-            )}
-          </>
-        ) : (
-          <label className={`flex flex-col items-center gap-2 p-4 text-center ${readOnly ? "" : "cursor-pointer hover:bg-background-tertiary transition-colors w-full h-full justify-center"}`}>
-            {uploadingType === type ? <Loader2 className="animate-spin text-primary" /> : <Upload className="text-text-tertiary" />}
-            <span className="text-xs text-text-tertiary font-medium">
-                {readOnly ? "Aucun document" : "Cliquez pour uploader"}
-            </span>
-            {!readOnly && <input type="file" className="hidden" accept="image/*" 
-                                onChange={(e) => e.target.files?.[0] && handleAdminUpload(type, e.target.files[0])} />}
+      <div className="aspect-video bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden relative group">
+        {url ? <img src={url} className="size-full object-cover" alt={title} /> : <Upload className="text-slate-300" />}
+        {!readOnly && (
+          <label className="absolute inset-0 bg-primary/80 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-all text-white backdrop-blur-sm">
+            {loading === type ? <Loader2 className="animate-spin" /> : <Upload size={24} />}
+            <span className="text-[10px] font-black mt-2 tracking-widest">REMPLACER</span>
+            <input type="file" className="hidden" accept="image/*" onChange={e => e.target.files?.[0] && handleUpload(type, e.target.files[0])} />
           </label>
         )}
       </div>
@@ -80,54 +49,61 @@ export default function VehicleMediaManager({ vehicle, onUpdate, readOnly }: Pro
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* 1. Documents Officiels */}
+      {/* 1. Documents Administratifs */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <AdminMediaCard title="Photo du Châssis (VIN)" url={vehicle.serialNumberPhotoUrl} type="vin" />
-        <AdminMediaCard title="Carte Grise / Immatriculation" url={vehicle.registrationPhotoUrl} type="registration" />
+        <DocCard title="Photo du Châssis (VIN)" url={vehicle.serialNumberPhotoUrl} type="vin" />
+        <DocCard title="Carte Grise / Immatriculation" url={vehicle.registrationPhotoUrl} type="registration" />
       </div>
-
+      
       {/* 2. Galerie d'illustration */}
-      <div className="bg-surface p-6 rounded-2xl border border-border-default space-y-6">
-        <div className="flex justify-between items-center border-b border-border-default pb-4">
-          <div className="flex items-center gap-3">
-            <ImageIcon className="text-primary" size={20} />
-            <h4 className="text-sm font-bold uppercase tracking-wider text-text-primary">Galerie d'illustration</h4>
+      <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h4 className="text-sm font-black uppercase text-slate-800 flex items-center gap-2">
+              <ImageIcon size={20} className="text-primary" /> Galerie d'illustration
+            </h4>
+            <p className="text-xs text-slate-400 mt-1">Photos du véhicule sous différents angles</p>
           </div>
           {!readOnly && (
-            <label className="relative flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg text-xs font-bold cursor-pointer hover:bg-primary/20 transition-colors">
-               {uploadingType === 'gallery' ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-               AJOUTER UNE PHOTO
-               <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleGalleryAdd(e.target.files[0])} />
+            <label className="cursor-pointer bg-primary text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg hover:shadow-primary/30 transition-all flex items-center gap-2">
+              {loading === 'gallery' ? <Loader2 size={14} className="animate-spin" /> : <Plus size={16} />}
+              Ajouter une photo
+              <input 
+                ref={galleryInputRef}
+                type="file" 
+                className="hidden" 
+                accept="image/*" 
+                onChange={e => e.target.files?.[0] && handleUpload('gallery', e.target.files[0])} 
+              />
             </label>
           )}
         </div>
-        
-        {vehicle.illustrationImages?.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {vehicle.illustrationImages.map((imgUrl, idx) => (
-              <div key={idx} className="aspect-square relative rounded-xl overflow-hidden group border border-border-default shadow-sm hover:shadow-md transition-all">
-                <img src={imgUrl} className="object-cover size-full" alt="Illustration" />
+
+        {vehicle.illustrationImages && vehicle.illustrationImages.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+            {vehicle.illustrationImages.map((img: string, i: number) => (
+              <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-slate-100 relative group shadow-sm hover:shadow-md transition-all">
+                <img src={img} className="size-full object-cover" alt={`Illustration ${i}`} />
                 {!readOnly && (
                   <button 
-                    onClick={async () => {
-                        if(confirm("Supprimer cette image ?")) {
-                            await vehicleService.deleteGalleryImage(vehicle.id, idx.toString()); // Note: Assure-toi que le backend attend l'index ou un ID réel
-                            onUpdate();
-                            toast.success("Image supprimée");
-                        }
+                    onClick={() => {
+                      if(confirm("Supprimer cette image de la galerie ?")) {
+                        // Note: On passe l'index si le backend n'a pas d'ID unique par image dans ce flux
+                        vehicleService.deleteGalleryImage(vehicle.id, i.toString()).then(onUpdate);
+                      }
                     }}
-                    className="absolute top-2 right-2 p-2 bg-red-600/90 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all transform translate-y-[-10px] group-hover:translate-y-0"
+                    className="absolute top-3 right-3 p-2 bg-red-500 text-white rounded-xl opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 shadow-lg"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={16} />
                   </button>
                 )}
               </div>
             ))}
           </div>
         ) : (
-          <div className="py-12 flex flex-col items-center justify-center text-text-disabled border-2 border-dashed border-border-default rounded-xl">
-            <ImageIcon size={40} className="mb-2 opacity-20" />
-            <p className="text-sm font-medium">Aucune photo d'illustration</p>
+          <div className="py-16 flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-100 rounded-[2rem]">
+            <ImageIcon size={48} className="mb-4 opacity-20" />
+            <p className="text-sm font-bold uppercase tracking-widest">Aucune photo dans la galerie</p>
           </div>
         )}
       </div>

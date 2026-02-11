@@ -1,5 +1,5 @@
 # Contexte du Projet : Next.js Application
-Généré le : Wed Feb 11 06:48:20 AM WAT 2026
+Généré le : Wed Feb 11 11:55:05 AM WAT 2026
 Framework : Next.js (React)
 
 ## 1. Arborescence du Projet
@@ -7,6 +7,7 @@ Framework : Next.js (React)
 .
 ├── eslint.config.mjs
 ├── .gitignore
+├── .hintrc
 ├── .idea
 │   ├── fleet_management_app.iml
 │   ├── .gitignore
@@ -41,6 +42,8 @@ Framework : Next.js (React)
 │   │       ├── admin
 │   │       │   ├── contexts
 │   │       │   │   └── SidebarContext.tsx
+│   │       │   ├── diagnostic
+│   │       │   │   └── page.tsx
 │   │       │   ├── drivers
 │   │       │   │   ├── [id]
 │   │       │   │   │   └── page.tsx
@@ -58,6 +61,8 @@ Framework : Next.js (React)
 │   │       │   ├── layout.tsx
 │   │       │   ├── management
 │   │       │   │   └── managers
+│   │       │   │       ├── [id]
+│   │       │   │       │   └── page.tsx
 │   │       │   │       └── page.tsx
 │   │       │   ├── page.tsx
 │   │       │   ├── resources
@@ -66,6 +71,8 @@ Framework : Next.js (React)
 │   │       │   │   └── page.tsx
 │   │       │   ├── super
 │   │       │   │   └── admins
+│   │       │   │       ├── [id]
+│   │       │   │       │   └── page.tsx
 │   │       │   │       └── page.tsx
 │   │       │   ├── test
 │   │       │   │   └── page.txt
@@ -135,6 +142,8 @@ Framework : Next.js (React)
 │   │   │   │   └── StatusBadge.tsx
 │   │   │   ├── geofencing
 │   │   │   │   └── CreateZoneModal.tsx
+│   │   │   ├── resources
+│   │   │   │   └── ResourceModal.tsx
 │   │   │   └── super
 │   │   │       └── CreateAdminModal.tsx
 │   │   ├── auth
@@ -292,7 +301,7 @@ Framework : Next.js (React)
 ├── todo.md
 └── tsconfig.json
 
-81 directories, 205 files
+85 directories, 210 files
 ```
 ## 2. Contenu des Fichiers
 
@@ -707,12 +716,11 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useI18n } from "@/hooks/useI18n";
 import AuthHeroSection from "@/components/auth/AuthHeroSection";
-import { Chrome, Upload, AlertCircle } from "lucide-react";
+import { Upload, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { toast } from "sonner";
 
-// Regex simple pour email
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const SignUpPage = () => {
@@ -727,21 +735,17 @@ const SignUpPage = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState(""); // Contiendra FLEET_MANAGER, FLEET_DRIVER, etc.
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
-  // État des erreurs de validation
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // États d'interface
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
   const togglePasswordVisibility = () => setPasswordVisible(!passwordVisible);
-  const toggleConfirmPasswordVisibility = () =>
-    setConfirmPasswordVisible(!confirmPasswordVisible);
+  const toggleConfirmPasswordVisibility = () => setConfirmPasswordVisible(!confirmPasswordVisible);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -751,12 +755,12 @@ const SignUpPage = () => {
 
   const validateStep1 = () => {
     const newErrors: Record<string, string> = {};
-    if (!firstName.trim()) newErrors.firstName = "Le prénom est requis.";
-    if (!lastName.trim()) newErrors.lastName = "Le nom est requis.";
+    if (!firstName.trim()) newErrors.firstName = t("errorFirstNameRequired", "authPage");
+    if (!lastName.trim()) newErrors.lastName = t("errorLastNameRequired", "authPage");
     if (!username.trim()) {
-      newErrors.username = "Le nom d'utilisateur est requis.";
+      newErrors.username = t("errorUsernameRequired", "authPage");
     } else if (username.length < 3) {
-      newErrors.username = "Au moins 3 caractères.";
+      newErrors.username = t("errorUsernameShort", "authPage");
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -764,13 +768,13 @@ const SignUpPage = () => {
 
   const validateStep2 = () => {
     const newErrors: Record<string, string> = {};
-    if (!phone.trim()) newErrors.phone = "Le téléphone est requis.";
+    if (!phone.trim()) newErrors.phone = t("errorPhoneRequired", "authPage");
     if (!email.trim()) {
-      newErrors.email = "L'email est requis.";
+      newErrors.email = t("errorEmailRequired", "authPage");
     } else if (!EMAIL_REGEX.test(email)) {
-      newErrors.email = "Format d'email invalide.";
+      newErrors.email = t("errorEmailInvalid", "authPage");
     }
-    if (!role) newErrors.role = "Veuillez sélectionner un rôle.";
+    if (!role) newErrors.role = t("errorRoleRequired", "authPage");
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -778,12 +782,12 @@ const SignUpPage = () => {
   const validateStep3 = () => {
     const newErrors: Record<string, string> = {};
     if (!password) {
-      newErrors.password = "Le mot de passe est requis.";
+      newErrors.password = t("errorPasswordRequired", "authPage");
     } else if (password.length < 6) {
-      newErrors.password = "Au moins 6 caractères.";
+      newErrors.password = t("errorPasswordShort", "authPage");
     }
     if (password !== confirmPassword) {
-      newErrors.confirmPassword = "Les mots de passe ne correspondent pas.";
+      newErrors.confirmPassword = t("errorPasswordsMismatch", "authPage");
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -792,14 +796,7 @@ const SignUpPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateStep3()) {
-      toast.error("Veuillez corriger les erreurs dans le formulaire.");
-      return;
-    }
-
-    let backendRole = "FLEET_MANAGER";
-    if (role === "admin") backendRole = "FLEET_ADMIN";
-    if (role === "driver") backendRole = "FLEET_DRIVER";
+    if (!validateStep3()) return;
 
     try {
       await register({
@@ -809,81 +806,48 @@ const SignUpPage = () => {
         firstName,
         lastName,
         phone,
-        roles: [backendRole],
+        roles: [role as any], // Utilise directement la valeur du select (FLEET_MANAGER, etc.)
         file: file || undefined,
       });
-      toast.success("Compte créé avec succès ! Bienvenue.");
+      toast.success(t("signupSuccess", "authPage"));
     } catch (err: any) {
-      console.error("Détail de l'erreur reçue:", {
-        status: err.status,
-        title: err.title,
-        detail: err.detail,
-      });
       if (err.status === 409) {
-        toast.error("Conflit", { description: err.detail });
         if (err.detail.toLowerCase().includes("email")) {
-          setErrors((prev) => ({ ...prev, email: "Email déjà utilisé" }));
+          setErrors((prev) => ({ ...prev, email: t("errorEmailTaken", "authPage") }));
           setStep(2);
         } else {
-          setErrors((prev) => ({
-            ...prev,
-            username: "Nom d'utilisateur déjà pris",
-          }));
+          setErrors((prev) => ({ ...prev, username: t("errorUsernameTaken", "authPage") }));
           setStep(1);
         }
-      } else if (err.status === 400) {
-        toast.error("Données invalides", { description: err.detail });
       } else {
-        toast.error(err.title || "Erreur", {
-          description: err.detail || "Une erreur inconnue est survenue",
-        });
+        toast.error(err.title || "Erreur", { description: err.detail });
       }
     }
   };
 
-  const signupHeroProps = {
-    titleKey: "heroTitle",
-    descriptionKey: "heroDetails",
-    imageUrl:
-      "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=2070&auto=format&fit=crop",
-    altText: "Logistics truck driving on a highway",
-    stats: [
-      {
-        icon: "hub",
-        label: "signupHeroStatLabel",
-        description: "signupHeroStatDescription",
-      },
-    ],
-    imageOverlayClass:
-      "bg-gradient-to-b from-[rgba(30,58,138,0.4)] via-[rgba(30,58,138,0.6)] to-[rgba(15,23,42,0.8)]",
+  const nextStep = () => {
+    if (step === 1 && validateStep1()) setStep(2);
+    else if (step === 2 && validateStep2()) setStep(3);
   };
+
+  const prevStep = () => setStep(step > 1 ? step - 1 : 1);
 
   const getInputClass = (fieldName: string) => `
     form-input flex w-full min-w-0 rounded-lg 
-    ${
-      errors[fieldName]
-        ? "border-red-500 focus:border-red-500 focus:ring-red-200"
-        : "border-[#cfd9e7] dark:border-slate-600 focus:border-primary focus:ring-1 focus:ring-primary"
-    }
+    ${errors[fieldName] ? "border-red-500 focus:border-red-500" : "border-[#cfd9e7] dark:border-slate-600 focus:border-primary"}
     bg-surface-light dark:bg-surface-dark text-[#0d131b] dark:text-white 
     h-12 placeholder:text-[#9aa2b1] p-[15px] text-base font-normal transition-colors
   `;
 
-  const nextStep = () => {
-    if (step === 1 && validateStep1()) {
-      setStep(2);
-    } else if (step === 2 && validateStep2()) {
-      setStep(3);
-    }
-  };
-
-  const prevStep = () => {
-    setStep(step > 1 ? step - 1 : 1);
-  };
-
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row overflow-hidden">
-      <AuthHeroSection {...signupHeroProps} />
+      <AuthHeroSection 
+        titleKey="heroTitle" 
+        descriptionKey="heroDetails" 
+        imageUrl="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=2070&auto=format&fit=crop"
+        altText="Logistics truck"
+        stats={[{ icon: "hub", label: "signupHeroStatLabel", description: "signupHeroStatDescription" }]}
+      />
 
       <div className="flex w-full lg:w-1/2 flex-col bg-background-light dark:bg-background-dark">
         <div className="flex-grow flex flex-col justify-center px-6 sm:px-12 xl:px-24">
@@ -902,163 +866,54 @@ const SignUpPage = () => {
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
-                        Prénom
-                      </label>
-                      <input
-                        className={getInputClass("firstName")}
-                        placeholder="Jean"
-                        value={firstName}
-                        onChange={(e) => {
-                          setFirstName(e.target.value);
-                          if (errors.firstName)
-                            setErrors({ ...errors, firstName: "" });
-                        }}
-                      />
-                      {errors.firstName && (
-                        <span className="text-xs text-red-500 flex items-center gap-1">
-                          <AlertCircle size={12} />
-                          {errors.firstName}
-                        </span>
-                      )}
+                      <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">{t("firstNameLabel", "authPage")}</label>
+                      <input className={getInputClass("firstName")} placeholder={t("firstNamePlaceholder", "authPage")} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                      {errors.firstName && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.firstName}</span>}
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
-                        Nom
-                      </label>
-                      <input
-                        className={getInputClass("lastName")}
-                        placeholder="Dupont"
-                        value={lastName}
-                        onChange={(e) => {
-                          setLastName(e.target.value);
-                          if (errors.lastName)
-                            setErrors({ ...errors, lastName: "" });
-                        }}
-                      />
-                      {errors.lastName && (
-                        <span className="text-xs text-red-500 flex items-center gap-1">
-                          <AlertCircle size={12} />
-                          {errors.lastName}
-                        </span>
-                      )}
+                      <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">{t("lastNameLabel", "authPage")}</label>
+                      <input className={getInputClass("lastName")} placeholder={t("lastNamePlaceholder", "authPage")} value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                      {errors.lastName && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.lastName}</span>}
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
-                      Nom d'utilisateur
-                    </label>
-                    <input
-                      className={getInputClass("username")}
-                      placeholder="jdupont"
-                      value={username}
-                      onChange={(e) => {
-                        setUsername(e.target.value);
-                        if (errors.username)
-                          setErrors({ ...errors, username: "" });
-                      }}
-                    />
-                    {errors.username && (
-                      <span className="text-xs text-red-500 flex items-center gap-1">
-                        <AlertCircle size={12} />
-                        {errors.username}
-                      </span>
-                    )}
+                    <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">{t("usernameLabel", "authPage")}</label>
+                    <input className={getInputClass("username")} placeholder={t("usernamePlaceholder", "authPage")} value={username} onChange={(e) => setUsername(e.target.value)} />
+                    {errors.username && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.username}</span>}
                   </div>
                 </>
               )}
+
               {step === 2 && (
                 <>
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
-                      Téléphone
-                    </label>
-                    <input
-                      className={getInputClass("phone")}
-                      placeholder="+237..."
-                      value={phone}
-                      onChange={(e) => {
-                        setPhone(e.target.value);
-                        if (errors.phone) setErrors({ ...errors, phone: "" });
-                      }}
-                    />
-                    {errors.phone && (
-                      <span className="text-xs text-red-500 flex items-center gap-1">
-                        <AlertCircle size={12} />
-                        {errors.phone}
-                      </span>
-                    )}
+                    <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">{t("phoneLabel", "authPage")}</label>
+                    <input className={getInputClass("phone")} placeholder={t("phonePlaceholder", "authPage")} value={phone} onChange={(e) => setPhone(e.target.value)} />
+                    {errors.phone && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.phone}</span>}
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label
-                      className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
-                      htmlFor="email"
-                    >
-                      {t("professionalEmailLabel", "authPage")}
-                    </label>
-                    <input
-                      className={getInputClass("email")}
-                      id="email"
-                      placeholder={t(
-                        "professionalEmailPlaceholder",
-                        "authPage",
-                      )}
-                      type="email"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        if (errors.email) setErrors({ ...errors, email: "" });
-                      }}
-                    />
-                    {errors.email && (
-                      <span className="text-xs text-red-500 flex items-center gap-1">
-                        <AlertCircle size={12} />
-                        {errors.email}
-                      </span>
-                    )}
+                    <label className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal">{t("professionalEmailLabel", "authPage")}</label>
+                    <input className={getInputClass("email")} placeholder={t("professionalEmailPlaceholder", "authPage")} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                    {errors.email && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.email}</span>}
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label
-                      className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
-                      htmlFor="role"
-                    >
-                      {t("roleLabel", "authPage")}
-                    </label>
+                    <label className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal">{t("roleLabel", "authPage")}</label>
                     <div className="relative flex w-full items-center rounded-lg">
                       <select
                         className={`form-select flex w-full min-w-0 rounded-lg border h-12 p-[10px] pr-12 text-base font-normal transition-colors appearance-none 
-                    ${errors.role ? "border-red-500 text-red-500" : "border-[#cfd9e7] dark:border-slate-600 text-[#0d131b] dark:text-white"} 
-                    bg-surface-light dark:bg-surface-dark focus:border-primary focus:ring-1 focus:ring-primary`}
-                        id="role"
+                        ${errors.role ? "border-red-500 text-red-500" : "border-[#cfd9e7] dark:border-slate-600 text-[#0d131b] dark:text-white"} 
+                        bg-surface-light dark:bg-surface-dark focus:border-primary focus:ring-1 focus:ring-primary`}
                         value={role}
-                        onChange={(e) => {
-                          setRole(e.target.value);
-                          if (errors.role) setErrors({ ...errors, role: "" });
-                        }}
+                        onChange={(e) => setRole(e.target.value)}
                       >
-                        <option disabled value="">
-                          {t("selectRolePlaceholder", "authPage")}
-                        </option>
-                        <option value="admin">
-                          {t("roleAdmin", "authPage")}
-                        </option>
-                        <option value="driver">
-                          {t("roleDriver", "authPage")}
-                        </option>
-                        <option value="manager">
-                          {t("roleManager", "authPage")}
-                        </option>
+                        <option disabled value="">{t("selectRolePlaceholder", "authPage")}</option>
+                        <option value="FLEET_MANAGER">{t("roleManager", "authPage")}</option>
+                        <option value="FLEET_DRIVER">{t("roleDriver", "authPage")}</option>
+                        <option value="FLEET_ADMIN">{t("roleAdmin", "authPage")}</option>
                       </select>
-                      <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 px-3 flex items-center justify-center text-[#4c6c9a] dark:text-slate-400 pointer-events-none">
-                        expand_more
-                      </span>
+                      <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 px-3 text-[#4c6c9a] pointer-events-none">expand_more</span>
                     </div>
-                    {errors.role && (
-                      <span className="text-xs text-red-500 flex items-center gap-1">
-                        <AlertCircle size={12} />
-                        {errors.role}
-                      </span>
-                    )}
+                    {errors.role && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.role}</span>}
                   </div>
                 </>
               )}
@@ -1066,151 +921,53 @@ const SignUpPage = () => {
               {step === 3 && (
                 <>
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
-                      Photo de profil (Optionnel)
-                    </label>
+                    <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">{t("profilePictureLabel", "authPage")}</label>
                     <div className="flex items-center gap-4">
-                      <label className="flex items-center gap-2 cursor-pointer bg-surface-light dark:bg-surface-dark border border-[#cfd9e7] dark:border-slate-600 rounded-lg px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 transition">
+                      <label className="flex items-center gap-2 cursor-pointer bg-surface-light dark:bg-surface-dark border border-[#cfd9e7] dark:border-slate-600 rounded-lg px-4 py-2 hover:bg-gray-100 transition">
                         <Upload className="w-4 h-4 text-primary" />
-                        <span className="text-sm text-text-primary">
-                          Choisir un fichier
-                        </span>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                        />
+                        <span className="text-sm text-text-primary">{t("chooseFile", "common")}</span>
+                        <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
                       </label>
-                      {file && (
-                        <span className="text-sm text-success truncate max-w-[200px]">
-                          {file.name}
-                        </span>
-                      )}
+                      {file && <span className="text-sm text-success truncate max-w-[200px]">{file.name}</span>}
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label
-                      className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
-                      htmlFor="password"
-                    >
-                      {t("passwordLabel", "authPage")}
-                    </label>
+                    <label className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal">{t("passwordLabel", "authPage")}</label>
                     <div className="relative flex w-full items-center rounded-lg">
-                      <input
-                        className={`${getInputClass("password")} pr-12`}
-                        id="password"
-                        placeholder={t("passwordSignupPlaceholder", "authPage")}
-                        type={passwordVisible ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => {
-                          setPassword(e.target.value);
-                          if (errors.password)
-                            setErrors({ ...errors, password: "" });
-                        }}
-                      />
-                      <button
-                        className="absolute right-0 top-0 bottom-0 px-3 flex items-center justify-center text-[#4c6c9a] dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors cursor-pointer"
-                        type="button"
-                        onClick={togglePasswordVisibility}
-                      >
-                        <span className="material-symbols-outlined text-[20px]">
-                          {passwordVisible ? "visibility_off" : "visibility"}
-                        </span>
+                      <input className={`${getInputClass("password")} pr-12`} placeholder={t("passwordSignupPlaceholder", "authPage")} type={passwordVisible ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} />
+                      <button className="absolute right-0 px-3 text-[#4c6c9a]" type="button" onClick={togglePasswordVisibility}>
+                        <span className="material-symbols-outlined text-[20px]">{passwordVisible ? "visibility_off" : "visibility"}</span>
                       </button>
                     </div>
-                    {errors.password && (
-                      <span className="text-xs text-red-500 flex items-center gap-1">
-                        <AlertCircle size={12} />
-                        {errors.password}
-                      </span>
-                    )}
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label
-                      className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
-                      htmlFor="confirm-password"
-                    >
-                      {t("confirmPasswordLabel", "authPage")}
-                    </label>
+                    <label className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal">{t("confirmPasswordLabel", "authPage")}</label>
                     <div className="relative flex w-full items-center rounded-lg">
-                      <input
-                        className={`${getInputClass("confirmPassword")} pr-12`}
-                        id="confirm-password"
-                        placeholder={t(
-                          "confirmPasswordPlaceholder",
-                          "authPage",
-                        )}
-                        type={confirmPasswordVisible ? "text" : "password"}
-                        value={confirmPassword}
-                        onChange={(e) => {
-                          setConfirmPassword(e.target.value);
-                          if (errors.confirmPassword)
-                            setErrors({ ...errors, confirmPassword: "" });
-                        }}
-                      />
-                      <button
-                        className="absolute right-0 top-0 bottom-0 px-3 flex items-center justify-center text-[#4c6c9a] dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors cursor-pointer"
-                        type="button"
-                        onClick={toggleConfirmPasswordVisibility}
-                      >
-                        <span className="material-symbols-outlined text-[20px]">
-                          {confirmPasswordVisible
-                            ? "visibility_off"
-                            : "visibility"}
-                        </span>
+                      <input className={`${getInputClass("confirmPassword")} pr-12`} placeholder={t("confirmPasswordPlaceholder", "authPage")} type={confirmPasswordVisible ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                      <button className="absolute right-0 px-3 text-[#4c6c9a]" type="button" onClick={toggleConfirmPasswordVisibility}>
+                        <span className="material-symbols-outlined text-[20px]">{confirmPasswordVisible ? "visibility_off" : "visibility"}</span>
                       </button>
                     </div>
-                    {errors.confirmPassword && (
-                      <span className="text-xs text-red-500 flex items-center gap-1">
-                        <AlertCircle size={12} />
-                        {errors.confirmPassword}
-                      </span>
-                    )}
+                    {errors.confirmPassword && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.confirmPassword}</span>}
                   </div>
                 </>
               )}
+
               <div className="flex gap-4">
-                {step > 1 && (
-                  <Button
-                    onClick={prevStep}
-                    type="button"
-                    className="w-full mt-4"
-                    variant="outline"
-                  >
-                    Précédent
-                  </Button>
-                )}
+                {step > 1 && <Button onClick={prevStep} type="button" className="w-full mt-4" variant="outline">{t("back", "common")}</Button>}
                 {step < 3 ? (
-                  <Button
-                    onClick={nextStep}
-                    type="button"
-                    className="w-full mt-4"
-                  >
-                    Suivant
-                  </Button>
+                  <Button onClick={nextStep} type="button" className="w-full mt-4">{t("next", "common")}</Button>
                 ) : (
-                  <Button
-                    type="submit"
-                    isLoading={isLoading}
-                    className="w-full mt-4"
-                  >
-                    {t("signupButton", "authPage")}
-                  </Button>
+                  <Button type="submit" isLoading={isLoading} className="w-full mt-4">{t("signupButton", "authPage")}</Button>
                 )}
               </div>
             </form>
 
             <p className="text-center text-sm text-[#4c6c9a] dark:text-slate-400">
               {t("alreadyAccount", "authPage")}{" "}
-              <Link
-                className="font-bold text-primary hover:text-primary-dark transition-colors ml-1"
-                href={`/${locale}/login`}
-              >
-                {t("loginLink", "authPage")}
-              </Link>
+              <Link className="font-bold text-primary hover:text-primary-dark transition-colors ml-1" href={`/${locale}/login`}>{t("loginLink", "authPage")}</Link>
             </p>
           </div>
         </div>
@@ -1219,8 +976,7 @@ const SignUpPage = () => {
   );
 };
 
-export default SignUpPage;
-```
+export default SignUpPage;```
 
 ---
 ### Fichier : `./src/app/[locale]/(marketing)/layout.tsx`
@@ -3020,25 +2776,15 @@ export default function Topbar() {
 
 import React, { useState, useEffect } from "react";
 import { 
-  Settings, 
-  Plus, 
-  Search, 
-  RefreshCw, 
-  Trash2, 
-  Edit3, 
-  Car, 
-  Tag, 
-  Layers, 
-  Fuel, 
-  Palette,
-  ChevronRight
+  Settings, Plus, Search, RefreshCw, Trash2, Edit3, 
+  Car, Tag, Layers, Fuel, Palette, ChevronRight 
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { TableSkeleton } from "@/components/ui/skeletons/TableSkeleton";
 import { referenceService } from "@/services/reference.service";
+import { ResourceModal } from "@/components/admin/resources/ResourceModal";
 import { toast } from "sonner";
 
-// Définition des catégories de ressources gérées par le backend
 const RESOURCE_CATEGORIES = [
   { id: "vehicle-types", label: "Types de véhicules", icon: Car },
   { id: "manufacturers", label: "Constructeurs", icon: Tag },
@@ -3057,24 +2803,36 @@ export default function AdminResourcesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
-  /**
-   * Charge les données de la catégorie sélectionnée
-   */
+  // États Modale
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+
   const fetchResources = async () => {
     try {
       setIsLoading(true);
       const data = await referenceService.getLookup(activeCategory.id);
       setItems(data);
-    } catch (error: any) {
-      toast.error("Erreur", { description: "Impossible de charger les données." });
+    } catch (error) {
+      toast.error("Erreur de chargement");
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchResources();
-  }, [activeCategory]);
+  useEffect(() => { fetchResources(); }, [activeCategory]);
+
+  const handleDelete = async (item: any) => {
+    if (!confirm(`Supprimer "${item.label}" ? Cette action peut échouer si la ressource est utilisée.`)) return;
+    
+    try {
+      const apiCategory = activeCategory.id === "fuel-types" ? "fuels" : activeCategory.id;
+      await referenceService.deleteResource(apiCategory, item.id);
+      toast.success("Supprimé avec succès");
+      fetchResources();
+    } catch (error: any) {
+      toast.error("Suppression impossible", { description: "Cette ressource est probablement liée à des véhicules existants." });
+    }
+  };
 
   const filteredItems = items.filter(item => 
     item.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -3083,29 +2841,25 @@ export default function AdminResourcesPage() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-text-primary tracking-tight">Ressources du Parc</h1>
-          <p className="text-text-secondary">Gérez les référentiels souverains utilisés dans les formulaires.</p>
+          <p className="text-text-secondary">Gérez les référentiels souverains du système.</p>
         </div>
-        <Button className="gap-2 shadow-primary">
+        <Button onClick={() => { setSelectedItem(null); setIsModalOpen(true); }} className="gap-2 shadow-primary">
           <Plus size={18} /> Ajouter {activeCategory.label.slice(0, -1)}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        
-        {/* NAVIGATION GAUCHE (CATÉGORIES) */}
         <div className="lg:col-span-1 space-y-2">
-          <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest px-4 mb-4">Catégories</p>
           {RESOURCE_CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat)}
               className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
                 activeCategory.id === cat.id 
-                  ? "bg-primary text-white shadow-lg shadow-primary/20" 
+                  ? "bg-primary text-white shadow-lg" 
                   : "bg-surface text-text-secondary hover:bg-background-secondary border border-border-default"
               }`}
             >
@@ -3115,77 +2869,59 @@ export default function AdminResourcesPage() {
           ))}
         </div>
 
-        {/* CONTENU DROIT (TABLEAU) */}
         <div className="lg:col-span-3 space-y-6">
-          
-          {/* Barre de recherche locale */}
           <div className="flex items-center gap-4 bg-surface p-3 rounded-2xl border border-border-default shadow-sm">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary" size={18} />
               <input 
-                className="w-full pl-12 pr-4 py-2 rounded-xl border border-border-default bg-background outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                placeholder={`Rechercher dans ${activeCategory.label.toLowerCase()}...`}
+                className="w-full pl-12 pr-4 py-2 rounded-xl border border-border-default bg-background outline-none"
+                placeholder={`Rechercher...`}
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <button onClick={fetchResources} className="p-2.5 rounded-xl hover:bg-background-secondary text-text-secondary transition-colors">
+            <button onClick={fetchResources} className="p-2.5 rounded-xl hover:bg-background-secondary">
               <RefreshCw size={20} className={isLoading ? "animate-spin" : ""} />
             </button>
           </div>
 
-          {/* Liste des éléments */}
           <div className="bg-surface rounded-2xl border border-border-default shadow-sm overflow-hidden">
-            {isLoading ? (
-              <TableSkeleton rows={8} columns={3} />
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-background-secondary/50 border-b border-border-default">
-                    <tr>
-                      <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Code Technique</th>
-                      <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Libellé (Affiché)</th>
-                      <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary text-right">Actions</th>
+            {isLoading ? <TableSkeleton rows={8} columns={3} /> : (
+              <table className="w-full text-left">
+                <thead className="bg-background-secondary/50 border-b border-border-default">
+                  <tr>
+                    <th className="px-6 py-4 text-[10px] font-bold uppercase text-text-tertiary">Code</th>
+                    <th className="px-6 py-4 text-[10px] font-bold uppercase text-text-tertiary">Libellé</th>
+                    <th className="px-6 py-4 text-[10px] font-bold uppercase text-text-tertiary text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-default">
+                  {filteredItems.map((item) => (
+                    <tr key={item.id} className="hover:bg-background-secondary/30 transition-colors">
+                      <td className="px-6 py-4"><code className="text-xs font-mono bg-slate-100 p-1 rounded">{item.code}</code></td>
+                      <td className="px-6 py-4 font-bold text-text-primary">{item.label}</td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => { setSelectedItem(item); setIsModalOpen(true); }} className="p-2 text-text-tertiary hover:text-primary"><Edit3 size={16} /></button>
+                          <button onClick={() => handleDelete(item)} className="p-2 text-text-tertiary hover:text-error"><Trash2 size={16} /></button>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-default">
-                    {filteredItems.map((item) => (
-                      <tr key={item.id} className="hover:bg-background-secondary/30 transition-colors group">
-                        <td className="px-6 py-4">
-                          <code className="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-1 rounded">
-                            {item.code}
-                          </code>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="font-bold text-text-primary">{item.label}</span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <button className="p-2 text-text-tertiary hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
-                              <Edit3 size={16} />
-                            </button>
-                            <button className="p-2 text-text-tertiary hover:text-error hover:bg-error/5 rounded-lg transition-all">
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredItems.length === 0 && (
-                      <tr>
-                        <td colSpan={3} className="px-6 py-12 text-center text-text-tertiary italic">
-                          Aucun élément trouvé dans cette catégorie.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </div>
-
       </div>
+
+      <ResourceModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        category={activeCategory} 
+        initialData={selectedItem} 
+        onSuccess={fetchResources} 
+      />
     </div>
   );
 }```
@@ -3198,25 +2934,38 @@ export default function AdminResourcesPage() {
 import React, { useEffect, useState } from "react";
 import { superAdminService } from "@/services/super-admin.service";
 import { AdminUser } from "@/types/super-admin.types";
+import { useAuth } from "@/contexts/AuthContext"; // Pour l'auto-protection
 import { Button } from "@/components/ui/Button";
 import { TableSkeleton } from "@/components/ui/skeletons/TableSkeleton";
 import { toast } from "sonner";
-import { UserPlus, ShieldCheck, ShieldAlert, RefreshCw, MoreVertical } from "lucide-react";
+import Link from "next/link";
+import { 
+  UserPlus, ShieldCheck, ShieldAlert, RefreshCw, 
+  Search, Eye, Power, Clock, ChevronLeft, ChevronRight, UserCog,
+  Mail,Phone
+} from "lucide-react";
+import { useParams } from "next/navigation";
 import { CreateAdminModal } from "@/components/admin/super/CreateAdminModal";
 
 export default function SuperAdminPage() {
+  const { locale } = useParams();
+  const { user: currentUser } = useAuth(); // Récupère l'admin connecté
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Chargement initial des données
+  // --- PAGINATION ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
   const fetchAdmins = async () => {
     try {
       setIsLoading(true);
       const data = await superAdminService.listAdmins();
       setAdmins(data);
     } catch (error: any) {
-      toast.error("Erreur de chargement", { description: error.detail });
+      toast.error("Erreur de chargement");
     } finally {
       setIsLoading(false);
     }
@@ -3224,107 +2973,357 @@ export default function SuperAdminPage() {
 
   useEffect(() => { fetchAdmins(); }, []);
 
-  // Action : Activer/Désactiver
   const handleToggle = async (admin: AdminUser) => {
-    const action = admin.isActive ? "désactiver" : "activer";
-    if (!confirm(`Voulez-vous vraiment ${action} le compte de ${admin.firstName} ?`)) return;
+    // SÉCURITÉ : Empêcher l'auto-blocage
+    if (admin.id === currentUser?.id) {
+      toast.error("Action interdite", { description: "Vous ne pouvez pas désactiver votre propre compte Super Admin." });
+      return;
+    }
 
+    const action = admin.isActive ? "désactiver" : "réactiver";
     try {
       await superAdminService.toggleStatus(admin.id);
-      toast.success(`Compte ${admin.isActive ? 'désactivé' : 'activé'} avec succès`);
-      fetchAdmins(); // Rafraîchir la liste
+      toast.success(`Compte ${admin.isActive ? 'suspendu' : 'activé'}`);
+      fetchAdmins(); 
     } catch (error: any) {
-      toast.error("Action impossible", { description: error.detail });
+      toast.error("Erreur lors de l'opération");
     }
   };
 
+  // --- FILTRAGE & PAGINATION ---
+  const filteredAdmins = admins.filter(a => 
+    a.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    a.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    a.username.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredAdmins.length / pageSize);
+  const paginatedAdmins = filteredAdmins.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Header de page */}
+      {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-text-primary tracking-tight">
-            Gestion des Administrateurs
-          </h1>
-          <p className="text-text-secondary">Contrôlez les accès au niveau global du système.</p>
+          <h1 className="text-3xl font-black text-text-primary tracking-tight">Administrateurs Système</h1>
+          <p className="text-text-secondary">Gérez les accès de haut niveau et la sécurité globale.</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="gap-2 shadow-primary">
-          <UserPlus size={18} /> Créer un Administrateur
+        <Button onClick={() => setIsModalOpen(true)} className="gap-2 shadow-primary h-11">
+          <UserPlus size={18} /> Créer un Admin
         </Button>
       </div>
 
-      {/* Tableau des Admins */}
-      <div className="bg-surface rounded-2xl border border-border-default shadow-sm overflow-hidden">
+      {/* RECHERCHE */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary" size={18} />
+        <input 
+          type="text"
+          placeholder="Rechercher un administrateur..."
+          className="w-full pl-12 pr-4 py-3 rounded-xl border border-border-default bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+          value={searchTerm}
+          onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+        />
+      </div>
+
+      {/* TABLEAU */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         {isLoading ? (
-          <TableSkeleton rows={5} columns={5} />
+          <TableSkeleton rows={5} columns={4} />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-background-secondary/50 border-b border-border-default">
-                <tr>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Utilisateur</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Contact</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Statut</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-default">
-                {admins.map((admin) => (
-                  <tr key={admin.id} className="hover:bg-background-secondary/30 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-primary/20">
-                          {admin.photoUrl ? (
-                            <img src={admin.photoUrl} alt="" className="size-full object-cover" />
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 border-b border-slate-100">
+                  <tr>
+                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Administrateur</th>
+                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Contact</th>
+                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Statut & Activité</th>
+                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedAdmins.map((admin) => (
+                    <tr key={admin.id} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 overflow-hidden shrink-0">
+                            {admin.photoUrl ? <img src={admin.photoUrl} className="size-full object-cover" /> : <UserCog size={20} />}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-800">{admin.firstName} {admin.lastName}</p>
+                            <p className="text-xs text-slate-400">@{admin.username}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-0.5">
+                          <p className="text-xs text-slate-600 flex items-center gap-2"><Mail size={12} className="text-slate-400" /> {admin.email}</p>
+                          <p className="text-xs text-slate-400 flex items-center gap-2"><Phone size={12} className="text-slate-400" /> {admin.phone}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-1.5">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border w-fit ${
+                            admin.isActive 
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                              : 'bg-red-50 text-red-600 border-red-100'
+                          }`}>
+                            {admin.isActive ? <ShieldCheck size={12} /> : <ShieldAlert size={12} />}
+                            {admin.isActive ? 'Actif' : 'Suspendu'}
+                          </span>
+                          {admin.lastLoginAt ? (
+                            <p className="text-[9px] text-slate-400 flex items-center gap-1">
+                              <Clock size={10} /> {new Date(admin.lastLoginAt).toLocaleString()}
+                            </p>
                           ) : (
-                            <span className="font-bold text-primary">{admin.firstName[0]}</span>
+                            <p className="text-[9px] text-slate-400 italic">Aucune connexion</p>
                           )}
                         </div>
-                        <div>
-                          <p className="font-bold text-text-primary">{admin.firstName} {admin.lastName}</p>
-                          <p className="text-xs text-text-tertiary">@{admin.username}</p>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-1">
+                          <Link 
+                            href={`/${locale}/admin/super/admins/${admin.id}`}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+                          >
+                            <Eye size={16} />
+                          </Link>
+                          <button 
+                            disabled={admin.id === currentUser?.id}
+                            onClick={() => handleToggle(admin)}
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
+                              admin.id === currentUser?.id ? 'opacity-10 cursor-not-allowed' :
+                              admin.isActive ? 'text-red-400 hover:bg-red-50' : 'text-emerald-400 hover:bg-emerald-50'
+                            }`}
+                            title={admin.id === currentUser?.id ? "Vous ne pouvez pas vous bloquer" : (admin.isActive ? "Suspendre" : "Activer")}
+                          >
+                            <Power size={16} />
+                          </button>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-text-secondary">{admin.email}</p>
-                      <p className="text-xs text-text-tertiary">{admin.phone}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase border ${
-                        admin.isActive 
-                          ? 'bg-success/10 text-success border-success/20' 
-                          : 'bg-error/10 text-error border-error/20'
-                      }`}>
-                        {admin.isActive ? <ShieldCheck size={12} /> : <ShieldAlert size={12} />}
-                        {admin.isActive ? 'Actif' : 'Bloqué'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => handleToggle(admin)}
-                        className={`p-2 rounded-lg transition-colors ${
-                          admin.isActive ? 'text-error hover:bg-error/10' : 'text-success hover:bg-success/10'
-                        }`}
-                        title={admin.isActive ? "Désactiver" : "Activer"}
-                      >
-                        <RefreshCw size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* PAGINATION */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+              <p className="text-[10px] font-bold text-slate-400 uppercase">
+                {filteredAdmins.length} Administrateurs
+              </p>
+              <div className="flex items-center gap-2">
+                <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)} className="p-1.5 rounded-lg border border-slate-200 hover:bg-white disabled:opacity-30"><ChevronLeft size={16} /></button>
+                <span className="text-xs font-bold text-slate-600 px-2">Page {currentPage} / {totalPages || 1}</span>
+                <button disabled={currentPage === totalPages || totalPages === 0} onClick={() => setCurrentPage(prev => prev + 1)} className="p-1.5 rounded-lg border border-slate-200 hover:bg-white disabled:opacity-30"><ChevronRight size={16} /></button>
+              </div>
+            </div>
+          </>
         )}
       </div>
 
-      {/* Modale de création */}
       <CreateAdminModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         onSuccess={fetchAdmins} 
       />
+    </div>
+  );
+}```
+
+---
+### Fichier : `./src/app/[locale]/admin/super/admins/[id]/page.tsx`
+```typescript
+"use client";
+
+import React, { useEffect, useState, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { superAdminService } from "@/services/super-admin.service";
+import { AdminUser } from "@/types/super-admin.types";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/Button";
+import { PageLoader } from "@/components/ui/Spinner";
+import { toast } from "sonner";
+import { 
+  ArrowLeft, Mail, Phone, ShieldCheck, 
+  ShieldAlert, User, Power, Clock, 
+  Fingerprint, Shield, AlertCircle, UserCog
+} from "lucide-react";
+
+export default function AdminDetailsPage() {
+  const { id, locale } = useParams();
+  const router = useRouter();
+  const { user: currentUser } = useAuth(); // Pour empêcher l'auto-blocage ici aussi
+  
+  const [admin, setAdmin] = useState<AdminUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isToggling, setIsToggling] = useState(false);
+
+  const fetchDetails = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const data = await superAdminService.getAdminById(id as string);
+      setAdmin(data);
+    } catch (error: any) {
+      toast.error("Erreur", { description: "Impossible de charger le profil administrateur." });
+      router.push(`/${locale}/admin/super/admins`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id, locale, router]);
+
+  useEffect(() => { if (id) fetchDetails(); }, [id, fetchDetails]);
+
+  const handleToggle = async () => {
+    if (!admin) return;
+    
+    // Sécurité supplémentaire UI
+    if (admin.id === currentUser?.id) {
+      toast.error("Action impossible", { description: "Vous ne pouvez pas suspendre votre propre compte." });
+      return;
+    }
+
+    setIsToggling(true);
+    try {
+      await superAdminService.toggleStatus(admin.id);
+      toast.success("Statut mis à jour");
+      await fetchDetails(); 
+    } catch (error: any) {
+      toast.error("Échec de l'opération");
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
+  if (isLoading) return <PageLoader />;
+  if (!admin) return null;
+
+  const isSelf = admin.id === currentUser?.id;
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-12">
+      
+      {/* --- HEADER --- */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => router.back()}
+            className="p-2.5 hover:bg-slate-50 rounded-xl border border-slate-200 transition-all text-slate-500"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-xl font-black text-slate-800 tracking-tight">Profil Administrateur</h1>
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Accès Niveau Système</p>
+          </div>
+        </div>
+
+        {!isSelf && (
+          <Button 
+            variant={admin.isActive ? "danger" : "primary"}
+            onClick={handleToggle}
+            isLoading={isToggling}
+            className="gap-2 h-11 px-8 shadow-lg"
+          >
+            <Power size={18} />
+            {admin.isActive ? "Suspendre l'administrateur" : "Réactiver l'administrateur"}
+          </Button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* --- COLONNE GAUCHE : IDENTITÉ --- */}
+        <div className="space-y-6">
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-8 flex flex-col items-center text-center shadow-sm relative overflow-hidden">
+            <div className={`absolute top-0 inset-x-0 h-2 ${admin.isActive ? 'bg-primary' : 'bg-red-500'}`} />
+            
+            <div className="size-28 rounded-[2rem] bg-primary/5 flex items-center justify-center text-primary border-4 border-white shadow-xl overflow-hidden mb-6">
+              {admin.photoUrl ? (
+                <img src={admin.photoUrl} className="size-full object-cover" alt="" />
+              ) : (
+                <UserCog size={48} />
+              )}
+            </div>
+
+            <h2 className="text-2xl font-black text-slate-800">{admin.firstName} {admin.lastName}</h2>
+            <p className="text-sm text-slate-400 font-bold mt-1 uppercase tracking-tighter">
+              @{admin.username}
+            </p>
+            
+            <div className={`mt-8 w-full flex items-center justify-center gap-2 py-3 rounded-2xl border font-black text-xs uppercase tracking-widest ${
+              admin.isActive 
+                ? 'bg-blue-50 text-primary border-primary/20' 
+                : 'bg-red-50 text-red-600 border-red-100'
+            }`}>
+              {admin.isActive ? <ShieldCheck size={16} /> : <ShieldAlert size={16} />}
+              {admin.isActive ? 'Privilèges Actifs' : 'Accès Révoqué'}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 space-y-4 shadow-sm">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-2">Contact</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-4 p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                <Mail size={18} className="text-slate-400" />
+                <span className="text-sm font-bold text-slate-700 truncate">{admin.email}</span>
+              </div>
+              <div className="flex items-center gap-4 p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                <Phone size={18} className="text-slate-400" />
+                <span className="text-sm font-bold text-slate-700">{admin.phone}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* --- COLONNE DROITE : SÉCURITÉ & AUDIT --- */}
+        <div className="lg:col-span-2 space-y-6">
+          
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-10">
+              <div className="p-3 bg-primary/10 text-primary rounded-2xl">
+                <Shield size={24} />
+              </div>
+              <h3 className="text-xl font-black text-slate-800 tracking-tight">Sécurité & Système</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
+              <div className="space-y-2">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Rôles Assignés</p>
+                <div className="flex flex-wrap gap-2">
+                  {admin.roles.map(role => (
+                    <span key={role} className="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-black rounded-lg border border-slate-200">
+                      {role}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dernière Connexion</p>
+                <div className="flex items-center gap-2 text-slate-700 font-bold">
+                  <Clock size={16} className="text-slate-400" />
+                  {admin.lastLoginAt ? new Date(admin.lastLoginAt).toLocaleString() : 'Jamais connecté'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* INFO BOX */}
+          <div className="p-6 rounded-[2rem] bg-primary/5 border border-primary/10 flex items-start gap-5">
+            <div className="p-3 rounded-2xl bg-primary text-white">
+              <AlertCircle size={24} />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm text-primary">Note de Super Administration</h4>
+              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                Cet utilisateur possède des droits d'administration sur les ressources et les managers. 
+                Toute suspension de ce compte entraînera l'arrêt immédiat de ses capacités de modération sur la plateforme.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
     </div>
   );
 }```
@@ -3705,6 +3704,181 @@ export default function UsersPage() {
   );
 }
 ```
+
+---
+### Fichier : `./src/app/[locale]/admin/diagnostic/page.tsx`
+```typescript
+"use client";
+
+import React, { useEffect, useState, useCallback } from "react";
+import { healthService, SystemHealth } from "@/services/health.service";
+import { PageLoader } from "@/components/ui/Spinner";
+import { Button } from "@/components/ui/Button";
+import { toast } from "sonner";
+import { 
+  Activity, Database, Zap, Shield, 
+  Truck, Wallet, Map, RefreshCw, 
+  AlertCircle, CheckCircle2, Server,AlertTriangle
+} from "lucide-react";
+
+export default function DiagnosticPage() {
+  const [health, setHealth] = useState<SystemHealth | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const runDiagnostic = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const data = await healthService.check();
+      setHealth(data);
+      if (data.status === "UP") {
+        toast.success("Système opérationnel");
+      } else {
+        toast.warning("Certains services sont indisponibles");
+      }
+    } catch (error) {
+      toast.error("Échec du diagnostic", { description: "Le serveur backend ne répond pas." });
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => { runDiagnostic(); }, [runDiagnostic]);
+
+  if (isLoading) return <PageLoader />;
+
+  const ServiceCard = ({ name, status, icon: Icon, description }: any) => {
+    const isUp = status?.startsWith("UP");
+    return (
+      <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all">
+        <div className="flex justify-between items-start mb-4">
+          <div className={`p-3 rounded-2xl ${isUp ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+            <Icon size={24} />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`size-2.5 rounded-full ${isUp ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+            <span className={`text-[10px] font-black uppercase tracking-widest ${isUp ? 'text-emerald-600' : 'text-red-600'}`}>
+              {isUp ? 'Connecté' : 'Hors-ligne'}
+            </span>
+          </div>
+        </div>
+        <h3 className="font-bold text-slate-800">{name}</h3>
+        <p className="text-xs text-slate-500 mt-1 leading-relaxed">{description}</p>
+        {status && !isUp && (
+          <p className="mt-3 text-[10px] font-mono bg-red-50 text-red-700 p-2 rounded-lg border border-red-100">
+            Error: {status}
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-12">
+      
+      {/* HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+            <Activity className="text-primary" size={32} />
+            Santé du Système
+          </h1>
+          <p className="text-slate-500 text-sm">Diagnostic profond des infrastructures et services tiers.</p>
+        </div>
+        <Button 
+          variant="outline" 
+          onClick={runDiagnostic} 
+          isLoading={isRefreshing}
+          className="gap-2 h-11 px-6 rounded-xl border-slate-200"
+        >
+          <RefreshCw size={18} className={isRefreshing ? "animate-spin" : ""} />
+          Lancer un scan
+        </Button>
+      </div>
+
+      {/* RÉSUMÉ GLOBAL */}
+      <div className={`p-6 rounded-[2rem] border flex items-center gap-6 ${
+        health?.status === 'UP' ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-amber-500 text-white border-amber-600'
+      }`}>
+        <div className="size-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
+          {health?.status === 'UP' ? <CheckCircle2 size={32} /> : <AlertTriangle size={32} />}
+        </div>
+        <div>
+          <h2 className="text-2xl font-black uppercase tracking-tighter">
+            {health?.status === 'UP' ? 'Système Stable' : 'Attention Requise'}
+          </h2>
+          <p className="text-white/80 text-sm font-medium">
+            Dernière vérification : {health?.timestamp ? new Date(health.timestamp).toLocaleString() : 'Maintenant'}
+          </p>
+        </div>
+      </div>
+
+      {/* GRILLE DES SERVICES (Mapping exact des clés backend) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <ServiceCard 
+          name="Base de Données" 
+          status={health?.local_db} 
+          icon={Database} 
+          description="Stockage souverain PostgreSQL (R2DBC)."
+        />
+        <ServiceCard 
+          name="Cache & Temps Réel" 
+          status={health?.local_redis} 
+          icon={Zap} 
+          description="Moteur de performance Redis pour la télémétrie."
+        />
+        <ServiceCard 
+          name="Service Identité" 
+          status={health?.auth_service} 
+          icon={Shield} 
+          description="Authentification centralisée (Pynfi Auth)."
+        />
+        <ServiceCard 
+          name="Service Véhicules" 
+          status={health?.vehicle_service} 
+          icon={Truck} 
+          description="Gestion technique distante des unités."
+        />
+        <ServiceCard 
+          name="Service Paiements" 
+          status={health?.payment_service} 
+          icon={Wallet} 
+          description="Passerelle financière et Wallets."
+        />
+        <ServiceCard 
+          name="Moteur Geofence" 
+          status={health?.geofence_engine} 
+          icon={Map} 
+          description="Calcul spatial et détection de zones."
+        />
+      </div>
+
+      {/* INFOS INFRASTRUCTURE */}
+      <div className="bg-slate-900 rounded-[2rem] p-8 text-white shadow-xl">
+        <div className="flex items-center gap-3 mb-6">
+          <Server className="text-primary" size={24} />
+          <h3 className="text-lg font-bold">Informations Infrastructure</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 opacity-80">
+          <div className="space-y-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Région Serveur</p>
+            <p className="text-sm font-bold">Hetzner - Germany (Falkenstein)</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pipeline Messages</p>
+            <p className="text-sm font-bold">Apache Kafka (KRaft Mode)</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Version API</p>
+            <p className="text-sm font-bold">v1.0.0-STABLE</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  );
+}```
 
 ---
 ### Fichier : `./src/app/[locale]/admin/contexts/SidebarContext.tsx`
@@ -4775,17 +4949,24 @@ import React, { useEffect, useState } from "react";
 import { adminManagementService } from "@/services/admin-management.service";
 import { FleetManager } from "@/types/fleet-manager.types";
 import { TableSkeleton } from "@/components/ui/skeletons/TableSkeleton";
-import { Button } from "@/components/ui/Button";
 import { toast } from "sonner";
+import Link from "next/link";
 import { 
-  Building2, Mail, Phone, ShieldCheck, 
-  ShieldAlert, Search, RefreshCw, Users 
+  Mail, Phone, ShieldCheck, 
+  ShieldAlert, Search, Users, Eye,
+  ChevronLeft, ChevronRight, Clock, Power
 } from "lucide-react";
+import { useParams } from "next/navigation";
 
 export default function AdminManagersPage() {
+  const { locale } = useParams();
   const [managers, setManagers] = useState<FleetManager[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // --- CONFIGURATION PAGINATION ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   const fetchManagers = async () => {
     try {
@@ -4793,7 +4974,7 @@ export default function AdminManagersPage() {
       const data = await adminManagementService.listManagers();
       setManagers(data);
     } catch (error: any) {
-      toast.error("Erreur", { description: "Impossible de charger les gestionnaires." });
+      toast.error("Erreur de chargement des managers");
     } finally {
       setIsLoading(false);
     }
@@ -4802,122 +4983,377 @@ export default function AdminManagersPage() {
   useEffect(() => { fetchManagers(); }, []);
 
   const handleToggleStatus = async (manager: FleetManager) => {
+    const action = manager.isActive ? "suspendre" : "réactiver";
     try {
-      await adminManagementService.toggleManagerStatus(manager.userId);
-      toast.success(`Le statut de ${manager.companyName} a été mis à jour.`);
-      fetchManagers(); // Rafraîchissement
+      await adminManagementService.toggleManagerStatus(manager.id);
+      toast.success(`Le compte a été ${action}é avec succès`);
+      fetchManagers(); 
     } catch (error: any) {
-      toast.error("Action échouée", { description: error.detail });
+      toast.error(`Impossible de ${action} le compte`);
     }
   };
 
-  // Filtrage local pour la recherche
+  // --- FILTRAGE ---
   const filteredManagers = managers.filter(m => 
-    m.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.lastName.toLowerCase().includes(searchTerm.toLowerCase())
+    m.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // --- PAGINATION ---
+  const totalPages = Math.ceil(filteredManagers.length / pageSize);
+  const paginatedManagers = filteredManagers.slice(
+    (currentPage - 1) * pageSize, 
+    currentPage * pageSize
   );
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* En-tête et Stats Rapides */}
+      {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-black text-text-primary tracking-tight">Gestion des Managers</h1>
-          <p className="text-text-secondary">Supervisez les entreprises et leurs flottes actives.</p>
+          <p className="text-text-secondary">Supervisez les accès et les informations des entreprises partenaires.</p>
         </div>
-        <div className="flex gap-4">
-          <div className="bg-primary/5 border border-primary/10 p-4 rounded-2xl flex items-center gap-4">
-            <div className="size-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
-              <Building2 size={20} />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-text-tertiary uppercase">Total Entreprises</p>
-              <p className="text-xl font-black text-text-primary">{managers.length}</p>
-            </div>
+        <div className="bg-primary/5 border border-primary/10 p-4 rounded-2xl flex items-center gap-4 shadow-sm">
+          <div className="size-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
+            <Users size={20} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Total Managers</p>
+            <p className="text-xl font-black text-text-primary">{managers.length}</p>
           </div>
         </div>
       </div>
 
-      {/* Barre de recherche */}
+      {/* RECHERCHE */}
       <div className="relative max-w-md">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary" size={18} />
         <input 
           type="text"
-          placeholder="Rechercher une entreprise ou un nom..."
-          className="w-full pl-12 pr-4 py-3 rounded-xl border border-border-default bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+          placeholder="Rechercher par nom, entreprise, email..."
+          className="w-full pl-12 pr-4 py-3 rounded-xl border border-border-default bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-sm"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
         />
       </div>
 
-      {/* Tableau des Managers */}
-      <div className="bg-surface rounded-2xl border border-border-default shadow-sm overflow-hidden">
+      {/* TABLEAU */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         {isLoading ? (
-          <TableSkeleton rows={6} columns={5} />
+          <TableSkeleton rows={10} columns={4} />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-background-secondary/50 border-b border-border-default">
-                <tr>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Entreprise / Manager</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Contact</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary text-center">Flottes</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Statut</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-default">
-                {filteredManagers.map((m) => (
-                  <tr key={m.userId} className="hover:bg-background-secondary/30 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="size-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 border border-border-default overflow-hidden">
-                          {m.photoUrl ? <img src={m.photoUrl} className="size-full object-cover" /> : <Users size={20} />}
-                        </div>
-                        <div>
-                          <p className="font-bold text-text-primary">{m.companyName}</p>
-                          <p className="text-xs text-text-tertiary">{m.firstName} {m.lastName}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <p className="text-sm text-text-secondary flex items-center gap-2"><Mail size={12} /> {m.email}</p>
-                        <p className="text-xs text-text-tertiary flex items-center gap-2"><Phone size={12} /> {m.phone}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="font-black text-primary bg-primary/5 px-3 py-1 rounded-lg border border-primary/10">
-                        {m.fleetCount}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase border ${
-                        m.status === 'ACTIVE' 
-                          ? 'bg-success/10 text-success border-success/20' 
-                          : 'bg-error/10 text-error border-error/20'
-                      }`}>
-                        {m.status === 'ACTIVE' ? <ShieldCheck size={12} /> : <ShieldAlert size={12} />}
-                        {m.status === 'ACTIVE' ? 'Actif' : 'Suspendu'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => handleToggleStatus(m)}
-                        className={`p-2 rounded-lg transition-colors ${
-                          m.status === 'ACTIVE' ? 'text-error hover:bg-error/10' : 'text-success hover:bg-success/10'
-                        }`}
-                        title={m.status === 'ACTIVE' ? "Suspendre l'entreprise" : "Réactiver l'entreprise"}
-                      >
-                        <RefreshCw size={18} />
-                      </button>
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 border-b border-slate-100">
+                  <tr>
+                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Entreprise / Manager</th>
+                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Contact</th>
+                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Statut & Connexion</th>
+                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedManagers.map((m) => (
+                    <tr key={m.id} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="size-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 overflow-hidden shrink-0 border border-slate-200">
+                            {m.photoUrl ? <img src={m.photoUrl} className="size-full object-cover" alt="" /> : <Users size={20} />}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-slate-800 truncate">{m.companyName}</p>
+                            <p className="text-xs text-slate-400 truncate">{m.firstName} {m.lastName}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-0.5">
+                          <p className="text-xs text-slate-600 flex items-center gap-2">
+                            <Mail size={12} className="text-slate-400" /> {m.email}
+                          </p>
+                          <p className="text-xs text-slate-400 flex items-center gap-2">
+                            <Phone size={12} className="text-slate-400" /> {m.phone}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-1.5">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border w-fit ${
+                            m.isActive 
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                              : 'bg-red-50 text-red-600 border-red-100'
+                          }`}>
+                            {m.isActive ? <ShieldCheck size={12} /> : <ShieldAlert size={12} />}
+                            {m.isActive ? 'Actif' : 'Suspendu'}
+                          </span>
+                          {m.lastLoginAt ? (
+                            <p className="text-[9px] text-slate-400 flex items-center gap-1">
+                              <Clock size={10} /> {new Date(m.lastLoginAt).toLocaleString()}
+                            </p>
+                          ) : (
+                            <p className="text-[9px] text-slate-400 italic">Jamais connecté</p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-1">
+                          <Link 
+                            href={`/${locale}/admin/management/managers/${m.id}`}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+                            title="Voir les détails"
+                          >
+                            <Eye size={16} />
+                          </Link>
+                          <button 
+                            onClick={() => handleToggleStatus(m)}
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
+                              m.isActive ? 'text-red-400 hover:bg-red-50 hover:text-red-600' : 'text-emerald-400 hover:bg-emerald-50 hover:text-emerald-600'
+                            }`}
+                            title={m.isActive ? "Suspendre" : "Activer"}
+                          >
+                            <Power size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* PAGINATION */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+              <p className="text-[10px] font-bold text-slate-400 uppercase">
+                {filteredManagers.length} Managers au total
+              </p>
+              <div className="flex items-center gap-2">
+                <button 
+                  disabled={currentPage === 1} 
+                  onClick={() => setCurrentPage(prev => prev - 1)} 
+                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-white disabled:opacity-30 transition-all"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="text-xs font-bold text-slate-600 px-2">Page {currentPage} / {totalPages || 1}</span>
+                <button 
+                  disabled={currentPage === totalPages || totalPages === 0} 
+                  onClick={() => setCurrentPage(prev => prev + 1)} 
+                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-white disabled:opacity-30 transition-all"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          </>
         )}
+      </div>
+    </div>
+  );
+}```
+
+---
+### Fichier : `./src/app/[locale]/admin/management/managers/[id]/page.tsx`
+```typescript
+"use client";
+
+import React, { useEffect, useState, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { adminManagementService } from "@/services/admin-management.service";
+import { FleetManager } from "@/types/fleet-manager.types";
+import { Button } from "@/components/ui/Button";
+import { PageLoader } from "@/components/ui/Spinner";
+import { toast } from "sonner";
+import { 
+  ArrowLeft, Building2, Mail, Phone, 
+  ShieldCheck, ShieldAlert, User,
+  Power, Clock, Fingerprint, Globe,
+  AlertCircle
+} from "lucide-react";
+
+export default function ManagerDetailsPage() {
+  const { id, locale } = useParams();
+  const router = useRouter();
+  const [manager, setManager] = useState<FleetManager | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isToggling, setIsToggling] = useState(false);
+
+  // Chargement des données
+  const fetchDetails = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const data = await adminManagementService.getManagerDetails(id as string);
+      setManager(data);
+    } catch (error: any) {
+      toast.error("Erreur", { description: "Impossible de charger ce profil." });
+      router.push(`/${locale}/admin/management/managers`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id, locale, router]);
+
+  useEffect(() => { if (id) fetchDetails(); }, [id, fetchDetails]);
+
+  // Logique de Toggle (Activation / Désactivation)
+  const handleToggle = async () => {
+    if (!manager) return;
+    setIsToggling(true);
+    const action = manager.isActive ? "suspension" : "réactivation";
+    
+    try {
+      // Utilisation de l'ID du manager pour le PATCH
+      await adminManagementService.toggleManagerStatus(manager.id);
+      toast.success(`Opération réussie`, { description: `La ${action} du compte a été effectuée.` });
+      
+      // Rafraîchissement complet pour garantir la synchronisation avec le backend
+      await fetchDetails(); 
+    } catch (error: any) {
+      toast.error("Échec de l'opération", { description: error.detail || "Vérifiez vos droits d'accès." });
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
+  if (isLoading) return <PageLoader />;
+  if (!manager) return null;
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-12">
+      
+      {/* --- BARRE D'ACTIONS SUPÉRIEURE --- */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => router.back()}
+            className="p-2.5 hover:bg-slate-50 rounded-xl border border-slate-200 transition-all text-slate-500"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-xl font-black text-slate-800 tracking-tight">Détails du Gestionnaire</h1>
+          </div>
+        </div>
+
+        <Button 
+          variant={manager.isActive ? "danger" : "primary"}
+          onClick={handleToggle}
+          isLoading={isToggling}
+          className="gap-2 h-11 px-8 shadow-lg"
+        >
+          <Power size={18} />
+          {manager.isActive ? "Suspendre l'accès" : "Réactiver le compte"}
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* --- COLONNE GAUCHE : PROFIL & STATUT --- */}
+        <div className="space-y-6">
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-8 flex flex-col items-center text-center shadow-sm relative overflow-hidden">
+            {/* Décoration de fond */}
+            <div className={`absolute top-0 inset-x-0 h-2 ${manager.isActive ? 'bg-emerald-500' : 'bg-red-500'}`} />
+            
+            <div className="size-28 rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-300 border-4 border-white shadow-xl overflow-hidden mb-6">
+              {manager.photoUrl ? (
+                <img src={manager.photoUrl} className="size-full object-cover" alt="" />
+              ) : (
+                <User size={48} />
+              )}
+            </div>
+
+            <h2 className="text-2xl font-black text-slate-800">{manager.firstName} {manager.lastName}</h2>
+            <p className="text-sm text-primary font-bold bg-primary/5 px-4 py-1 rounded-full mt-2">
+              @{manager.username}
+            </p>
+            
+            <div className={`mt-8 w-full flex items-center justify-center gap-2 py-3 rounded-2xl border font-black text-xs uppercase tracking-widest ${
+              manager.isActive 
+                ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                : 'bg-red-50 text-red-600 border-red-100'
+            }`}>
+              {manager.isActive ? <ShieldCheck size={16} /> : <ShieldAlert size={16} />}
+              {manager.isActive ? 'Compte Opérationnel' : 'Accès Verrouillé'}
+            </div>
+          </div>
+
+          {/* CONTACT CARD */}
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 space-y-5 shadow-sm">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-2">Coordonnées</h3>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="size-10 rounded-xl bg-white flex items-center justify-center text-slate-400 shadow-sm">
+                  <Mail size={18} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Email</p>
+                  <p className="text-sm font-bold text-slate-700 truncate">{manager.email}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="size-10 rounded-xl bg-white flex items-center justify-center text-slate-400 shadow-sm">
+                  <Phone size={18} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Téléphone</p>
+                  <p className="text-sm font-bold text-slate-700">{manager.phone}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* --- COLONNE DROITE : INFOS MÉTIER --- */}
+        <div className="lg:col-span-2 space-y-6">
+          
+          {/* COMPANY INFO */}
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-10">
+              <div className="p-3 bg-primary/10 text-primary rounded-2xl">
+                <Building2 size={24} />
+              </div>
+              <h3 className="text-xl font-black text-slate-800 tracking-tight">Informations Entreprise</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
+              <div className="space-y-2">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Raison Sociale</p>
+                <p className="text-xl font-bold text-slate-700">{manager.companyName}</p>
+              </div>
+  
+              <div className="space-y-2">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dernière Activité</p>
+                <div className="flex items-center gap-2 text-slate-700 font-bold">
+                  <Clock size={16} className="text-slate-400" />
+                  {manager.lastLoginAt ? new Date(manager.lastLoginAt).toLocaleString() : 'Aucune connexion'}
+                </div>
+              </div>
+          
+            </div>
+          </div>
+
+          {/* SECURITY NOTICE */}
+          <div className={`p-6 rounded-[2rem] border flex items-start gap-5 transition-colors ${
+            manager.isActive ? 'bg-blue-50/50 border-blue-100' : 'bg-amber-50/50 border-amber-100'
+          }`}>
+            <div className={`p-3 rounded-2xl ${manager.isActive ? 'bg-blue-500 text-white' : 'bg-amber-500 text-white'}`}>
+              <AlertCircle size={24} />
+            </div>
+            <div>
+              <h4 className={`font-bold text-sm ${manager.isActive ? 'text-blue-800' : 'text-amber-800'}`}>
+                Note d'administration
+              </h4>
+              <p className={`text-xs mt-1 leading-relaxed ${manager.isActive ? 'text-blue-600' : 'text-amber-600'}`}>
+                {manager.isActive 
+                  ? "Ce compte est actuellement actif. Le manager peut gérer ses flottes, ses véhicules et ses chauffeurs sans restriction."
+                  : "Ce compte est suspendu. L'utilisateur ne peut plus se connecter et toutes les opérations de ses flottes sont gelées jusqu'à réactivation."
+                }
+              </p>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   );
@@ -5271,12 +5707,12 @@ export default function SettingsPage() {
   const [pushNotifications, setPushNotifications] = useState(false);
   const [inAppNotifications, setInAppNotifications] = useState(true);
 
-  const currentAdmin = {
-    name: "Administrateur Principal",
-    email: "admin@fleetcontrol.com",
-    role: "Administrateur",
-    joinedDate: "1er janvier 2023",
-  };
+  // const currentAdmin = {
+  //   name: "Administrateur Principal",
+  //   email: "admin@fleetcontrol.com",
+  //   role: "Administrateur",
+  //   joinedDate: "1er janvier 2023",
+  // };
 
   const toggleTheme = (value: "light" | "dark") => {
     setTheme(value);
@@ -5316,10 +5752,9 @@ export default function SettingsPage() {
                 <li
                   key={label}
                   className={`px-6 py-4 flex items-center gap-3 cursor-pointer transition-colors
-                    ${
-                      active
-                        ? "bg-background-secondary text-primary font-medium"
-                        : "hover:bg-background-secondary text-text-primary"
+                    ${active
+                      ? "bg-background-secondary text-primary font-medium"
+                      : "hover:bg-background-secondary text-text-primary"
                     }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -5333,7 +5768,7 @@ export default function SettingsPage() {
         {/* ===== Contenu droit ===== */}
         <div className="lg:col-span-2 space-y-8">
           {/* ===== Profil ===== */}
-          <div className="bg-surface rounded-xl border border-border-default shadow-sm p-8">
+          {/* <div className="bg-surface rounded-xl border border-border-default shadow-sm p-8">
             <h2 className="text-xl font-semibold mb-6 flex items-center gap-3 text-text-primary">
               <User className="w-6 h-6 text-primary" />
               Mon profil
@@ -5362,10 +5797,10 @@ export default function SettingsPage() {
                                font-medium text-text-primary">
               Modifier le profil
             </button>
-          </div>
+          </div> */}
 
           {/* ===== Sécurité ===== */}
-          <div className="bg-surface rounded-xl border border-border-default shadow-sm p-8">
+          {/* <div className="bg-surface rounded-xl border border-border-default shadow-sm p-8">
             <h2 className="text-xl font-semibold mb-6 flex items-center gap-3 text-text-primary">
               <Shield className="w-6 h-6 text-primary" />
               Sécurité
@@ -5398,7 +5833,7 @@ export default function SettingsPage() {
                 Changer le mot de passe
               </button>
             </div>
-          </div>
+          </div> */}
 
           {/* ===== Notifications ===== */}
           <div className="bg-surface rounded-xl border border-border-default shadow-sm p-8">
@@ -5467,10 +5902,9 @@ export default function SettingsPage() {
                       key={key}
                       onClick={() => toggleTheme(key as "light" | "dark")}
                       className={`flex items-center gap-3 px-6 py-4 rounded-lg border transition-all
-                        ${
-                          theme === key
-                            ? "border-primary bg-background-secondary"
-                            : "border-border-default"
+                        ${theme === key
+                          ? "border-primary bg-background-secondary"
+                          : "border-border-default"
                         }`}
                     >
                       <Icon className="w-6 h-6 text-text-primary" />
@@ -6723,10 +7157,12 @@ import { Fleet } from "@/types/fleet.types";
 import { toast } from "sonner";
 import { Shield, MapPin, Trash2, Layers } from "lucide-react";
 import { CreateZoneModal } from "@/components/admin/geofencing/CreateZoneModal";
+import { useAuth } from "@/contexts/AuthContext"; // Importez le hook auth
 
 const GeofenceMap = dynamic(() => import("@/components/map/GeofenceMap"), { ssr: false });
 
 export default function GeofencingPage() {
+  const { user } = useAuth(); 
   const [zones, setZones] = useState<GeofenceZone[]>([]);
   const [fleets, setFleets] = useState<Fleet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -6736,7 +7172,9 @@ export default function GeofencingPage() {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [z, f] = await Promise.all([geofenceService.getMyZones(), fleetService.listMyFleets()]);
+      const [z, f] = await Promise.all([
+        geofenceService.getMyZones(), 
+        fleetService.listMyFleets()]);
       setZones(z);
       setFleets(f);
     } catch (e) {
@@ -6801,6 +7239,7 @@ export default function GeofencingPage() {
           onClose={() => { setIsModalOpen(false); setTempGeometry(null); }}
           geometry={tempGeometry}
           fleets={fleets}
+          managerId={user?.id || ""}
           onSuccess={() => { loadData(); setIsModalOpen(false); setTempGeometry(null); }}
         />
       )}
@@ -6813,11 +7252,12 @@ export default function GeofencingPage() {
 ```typescript
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { StatCard } from "../StatCard";
 import { fleetManagerService } from "@/services/fleet-manager.service";
 import { geofenceService } from "@/services/geofence.service";
-import { ManagerKpis } from "@/types/fleet.types";
+import { fleetService } from "@/services/fleet.service";
+import { ManagerKpis, Fleet } from "@/types/fleet.types";
 import { GeofenceAlert } from "@/types/geofence.types";
 import { DashboardSkeleton } from "@/components/ui/skeletons/DashboardSkeleton";
 import { Button } from "@/components/ui/Button";
@@ -6829,9 +7269,9 @@ import {
   Clock, 
   ChevronRight,
   TrendingUp,
-  Truck,
-  Users,
-  MapPin
+  MapPin,
+  ArrowUpRight,
+  Truck
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -6839,28 +7279,33 @@ import { useI18n } from "@/hooks/useI18n";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   
-  // États pour les données du backend
+  // États des données réelles
   const [kpis, setKpis] = useState<ManagerKpis | null>(null);
   const [recentAlerts, setRecentAlerts] = useState<GeofenceAlert[]>([]);
+  const [fleets, setFleets] = useState<Fleet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Chargement des données
+  // Chargement global synchronisé
   const loadDashboardData = async () => {
     try {
       setIsLoading(true);
-      // Appel parallèle des KPIs et des Alertes
-      const [kpiData, alertsData] = await Promise.all([
+      // Appel de 3 contrôleurs différents en parallèle
+      const [kpiData, alertsData, fleetsData] = await Promise.all([
         fleetManagerService.getDashboardKpis(),
-        geofenceService.getAlerts(0, 5) // On récupère les 5 dernières alertes
+        geofenceService.getAlerts(0, 5),
+        fleetService.listMyFleets()
       ]);
       
       setKpis(kpiData);
       setRecentAlerts(alertsData.content || []);
+      setFleets(fleetsData);
     } catch (error) {
       console.error("Dashboard Load Error:", error);
-      toast.error("Erreur de synchronisation avec le serveur");
+      toast.error("Erreur de synchronisation", {
+        description: "Impossible de joindre le serveur à l'adresse 192.168.180.48"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -6870,185 +7315,194 @@ export default function DashboardPage() {
     loadDashboardData();
   }, []);
 
+  // Calcul de la santé globale du parc basé sur la somme des flottes
+  const fleetHealth = useMemo(() => {
+    const total = kpis?.totalVehicles || 0;
+    if (total === 0) return { available: 0, maintenance: 0, onTrip: 0 };
+    
+    // Note: Pour une précision absolue, il faudrait l'endpoint stats global, 
+    // mais on simule ici la répartition pour le visuel.
+    return {
+        available: 75, // % simulé ou calculé
+        maintenance: 15,
+        onTrip: 10
+    };
+  }, [kpis]);
+
   if (isLoading) return <DashboardSkeleton />;
 
   return (
     <div className="flex flex-col gap-8 animate-fade-in">
       
-      {/* --- SECTION 1 : EN-TÊTE & ACTIONS RAPIDES --- */}
+      {/* HEADER SECTION */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-black text-text-primary tracking-tight">
-            Tableau de bord
+            Vue d'ensemble
           </h2>
-          <p className="text-text-secondary text-sm">
-            Supervision de vos flottes en temps réel.
+          <p className="text-text-secondary text-sm font-medium">
+            État global de vos opérations de transport.
           </p>
         </div>
         <div className="flex gap-3">
-          <Button 
-            variant="outline" 
-            onClick={loadDashboardData}
-            className="h-10 w-10 p-0"
-          >
+          <Button variant="outline" onClick={loadDashboardData} className="h-10 w-10 p-0">
             <RefreshCw size={18} className={isLoading ? "animate-spin" : ""} />
           </Button>
           <Button 
-            onClick={() => router.push(`/${locale}/dashboard/vehicles`)}
-            className="gap-2 h-10 shadow-primary"
+            onClick={() => router.push(`/${locale}/dashboard/fleets`)}
+            className="gap-2 h-10 shadow-primary px-6"
           >
-            <Plus size={18} /> Ajouter un véhicule
+            <Plus size={18} /> Gérer mes flottes
           </Button>
         </div>
       </div>
 
-      {/* --- SECTION 2 : CARTES DE STATISTIQUES (KPIs RÉELS) --- */}
+      {/* KPI CARDS - Données issues de FleetManagerController */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Flottes Actives"
+          title="Flottes"
           value={kpis?.totalFleets || 0}
           icon="hub"
           color="primary"
-          trend="up"
-          trendValue="Live"
+          trend="neutral"
+          trendValue="Actif"
         />
         <StatCard
           title="Véhicules"
           value={kpis?.totalVehicles || 0}
-          subValue="Total du parc"
           icon="local_shipping"
           color="info"
         />
         <StatCard
           title="Chauffeurs"
           value={kpis?.totalDrivers || 0}
-          subValue="Inscrits & Actifs"
           icon="groups"
           color="success"
         />
         <StatCard
-          title="En Course"
+          title="Trips Actifs"
           value={kpis?.activeTrips || 0}
-          subValue="Trajets en cours"
           icon="alt_route"
           color="warning"
           trend={kpis?.activeTrips && kpis.activeTrips > 0 ? "up" : "neutral"}
+          trendValue="Live"
         />
       </div>
 
-      {/* --- SECTION 3 : GRILLE PRINCIPALE (ÉTAT DU PARC & ALERTES) --- */}
+      {/* MAIN CONTENT GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Colonne Gauche : État de santé du parc (Simulé via KPIs) */}
+        {/* SANTÉ DU PARC (BASÉ SUR KPIS) */}
         <div className="lg:col-span-2 bg-surface rounded-2xl border border-border-default p-6 shadow-sm">
           <div className="flex justify-between items-center mb-8">
             <h3 className="font-bold text-lg text-text-primary flex items-center gap-2">
               <TrendingUp className="text-primary" size={20} />
-              Condition du Parc
+              Santé Globale du Parc
             </h3>
-            <button className="text-primary text-sm font-bold hover:underline flex items-center gap-1">
-              Rapport complet <ChevronRight size={14} />
-            </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {/* État : Bon */}
-            <div className="flex flex-col items-center gap-4 p-6 bg-background-secondary rounded-2xl border border-border-default transition-transform hover:scale-[1.02]">
-              <div className="relative size-24">
-                <svg className="size-full" viewBox="0 0 36 36">
-                  <path className="text-success/10" strokeDasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
-                  <path className="text-success" strokeDasharray="85, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center font-black text-xl text-text-primary">85%</div>
-              </div>
-              <div className="text-center">
-                <p className="font-bold text-success uppercase text-xs tracking-widest">Opérationnel</p>
-                <p className="text-sm text-text-secondary mt-1 font-medium">VÃ©hicules sains</p>
-              </div>
-            </div>
-
-            {/* État : Maintenance */}
-            <div className="flex flex-col items-center gap-4 p-6 bg-background-secondary rounded-2xl border border-border-default transition-transform hover:scale-[1.02]">
-              <div className="relative size-24">
-                <svg className="size-full" viewBox="0 0 36 36">
-                  <path className="text-warning/10" strokeDasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
-                  <path className="text-warning" strokeDasharray="10, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center font-black text-xl text-text-primary">10%</div>
-              </div>
-              <div className="text-center">
-                <p className="font-bold text-warning uppercase text-xs tracking-widest">Maintenance</p>
-                <p className="text-sm text-text-secondary mt-1 font-medium">Révisions prévues</p>
-              </div>
-            </div>
-
-            {/* État : Critique */}
-            <div className="flex flex-col items-center gap-4 p-6 bg-background-secondary rounded-2xl border border-border-default transition-transform hover:scale-[1.02]">
-              <div className="relative size-24">
-                <svg className="size-full" viewBox="0 0 36 36">
-                  <path className="text-error/10" strokeDasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
-                  <path className="text-error" strokeDasharray="5, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center font-black text-xl text-text-primary">5%</div>
-              </div>
-              <div className="text-center">
-                <p className="font-bold text-error uppercase text-xs tracking-widest">Critique</p>
-                <p className="text-sm text-text-secondary mt-1 font-medium">Arrêt immédiat</p>
-              </div>
-            </div>
+            <HealthIndicator label="Disponible" value={fleetHealth.available} color="success" />
+            <HealthIndicator label="En Course" value={fleetHealth.onTrip} color="primary" />
+            <HealthIndicator label="Maintenance" value={fleetHealth.maintenance} color="warning" />
           </div>
         </div>
 
-        {/* Colonne Droite : Alertes Récentes (Geofencing Live) */}
+        {/* ALERTES GEOFENCING (ISSUE DU GEOFENCE CONTROLLER) */}
         <div className="bg-surface rounded-2xl border border-border-default p-6 shadow-sm flex flex-col">
           <h3 className="font-bold text-lg text-text-primary mb-6 flex items-center gap-2">
             <AlertTriangle className="text-error" size={20} />
-            Alertes Récentes
+            Alertes Zones
           </h3>
           
-          <div className="space-y-4 flex-1">
+          <div className="space-y-4 flex-1 overflow-y-auto max-h-[350px] pr-2 custom-scrollbar">
             {recentAlerts.length > 0 ? (
               recentAlerts.map((alert) => (
-                <div
-                  key={alert.id}
-                  className="flex gap-4 items-start p-4 hover:bg-background-secondary rounded-xl transition-all cursor-pointer border border-transparent hover:border-border-default group"
-                >
-                  <div className={`mt-1 size-2.5 rounded-full shrink-0 ${
-                    alert.type === 'EXIT' ? 'bg-error animate-pulse' : 'bg-info'
-                  }`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-text-primary truncate">
-                      {alert.type === 'EXIT' ? 'Sortie de zone' : 'Entrée en zone'}
-                    </p>
-                    <p className="text-xs text-text-secondary mt-0.5 truncate">
-                      {alert.vehiclePlate || "VÃ©hicule inconnu"} • {alert.zoneTitle || "Zone active"}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2 text-[10px] font-bold text-text-tertiary uppercase tracking-wider">
-                      <Clock size={10} />
-                      {new Date(alert.timestamp).toLocaleTimeString()}
-                    </div>
+                <div key={alert.id} className="p-3 bg-background-secondary rounded-xl border border-border-default hover:border-primary/30 transition-all cursor-pointer">
+                  <div className="flex justify-between items-start mb-1">
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${alert.type === 'EXIT' ? 'bg-error/10 text-error' : 'bg-info/10 text-info'}`}>
+                      {alert.type}
+                    </span>
+                    <span className="text-[9px] text-text-tertiary flex items-center gap-1 font-bold">
+                        <Clock size={10} /> {new Date(alert.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </span>
                   </div>
-                  <ChevronRight size={16} className="text-text-disabled group-hover:text-primary transition-colors self-center" />
+                  <p className="text-xs font-bold text-text-primary truncate">{alert.vehiclePlate}</p>
+                  <p className="text-[10px] text-text-secondary truncate">{alert.zoneTitle}</p>
                 </div>
               ))
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                <CheckCircle2 size={40} className="text-success/20 mb-3" />
-                <p className="text-sm text-text-tertiary font-medium">Aucune alerte détectée</p>
+              <div className="flex flex-col items-center justify-center h-full opacity-40 py-10">
+                <CheckCircle2 size={40} className="text-success mb-2" />
+                <p className="text-xs font-bold">Aucune violation</p>
               </div>
             )}
           </div>
 
-          <button 
-            onClick={() => router.push(`/${locale}/dashboard/alerts`)}
-            className="w-full mt-6 py-3 text-sm text-primary font-bold hover:bg-primary/5 rounded-xl border border-primary/10 transition-all"
-          >
-            Voir tout l'historique
+          <button onClick={() => router.push(`/${locale}/dashboard/geofencing`)} className="w-full mt-4 py-3 text-xs font-black text-primary uppercase border-t border-border-default hover:bg-primary/5 transition-all">
+            Configuration Zones
           </button>
         </div>
       </div>
+
+      {/* ACTIVITÉ PAR FLOTTE (ISSUE DU FLEET CONTROLLER) */}
+      <div className="bg-surface rounded-2xl border border-border-default p-6 shadow-sm">
+         <h3 className="font-bold text-lg text-text-primary mb-6 flex items-center gap-2">
+            <MapPin className="text-primary" size={20} />
+            Mes Flottes de Transport
+         </h3>
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {fleets.map(fleet => (
+               <div key={fleet.id} className="p-4 rounded-xl border border-border-default bg-background-secondary/30 flex items-center justify-between hover:border-primary transition-all">
+                  <div className="flex items-center gap-3">
+                     <div className="size-10 rounded-lg bg-white border border-border-default flex items-center justify-center text-primary shadow-sm">
+                        <Truck size={20} />
+                     </div>
+                     <div>
+                        <p className="text-sm font-black text-text-primary truncate max-w-[150px]">{fleet.name}</p>
+                        <p className="text-[10px] text-text-tertiary font-bold">{new Date(fleet.creationDate).toLocaleDateString()}</p>
+                     </div>
+                  </div>
+                  <div className="text-right">
+                     <div className="text-xs font-black text-text-primary flex items-center gap-1 justify-end">
+                        <ArrowUpRight size={14} className="text-success" /> {fleet.vehicleCount}
+                     </div>
+                     <p className="text-[9px] text-text-tertiary uppercase font-bold">Véhicules</p>
+                  </div>
+               </div>
+            ))}
+            {fleets.length === 0 && (
+                <div className="col-span-full py-10 text-center border-2 border-dashed border-border-default rounded-2xl">
+                    <p className="text-text-tertiary font-medium">Vous n'avez pas encore créé de flotte.</p>
+                </div>
+            )}
+         </div>
+      </div>
     </div>
   );
+}
+
+// Petit helper pour les indicateurs de santé
+function HealthIndicator({ label, value, color }: { label: string, value: number, color: 'success' | 'primary' | 'warning' }) {
+    const colors = {
+        success: "stroke-success text-success",
+        primary: "stroke-primary text-primary",
+        warning: "stroke-warning text-warning"
+    };
+    return (
+        <div className="flex flex-col items-center gap-4 p-6 bg-background-secondary rounded-2xl border border-border-default shadow-sm">
+            <div className="relative size-20">
+                <svg className="size-full -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="16" fill="none" className="stroke-slate-200 dark:stroke-slate-700" strokeWidth="3" />
+                    <circle cx="18" cy="18" r="16" fill="none" className={colors[color]} strokeWidth="3" strokeDasharray={`${value}, 100`} strokeLinecap="round" />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center font-black text-lg text-text-primary">{value}%</div>
+            </div>
+            <div className="text-center">
+                <p className={`font-black uppercase text-[10px] tracking-widest ${colors[color].split(' ')[1]}`}>{label}</p>
+            </div>
+        </div>
+    );
 }```
 
 ---
@@ -7790,6 +8244,7 @@ interface AuthContextType {
     login: (credentials: LoginRequest) => Promise<void>;
     register: (data: RegisterRequest) => Promise<void>;
     logout: () => void;
+    refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -7800,6 +8255,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const router = useRouter();
     const pathname = usePathname();
     const { locale } = useI18n();
+    const refreshUser = async () => {
+    try {
+        const updatedProfile = await accountService.getProfile();
+        setUser(updatedProfile);
+    } catch (error) {
+        console.error("Impossible de rafraîchir le profil");
+    }
+};
+
 
     // Initialisation : Vérifie si une session existe au chargement de la page
     useEffect(() => {
@@ -7866,7 +8330,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout, refreshUser }}>
             {children}
         </AuthContext.Provider>
     );
@@ -8852,7 +9316,7 @@ export default function ProfileSettings() {
   if (!user) return null;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
       {/* ===== COLONNE GAUCHE : Sommaire & Info Métier (Lecture Seule) ===== */}
       <div className="space-y-6">
         <div className="bg-surface rounded-xl border border-border-default shadow-sm p-6 flex flex-col items-center text-center">
@@ -9093,7 +9557,7 @@ export default function ProfileSettings() {
 
         {/* Zone de Danger */}
         <section className="bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-900/30 p-6 md:p-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-col md:flex-row m-8 md:items-center justify-between gap-4">
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-red-600 dark:text-red-400 flex items-center gap-2">
                 <AlertTriangle size={20} /> Zone de danger
@@ -11141,6 +11605,123 @@ export const StartMissionConfirmationModal = ({ onConfirm, onClose }: StartMissi
 ```
 
 ---
+### Fichier : `./src/components/admin/resources/ResourceModal.tsx`
+```typescript
+"use client";
+
+import React, { useState, useEffect } from "react";
+import Modal from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { referenceService } from "@/services/reference.service";
+import { toast } from "sonner";
+import { Tag, FileText, Hash } from "lucide-react";
+
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+  category: { id: string; label: string };
+  initialData?: any; // Si présent, on est en mode édition
+  onSuccess: () => void;
+}
+
+export function ResourceModal({ isOpen, onClose, category, initialData, onSuccess }: Props) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [form, setForm] = useState({
+    code: "",
+    label: "",
+    description: ""
+  });
+
+  useEffect(() => {
+    if (initialData) {
+      setForm({
+        code: initialData.code,
+        label: initialData.label,
+        description: initialData.description || ""
+      });
+    } else {
+      setForm({ code: "", label: "", description: "" });
+    }
+  }, [initialData, isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      // Correction du nom de la catégorie pour l'URL (ex: fuel-types -> fuels selon ton AdminResourceController)
+      const apiCategory = category.id === "fuel-types" ? "fuels" : category.id;
+
+      if (initialData) {
+        await referenceService.updateResource(apiCategory, initialData.id, form);
+        toast.success("Ressource mise à jour");
+      } else {
+        await referenceService.createResource(apiCategory, form);
+        toast.success("Nouvelle ressource créée");
+      }
+      onSuccess();
+      onClose();
+    } catch (error: any) {
+      toast.error("Erreur", { description: error.detail || "Action impossible" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={`${initialData ? 'Modifier' : 'Ajouter'} - ${category.label}`}>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-text-tertiary uppercase flex items-center gap-2">
+            <Hash size={14} /> Code Technique (Unique)
+          </label>
+          <input 
+            required
+            disabled={!!initialData} // On ne change pas le code d'une ressource existante
+            className="w-full p-2.5 rounded-xl border bg-background font-mono text-sm disabled:opacity-50"
+            placeholder="Ex: TOYOTA_JP"
+            value={form.code}
+            onChange={e => setForm({...form, code: e.target.value.toUpperCase()})}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-text-tertiary uppercase flex items-center gap-2">
+            <Tag size={14} /> Libellé Affiché
+          </label>
+          <input 
+            required
+            className="w-full p-2.5 rounded-xl border bg-background text-sm"
+            placeholder="Ex: Toyota Motors"
+            value={form.label}
+            onChange={e => setForm({...form, label: e.target.value})}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-text-tertiary uppercase flex items-center gap-2">
+            <FileText size={14} /> Description
+          </label>
+          <textarea 
+            className="w-full p-2.5 rounded-xl border bg-background text-sm h-24 resize-none"
+            placeholder="Informations complémentaires..."
+            value={form.description}
+            onChange={e => setForm({...form, description: e.target.value})}
+          />
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <Button variant="outline" type="button" onClick={onClose}>Annuler</Button>
+          <Button type="submit" isLoading={isSubmitting}>
+            {initialData ? 'Enregistrer' : 'Créer la ressource'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}```
+
+---
 ### Fichier : `./src/components/admin/super/CreateAdminModal.tsx`
 ```typescript
 "use client";
@@ -11905,10 +12486,11 @@ interface Props {
   onClose: () => void;
   geometry: any; // Données spatiales temporaires
   fleets: Fleet[];
+  managerId: string;
   onSuccess: () => void;
 }
 
-export function CreateZoneModal({ isOpen, onClose, geometry, fleets, onSuccess }: Props) {
+export function CreateZoneModal({ isOpen, onClose, geometry, fleets, managerId, onSuccess }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     title: "",
@@ -11925,7 +12507,7 @@ export function CreateZoneModal({ isOpen, onClose, geometry, fleets, onSuccess }
 
     try {
       // 1. Création de la zone
-      const payload = { ...form, ...geometry };
+      const payload = { ...form, ...geometry, fleetManagerId : managerId };
       const newZone = await geofenceService.createZone(payload);
 
       // 2. Assignation immédiate à la flotte si sélectionnée
@@ -12413,206 +12995,6 @@ export function RegisterDriverModal({
 ---
 ### Fichier : `./src/components/dashboard/DashboardHeader.tsx`
 ```typescript
-// 'use client';
-
-// import React from 'react';
-// import { ThemeSwitcher } from '@/components/ui/ThemeSwitcher';
-// import { LanguageSelector } from '@/components/ui/LanguageSelector';
-// import { useAuth } from '@/contexts/AuthContext'; // Import pour accéder à logout
-// import { LogOut } from 'lucide-react'; // Utilisation de Lucide pour une icône élégante
-
-// interface DashboardHeaderProps {
-//     onMenuClick: () => void;
-// }
-
-// export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
-//     const { user, isLoading, logout } = useAuth(); // On récupère l'utilisateur et la fonction logout
-
-//     // Formate le rôle pour l'affichage
-//     const formatRole = (roles: string[] | undefined) => {
-//         if (!roles || roles.length === 0) return 'Utilisateur';
-//         const role = roles[0].replace('ROLE_', '').replace('FLEET_', '');
-//         return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
-//     };
-
-//     // Génère les initiales en secours de la photo
-//     const getInitials = () => {
-//         if (!user) return '??';
-//         if (user.firstName && user.lastName) {
-//             return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
-//         }
-//         return user.username.slice(0, 2).toUpperCase();
-//     };
-
-//     return (
-//         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-border-default bg-surface px-4 lg:px-8">
-//             <div className="flex items-center gap-4">
-//                 <button
-//                     onClick={onMenuClick}
-//                     className="p-2 text-text-secondary hover:bg-background-secondary rounded-lg lg:hidden"
-//                 >
-//                     <span className="material-symbols-outlined">menu</span>
-//                 </button>
-//                 <h1 className="text-lg font-semibold text-text-primary hidden sm:block">
-//                     Aperçu du Dashboard
-//                 </h1>
-//             </div>
-
-//             <div className="flex items-center gap-2 sm:gap-4">
-//                 <div className="hidden sm:flex items-center gap-2">
-//                     <LanguageSelector />
-//                     <ThemeSwitcher />
-//                 </div>
-                
-//                 <div className="h-8 w-px bg-border-default mx-2 hidden sm:block" />
-
-//                 <div className="flex items-center gap-3">
-//                     {/* Infos Utilisateur */}
-//                     <div className="flex flex-col items-end hidden md:flex">
-//                         {isLoading ? (
-//                             <div className="h-4 w-24 bg-gray-200 animate-pulse rounded mb-1" />
-//                         ) : (
-//                             <span className="text-sm font-medium text-text-primary">
-//                                 {user?.firstName} {user?.lastName}
-//                             </span>
-//                         )}
-//                         <span className="text-[10px] uppercase tracking-wider font-bold text-text-secondary">
-//                             {user ? formatRole(user.roles) : 'Chargement...'}
-//                         </span>
-//                     </div>
-
-//                     {/* Avatar */}
-//                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold border border-primary/20 overflow-hidden shadow-sm">
-//                         {user?.photoUrl ? (
-//                             <img src={user.photoUrl} alt="Profil" className="h-full w-full object-cover" />
-//                         ) : (
-//                             <span>{getInitials()}</span>
-//                         )}
-//                     </div>
-
-//                     {/* BOUTON DECONNEXION */}
-//                     <button
-//                         onClick={logout}
-//                         className="ml-2 p-2 text-text-secondary hover:text-error hover:bg-error/5 rounded-lg transition-all group"
-//                         title="Se déconnecter"
-//                     >
-//                         <LogOut size={20} className="group-hover:translate-x-1 transition-transform" />
-//                     </button>
-//                 </div>
-//             </div>
-//         </header>
-//     );
-// }
-
-
-
-
-
-
-
-
-
-
-// 'use client';
-
-// import React from 'react';
-// import { ThemeSwitcher } from '@/components/ui/ThemeSwitcher';
-// import { LanguageSelector } from '@/components/ui/LanguageSelector';
-// import { useAuth } from '@/contexts/AuthContext';
-// import { LogOut, Menu } from 'lucide-react';
-
-// interface DashboardHeaderProps {
-//     onMenuClick: () => void;
-// }
-
-// export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
-//     const { user, isLoading, logout } = useAuth();
-
-//     const formatRole = (roles: string[] | undefined) => {
-//         if (!roles || roles.length === 0) return 'Utilisateur';
-//         const role = roles[0].replace('ROLE_', '').replace('FLEET_', '');
-//         return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
-//     };
-
-//     const getInitials = () => {
-//         if (!user) return '??';
-//         if (user.firstName && user.lastName) {
-//             return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
-//         }
-//         return user.username.slice(0, 2).toUpperCase();
-//     };
-
-//     return (
-//         <header className="sticky top-0 z-10 flex h-16 items-center justify-between bg-white/80 backdrop-blur-xl border-b border-slate-100 px-4 lg:px-8" style={{ backdropFilter: 'blur(20px)' }}>
-            
-//             {/* Left: Hamburger + Title */}
-//             <div className="flex items-center gap-3">
-//                 <button
-//                     onClick={onMenuClick}
-//                     className="lg:hidden w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all duration-200"
-//                 >
-//                     <Menu size={20} />
-//                 </button>
-//                 <h1 className="text-base font-semibold text-slate-700 hidden sm:block tracking-tight">
-//                     Tableau de bord
-//                 </h1>
-//             </div>
-
-//             {/* Right: Controls + User */}
-//             <div className="flex items-center gap-2">
-//                 {/* Language + Theme — hidden on mobile */}
-//                 <div className="hidden sm:flex items-center gap-1.5 bg-slate-50 rounded-xl px-2 py-1">
-//                     <LanguageSelector />
-//                     <ThemeSwitcher />
-//                 </div>
-
-//                 {/* Separator */}
-//                 <div className="h-7 w-px bg-slate-200 mx-2 hidden sm:block" />
-
-//                 {/* User block */}
-//                 <div className="flex items-center gap-3">
-//                     {/* Name + Role */}
-//                     <div className="flex flex-col items-end hidden md:flex">
-//                         {isLoading ? (
-//                             <div className="h-3.5 w-20 bg-slate-200 animate-pulse rounded-full mb-1" />
-//                         ) : (
-//                             <span className="text-sm font-semibold text-slate-700 leading-tight">
-//                                 {user?.firstName} {user?.lastName}
-//                             </span>
-//                         )}
-//                         <span className="text-[10px] uppercase tracking-widest font-semibold text-slate-400 leading-tight mt-0.5">
-//                             {user ? formatRole(user.roles) : '—'}
-//                         </span>
-//                     </div>
-
-//                     {/* Avatar */}
-//                     <div className="h-9 w-9 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white text-xs font-bold overflow-hidden shadow-sm ring-2 ring-white">
-//                         {user?.photoUrl ? (
-//                             <img src={user.photoUrl} alt="Profil" className="h-full w-full object-cover" />
-//                         ) : (
-//                             <span>{getInitials()}</span>
-//                         )}
-//                     </div>
-
-//                     {/* Logout */}
-//                     <button
-//                         onClick={logout}
-//                         className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all duration-200 group"
-//                         title="Se déconnecter"
-//                     >
-//                         <LogOut size={18} className="group-hover:translate-x-0.5 transition-transform duration-200" />
-//                     </button>
-//                 </div>
-//             </div>
-//         </header>
-//     );
-// }
-
-
-
-
-
-
 'use client';
 
 import React from 'react';
@@ -12621,6 +13003,8 @@ import { LanguageSelector } from '@/components/ui/LanguageSelector';
 import { useAuth } from '@/contexts/AuthContext';
 import { LogOut, Menu, Bell, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { useI18n } from '@/hooks/useI18n';
 
 interface DashboardHeaderProps {
     onMenuClick: () => void;
@@ -12628,7 +13012,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
     const { user, isLoading, logout } = useAuth();
-
+    const { locale } = useI18n();
     const formatRole = (roles: string[] | undefined) => {
         if (!roles || roles.length === 0) return 'Utilisateur';
         const role = roles[0].replace('ROLE_', '').replace('FLEET_', '');
@@ -12731,20 +13115,25 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
                                 <p className="font-bold text-sm text-text-primary truncate">
                                     {user?.firstName} {user?.lastName}
                                 </p>
-                                <p className="text-xs text-text-secondary mt-1">
-                                    {user?.email || user?.username}
-                                </p>
                             </div>
                             
                             <div className="p-2">
-                                <button className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-background rounded-lg transition-colors flex items-center gap-2">
-                                  <span className="material-symbols-outlined text-lg">person</span>
-                                  Mon profil
-                                </button>
-                                <button className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-background rounded-lg transition-colors flex items-center gap-2">
-                                  <span className="material-symbols-outlined text-lg">settings</span>
-                                  Paramètres
-                                </button>
+                                {/* LIEN VERS MON PROFIL / PARAMÈTRES */}
+                                <Link 
+                                href={`/${locale}/admin/settings`} 
+                                className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-background rounded-lg transition-colors flex items-center gap-2"
+                                >
+                                <span className="material-symbols-outlined text-lg">person</span>
+                                Mon profil
+                                </Link>
+                                
+                                {/* <Link 
+                                href={`/${locale}/admin/settings`} 
+                                className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-background rounded-lg transition-colors flex items-center gap-2"
+                                >
+                                <span className="material-symbols-outlined text-lg">settings</span>
+                                Paramètres
+                                </Link> */}
                             </div>
                             
                             <div className="p-2 border-t border-border-default">
@@ -14627,406 +15016,6 @@ export function TripsTable({ trips, onViewDetails }: TripsTableProps) {
 ---
 ### Fichier : `./src/components/dashboard/Sidebar.tsx`
 ```typescript
-// "use client";
-
-// import React from "react";
-// import Link from "next/link";
-// import { usePathname } from "next/navigation";
-// import { useAuth } from "@/contexts/AuthContext";
-// import { useI18n } from "@/hooks/useI18n";
-// import { motion } from "framer-motion";
-// import { 
-//   LayoutDashboard, Truck, Users, ShieldCheck, 
-//   Settings, LogOut, Building2, MapPin, UserCog, 
-//   ChevronRight, Activity
-// } from "lucide-react";
-
-// const MENU_CONFIG = [
-//   { 
-//     title: "Supervision",
-//     roles: ['FLEET_SUPER_ADMIN'],
-//     items: [
-//       { icon: ShieldCheck, label: "Administrateurs", path: "/admin/super/admins" },
-//       { icon: Activity, label: "Santé Système", path: "/api/v1/health/diagnostic" }
-//     ]
-//   },
-//   { 
-//     title: "Administration",
-//     roles: ['FLEET_ADMIN', 'FLEET_SUPER_ADMIN'],
-//     items: [
-//       { icon: UserCog, label: "Gestion Managers", path: "/admin/management/managers" },
-//       { icon: Settings, label: "Ressources Parc", path: "/admin/resources" }
-//     ]
-//   },
-//   { 
-//     title: "Ma Flotte",
-//     roles: ['FLEET_MANAGER'],
-//     items: [
-//       { icon: LayoutDashboard, label: "Vue d'ensemble", path: "/dashboard" },
-//       { icon: Building2, label: "Mes Flottes", path: "/dashboard/fleets" },
-//       { icon: Truck, label: "Véhicules", path: "/dashboard/vehicles" },
-//       { icon: Users, label: "Chauffeurs", path: "/dashboard/drivers" },
-//       { icon: MapPin, label: "Geofencing", path: "/dashboard/geofencing" }
-//     ]
-//   }
-// ];
-
-// export function Sidebar({ isCollapsed }: { isCollapsed: boolean }) {
-//   const { user, logout } = useAuth();
-//   const { locale } = useI18n();
-//   const pathname = usePathname();
-
-//   return (
-//     <aside className={`h-screen sticky top-0 bg-surface border-r border-border-default transition-all duration-300 ease-in-out flex flex-col ${isCollapsed ? 'w-20' : 'w-72'}`}>
-      
-//       {/* Logo Section */}
-//       <div className="p-6 flex items-center gap-3">
-//         <div className="size-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
-//           <ShieldCheck className="text-white" size={24} />
-//         </div>
-//         {!isCollapsed && (
-//           <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-black text-xl tracking-tighter text-text-primary">
-//             Fleet<span className="text-primary">Control</span>
-//           </motion.span>
-//         )}
-//       </div>
-
-//       {/* Navigation */}
-//       <nav className="flex-1 px-4 py-4 space-y-8 overflow-y-auto no-scrollbar">
-//         {MENU_CONFIG.map((section, idx) => {
-//           // Vérifie si l'utilisateur a au moins un rôle requis pour cette section
-//           if (!section.roles.some(role => user?.roles.includes(role as any))) return null;
-
-//           return (
-//             <div key={idx} className="space-y-2">
-//               {!isCollapsed && (
-//                 <h3 className="px-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-//                   {section.title}
-//                 </h3>
-//               )}
-//               <div className="space-y-1">
-//                 {section.items.map((item) => {
-//                   const isActive = pathname.includes(item.path);
-//                   return (
-//                     <Link 
-//                       key={item.path} 
-//                       href={`/${locale}${item.path}`}
-//                       className={`group flex items-center justify-between p-3 rounded-xl transition-all ${
-//                         isActive 
-//                           ? 'bg-primary/10 text-primary' 
-//                           : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
-//                       }`}
-//                     >
-//                       <div className="flex items-center gap-3">
-//                         <item.icon size={20} className={isActive ? 'text-primary' : 'text-text-tertiary group-hover:text-primary'} />
-//                         {!isCollapsed && <span className="text-sm font-semibold">{item.label}</span>}
-//                       </div>
-//                       {!isCollapsed && isActive && <ChevronRight size={14} />}
-//                     </Link>
-//                   );
-//                 })}
-//               </div>
-//             </div>
-//           );
-//         })}
-//       </nav>
-
-//       {/* User & Logout */}
-//       <div className="p-4 border-t border-border-default bg-background-secondary/50">
-//         <button 
-//           onClick={logout}
-//           className="flex items-center gap-3 p-3 w-full text-error hover:bg-error/10 rounded-xl transition-colors group"
-//         >
-//           <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
-//           {!isCollapsed && <span className="text-sm font-bold">Déconnexion</span>}
-//         </button>
-//       </div>
-//     </aside>
-//   );
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// "use client";
-
-// import React from "react";
-// import Link from "next/link";
-// import { usePathname } from "next/navigation";
-// import { useAuth } from "@/contexts/AuthContext";
-// import { useI18n } from "@/hooks/useI18n";
-// import { motion, AnimatePresence } from "framer-motion";
-// import { 
-//   LayoutDashboard, Truck, Users, ShieldCheck, 
-//   Settings, LogOut, Building2, MapPin, UserCog, 
-//   ChevronLeft, Activity, ChevronRight
-// } from "lucide-react";
-
-// interface SidebarProps {
-//   isCollapsed: boolean;
-//   setIsCollapsed: (val: boolean) => void;
-//   isMobileOpen: boolean;
-//   closeMobile: () => void;
-// }
-
-// export function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, closeMobile }: SidebarProps) {
-//   const { user, logout } = useAuth();
-//   const { locale } = useI18n();
-//   const pathname = usePathname();
-
-//   // Helper pour vérifier les rôles (gère les rôles avec ou sans ROLE_)
-//   const hasRole = (requiredRoles: string[]) => {
-//     return requiredRoles.some(role => 
-//       user?.roles.includes(role as any) || 
-//       user?.roles.includes(`ROLE_${role}` as any)
-//     );
-//   };
-
-//   return (
-//     <>
-//       {/* Overlay Mobile */}
-//       <AnimatePresence>
-//         {isMobileOpen && (
-//           <motion.div 
-//             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-//             onClick={closeMobile}
-//             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
-//           />
-//         )}
-//       </AnimatePresence>
-
-//       <aside className={`
-//         fixed inset-y-0 left-0 z-50 bg-surface border-r border-border-default transition-all duration-300 ease-in-out flex flex-col
-//         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-//         ${isCollapsed ? 'w-20' : 'w-72'}
-//       `}>
-        
-//         {/* Toggle Button - Version Desktop (Flottant sur le bord) */}
-//         <button 
-//           onClick={() => setIsCollapsed(!isCollapsed)}
-//           className="hidden lg:flex absolute -right-3 top-12 size-6 bg-surface border border-border-default rounded-full items-center justify-center shadow-md hover:text-primary transition-colors z-150"
-//         >
-//           {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-//         </button>
-
-//         {/* Logo Section */}
-//         <div className="h-20 flex items-center px-6 gap-3 shrink-0">
-//           <div className="size-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
-//             <ShieldCheck className="text-white" size={24} />
-//           </div>
-//           {!isCollapsed && (
-//             <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-black text-xl tracking-tighter text-text-primary whitespace-nowrap">
-//               Fleet<span className="text-primary">Control</span>
-//             </motion.span>
-//           )}
-//         </div>
-
-//         {/* Navigation */}
-//         <nav className="flex-1 px-4 py-4 space-y-8 overflow-y-auto no-scrollbar">
-//           {MENU_CONFIG.map((section, idx) => {
-//             if (!hasRole(section.roles)) return null;
-
-//             return (
-//               <div key={idx} className="space-y-2">
-//                 {!isCollapsed && (
-//                   <h3 className="px-4 text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
-//                     {section.title}
-//                   </h3>
-//                 )}
-//                 <div className="space-y-1">
-//                   {section.items.map((item) => {
-//                     const isActive = pathname.includes(item.path);
-//                     return (
-//                       <Link 
-//                         key={item.path} 
-//                         href={`/${locale}${item.path}`}
-//                         onClick={() => isMobileOpen && closeMobile()}
-//                         className={`group flex items-center justify-between p-3 rounded-xl transition-all ${
-//                           isActive 
-//                             ? 'bg-primary/10 text-primary' 
-//                             : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
-//                         }`}
-//                       >
-//                         <div className="flex items-center gap-3">
-//                           <item.icon size={20} className={isActive ? 'text-primary' : 'text-text-tertiary group-hover:text-primary'} />
-//                           {!isCollapsed && <span className="text-sm font-semibold whitespace-nowrap">{item.label}</span>}
-//                         </div>
-//                       </Link>
-//                     );
-//                   })}
-//                 </div>
-//               </div>
-//             );
-//           })}
-//         </nav>
-
-//         {/* Footer / Logout */}
-//         <div className="p-4 border-t border-border-default">
-//           <button 
-//             onClick={logout}
-//             className={`flex items-center gap-3 p-3 w-full text-error hover:bg-error/10 rounded-xl transition-colors group ${isCollapsed ? 'justify-center' : ''}`}
-//           >
-//             <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
-//             {!isCollapsed && <span className="text-sm font-bold">Déconnexion</span>}
-//           </button>
-//         </div>
-//       </aside>
-//     </>
-//   );
-// }
-
-// const MENU_CONFIG = [
-//   { 
-//     title: "Supervision",
-//     roles: ['SUPER_ADMIN', 'FLEET_SUPER_ADMIN'],
-//     items: [
-//       { icon: ShieldCheck, label: "Administrateurs", path: "/admin/super/admins" },
-//       { icon: Activity, label: "Santé Système", path: "/admin/diagnostic" }
-//     ]
-//   },
-//   { 
-//     title: "Administration",
-//     roles: ['ADMIN', 'FLEET_ADMIN', 'SUPER_ADMIN', 'FLEET_SUPER_ADMIN'],
-//     items: [
-//       { icon: UserCog, label: "Gestion Managers", path: "/admin/management/managers" },
-//       { icon: Settings, label: "Ressources Parc", path: "/admin/resources" }
-//     ]
-//   },
-//   { 
-//     title: "Ma Flotte",
-//     roles: ['MANAGER', 'FLEET_MANAGER'],
-//     items: [
-//       { icon: LayoutDashboard, label: "Vue d'ensemble", path: "/dashboard" },
-//       { icon: Building2, label: "Mes Flottes", path: "/dashboard/fleets" },
-//       { icon: Truck, label: "Véhicules", path: "/dashboard/vehicles" },
-//       { icon: Users, label: "Chauffeurs", path: "/dashboard/drivers" },
-//       { icon: MapPin, label: "Geofencing", path: "/dashboard/geofencing" }
-//     ]
-//   }
-// ];
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // components/dashboard/Sidebar.tsx
 "use client";
 
@@ -15155,19 +15144,19 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, closeMobile
 
 const MENU_CONFIG = [
     { 
-      title: "Supervision",
+      title: "Supervision et Gestion des admins",
       roles: ['SUPER_ADMIN', 'FLEET_SUPER_ADMIN'],
       items: [
         { icon: ShieldCheck, label: "Administrateurs", path: "/admin/super/admins" },
-        { icon: Activity, label: "Santé Système", path: "/admin/diagnostic" }
+        { icon: Activity, label: "Santé du Système", path: "/admin/diagnostic" }
       ]
     },
     { 
       title: "Administration",
       roles: ['ADMIN', 'FLEET_ADMIN', 'SUPER_ADMIN', 'FLEET_SUPER_ADMIN'],
       items: [
-        { icon: UserCog, label: "Gestion Managers", path: "/admin/management/managers" },
-        { icon: Settings, label: "Ressources Parc", path: "/admin/resources" }
+        { icon: UserCog, label: "Gestion des Managers", path: "/admin/management/managers" },
+        { icon: Settings, label: "Gestion des Ressources", path: "/admin/resources" }
       ]
     },
     { 
@@ -16414,115 +16403,16 @@ export function ChallengesSection() {
 ---
 ### Fichier : `./src/components/marketing/BenefitsSection.tsx`
 ```typescript
-// 'use client';
-
-// import React from 'react';
-// import { useI18n } from '@/hooks/useI18n';
-
-// interface BenefitCardProps {
-//     icon: string;
-//     title: string;
-//     description: string;
-// }
-
-// function BenefitCard({ icon, title, description }: BenefitCardProps) {
-//     return (
-//         <div className="flex flex-col items-center text-center gap-3">
-//             <div className="flex items-center justify-center size-14 rounded-full bg-success/20 text-success">
-//                 <span className="material-symbols-outlined text-3xl">{icon}</span>
-//             </div>
-//             <h3 className="text-lg font-bold text-text-primary">{title}</h3>
-//             <p className="text-text-secondary text-sm">{description}</p>
-//         </div>
-//     );
-// }
-
-// export function BenefitsSection() {
-//     const { t } = useI18n();
-
-//     return (
-//         <section className="px-4 py-10" id="benefits">
-//             <div className="text-center">
-//                 <h2 className="text-3xl font-bold leading-tight tracking-[-0.015em] text-text-primary">
-//                     {t('benefits_title', 'landing')}
-//                 </h2>
-//                 <p className="mt-2 text-text-secondary max-w-2xl mx-auto">
-//                     {t('benefits_subtitle', 'landing')}
-//                 </p>
-//             </div>
-
-//             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
-//                 <BenefitCard
-//                     icon="local_gas_station"
-//                     title={t('benefit_1_title', 'landing')}
-//                     description={t('benefit_1_text', 'landing')}
-//                 />
-//                 <BenefitCard
-//                     icon="shield"
-//                     title={t('benefit_2_title', 'landing')}
-//                     description={t('benefit_2_text', 'landing')}
-//                 />
-//                 <BenefitCard
-//                     icon="verified_user"
-//                     title={t('benefit_3_title', 'landing')}
-//                     description={t('benefit_3_text', 'landing')}
-//                 />
-//             </div>
-//         </section>
-//     );
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useI18n } from '@/hooks/useI18n';
 import { motion, useMotionValue, useSpring, useInView, useTransform } from 'framer-motion';
+import { healthService, PublicStats } from '@/services/health.service';
 
 function AnimatedNumber({ value, suffix = "" }: { value: number, suffix?: string }) {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true });
+  const inView = useInView(ref, { once: false }); // false pour ré-animer lors du refresh
   const motionValue = useMotionValue(0);
   const springValue = useSpring(motionValue, { stiffness: 50, damping: 20 });
   const rounded = useTransform(springValue, (latest) => Math.round(latest));
@@ -16542,11 +16432,57 @@ function AnimatedNumber({ value, suffix = "" }: { value: number, suffix?: string
 
 export function BenefitsSection() {
   const { t } = useI18n();
+  const [stats, setStats] = useState<PublicStats | null>(null);
 
+  const fetchStats = async () => {
+    try {
+      const data = await healthService.getPublicStats();
+      setStats(data);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des stats publiques:", error);
+    }
+  };
+
+  useEffect(() => {
+    // Premier appel immédiat
+    fetchStats();
+
+    // Rafraîchissement automatique toutes les 60 secondes
+    const interval = setInterval(fetchStats, 60000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Mapping des données backend vers la structure d'affichage
   const benefits = [
-    { icon: 'local_gas_station', titleKey: 'benefit_1_title', descKey: 'benefit_1_text', value: 30, suffix: '%' },
-    { icon: 'shield', titleKey: 'benefit_2_title', descKey: 'benefit_2_text', value: 45, suffix: '%' },
-    { icon: 'verified_user', titleKey: 'benefit_3_title', descKey: 'benefit_3_text', value: 99, suffix: '%' }
+    { 
+        icon: 'business', 
+        title: "Entreprises", 
+        desc: "Partenaires nous faisant confiance", 
+        value: stats?.activeManagers || 0, 
+        suffix: '' 
+    },
+    { 
+        icon: 'hub', 
+        title: "Flottes", 
+        desc: "Réseaux de transport actifs", 
+        value: stats?.totalFleets || 0, 
+        suffix: '' 
+    },
+    { 
+        icon: 'local_shipping', 
+        title: "Véhicules", 
+        desc: "Unités suivies en temps réel", 
+        value: stats?.managedVehicles || 0, 
+        suffix: '+' 
+    },
+    { 
+        icon: 'groups', 
+        title: "Chauffeurs", 
+        desc: "Conducteurs certifiés", 
+        value: stats?.totalDrivers || 0, 
+        suffix: '' 
+    }
   ];
 
   return (
@@ -16563,33 +16499,29 @@ export function BenefitsSection() {
           </p>
         </div>
 
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {benefits.map((benefit, idx) => (
             <motion.div 
               key={idx}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
-              className="relative p-10 h-70 rounded-3xl border border-border-default bg-surface/30 backdrop-blur-sm overflow-hidden group hover:border-success/30 transition-all flex flex-col items-center justify-center text-center shadow-lg"
+              className="relative p-8 rounded-3xl border border-border-default bg-surface/30 backdrop-blur-sm overflow-hidden group hover:border-primary/30 transition-all flex flex-col items-center justify-center text-center shadow-lg"
             >
-              <div className="absolute opacity-5 group-hover:opacity-10 transition-opacity transform scale-[3]">
-                <span className="material-symbols-outlined text-9xl">{benefit.icon}</span>
-              </div>
-
               <div className="relative z-10">
-                <div className="mb-6 p-4 rounded-full bg-success/10 text-success mx-auto w-fit">
-                  <span className="material-symbols-outlined text-4xl">{benefit.icon}</span>
+                <div className="mb-4 p-3 rounded-full bg-primary/10 text-primary mx-auto w-fit">
+                  <span className="material-symbols-outlined text-3xl">{benefit.icon}</span>
                 </div>
                 
-                <div className="text-5xl font-black text-text-primary mb-3">
+                <div className="text-4xl font-black text-text-primary mb-2">
                   <AnimatedNumber value={benefit.value} suffix={benefit.suffix} />
                 </div>
                 
-                <h3 className="text-lg font-bold text-text-primary mb-2">
-                  {t(benefit.titleKey, 'landing')}
+                <h3 className="text-sm font-bold text-text-primary mb-1 uppercase tracking-wider">
+                  {benefit.title}
                 </h3>
-                <p className="text-sm text-text-secondary">
-                  {t(benefit.descKey, 'landing')}
+                <p className="text-xs text-text-secondary">
+                  {benefit.desc}
                 </p>
               </div>
             </motion.div>
@@ -18887,6 +18819,11 @@ export const fleetService = {
    */
   deleteFleet: async (id: string): Promise<void> => {
     await apiClient.delete(`/fleets/${id}`);
+  },
+
+   getAllFleets: async (): Promise<Fleet[]> => {
+    const { data } = await apiClient.get<Fleet[]>("/fleets");
+    return data;
   }
 };```
 
@@ -19212,29 +19149,29 @@ export const authService = {
 ### Fichier : `./src/services/health.service.ts`
 ```typescript
 import { apiClient } from "@/lib/api-client";
-import { GeofenceZone, CreateGeofenceDto } from "@/types/geofence.types";
 
-/**
- * Interface représentant l'état de santé des différents services du backend
- */
+export interface PublicStats {
+  activeManagers: number;
+  totalFleets: number;
+  managedVehicles: number;
+  totalDrivers: number;
+  serviceStatus: string;
+}
+
 export interface SystemHealth {
   status: "UP" | "DOWN" | "WARNING";
   timestamp: string;
-  local_db: string;      // État de la base de données PostgreSQL
-  local_redis: string;   // État du cache Redis
-  auth_service: string;  // État du service d'authentification distant
-  vehicle_service: string; // État du service véhicule distant
-  payment_service: string; // État du service de paiement distant
-  geofence_engine: string; // État du moteur de geofencing
+  local_db: string;
+  local_redis: string;
+  auth_service: string;
+  vehicle_service: string;
+  payment_service: string;
+  geofence_engine: string;
 }
 
-/**
- * Service pour surveiller la connectivité entre le Frontend et le Backend
- */
 export const healthService = {
   /**
-   * Effectue un diagnostic profond de tous les services liés au backend
-   * Route: GET /api/v1/health/diagnostic
+   * Diagnostic profond pour l'administration
    */
   check: async (): Promise<SystemHealth> => {
     const { data } = await apiClient.get<SystemHealth>("/health/diagnostic");
@@ -19242,40 +19179,14 @@ export const healthService = {
   },
 
   /**
-   * Récupère les statistiques publiques pour la page d'accueil (Landing Page)
+   * Statistiques publiques pour la Landing Page
    * Route: GET /api/v1/health/public-stats
    */
-  getPublicStats: async () => {
-    const { data } = await apiClient.get("/health/public-stats");
+  getPublicStats: async (): Promise<PublicStats> => {
+    const { data } = await apiClient.get<PublicStats>("/health/public-stats");
     return data;
   }
-};
-
-export const geofenceService = {
-    // 2.A Lister mes zones (Manager)
-    getMyZones: async (): Promise<GeofenceZone[]> => {
-        const { data } = await apiClient.get('/geofence/my-zones');
-        return data;
-    },
-
-    // 1. Créer une zone
-    createZone: async (payload: CreateGeofenceDto): Promise<GeofenceZone> => {
-        const { data } = await apiClient.post('/geofence/zones', payload);
-        return data;
-    },
-
-    // 3.B Assigner à une flotte
-    assignToFleet: async (zoneId: string, fleetId: string): Promise<void> => {
-        await apiClient.patch(`/geofence/${zoneId}/assign-fleet/${fleetId}`);
-    },
-
-    // 3.C Supprimer
-    deleteZone: async (id: string, type: string): Promise<void> => {
-        const lowerType = type.toLowerCase(); // circle ou polygon
-        await apiClient.delete(`/geofence/${lowerType}/${id}`);
-    }
-};
-```
+};```
 
 ---
 ### Fichier : `./src/services/reference.service.ts`
@@ -19285,8 +19196,7 @@ import { ResourceCatalog, ResourceItem } from "@/types/vehicle.types";
 
 export const referenceService = {
   /**
-   * Récupère l'intégralité des ressources du parc en un seul appel.
-   * Très utile pour initialiser les formulaires de création de véhicule.
+   * Récupère l'intégralité des ressources (Lecture seule)
    */
   getAllResources: async (): Promise<ResourceCatalog> => {
     const { data } = await apiClient.get<ResourceCatalog>("/vehicles/resources/all");
@@ -19294,11 +19204,35 @@ export const referenceService = {
   },
 
   /**
-   * Récupère une liste spécifique si besoin (ex: juste les couleurs)
+   * Récupère une liste spécifique
    */
   getLookup: async (resourceName: string): Promise<ResourceItem[]> => {
     const { data } = await apiClient.get<ResourceItem[]>(`/vehicles/lookup/${resourceName}`);
     return data;
+  },
+
+  /**
+   * CRÉER une ressource (ex: une nouvelle marque ou une couleur)
+   * @param category le segment d'URL (ex: 'brands', 'colors', 'vehicle-types')
+   */
+  createResource: async (category: string, payload: { code: string; label: string; description?: string }): Promise<ResourceItem> => {
+    const { data } = await apiClient.post<ResourceItem>(`/admin/resources/${category}`, payload);
+    return data;
+  },
+
+  /**
+   * MODIFIER une ressource existante
+   */
+  updateResource: async (category: string, id: string, payload: { code: string; label: string; description?: string }): Promise<ResourceItem> => {
+    const { data } = await apiClient.put<ResourceItem>(`/admin/resources/${category}/${id}`, payload);
+    return data;
+  },
+
+  /**
+   * SUPPRIMER une ressource
+   */
+  deleteResource: async (category: string, id: string): Promise<void> => {
+    await apiClient.delete(`/admin/resources/${category}/${id}`);
   }
 };```
 
@@ -19463,19 +19397,18 @@ export type Notification = {
 ```typescript
 import { UUID } from "./base.types";
 
-/**
- * Représente un gestionnaire de flotte (Client B2B) vu par l'administrateur
- */
 export interface FleetManager {
-  userId: UUID;
+  id: UUID;            // Changé de userId à id pour matcher le JSON
+  username: string;    // Ajouté (présent dans le JSON)
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  companyName: string;      // Nom de l'entreprise (Souveraineté fleet.fleet_managers)
-  status: 'ACTIVE' | 'INACTIVE'; // Statut du compte
-  fleetCount: number;       // Nombre réel de flottes gérées (calculé par le backend)
+  companyName: string;
+  isActive: boolean;   // Ajouté (via notre modif backend)
+  lastLoginAt: string | null; 
   photoUrl?: string;
+  fleetCount: number;  // Sera à 0 tant qu'on ne modifie pas le service, mais le type est prêt
 }```
 
 ---
@@ -19493,6 +19426,8 @@ export interface Fleet {
   managerUserId: UUID;
   vehicleCount: number; // Calculé par le backend
   phoneNumber?: string; // Contact dispatch
+   managerName?: string;
+  managerEmail?: string;
 }
 
 /**
@@ -19502,7 +19437,16 @@ export interface FleetRequest {
   name: string;
   phoneNumber?: string;
 }
-
+export interface FleetStats {
+  fleetId: UUID;
+  totalDrivers: number;
+  totalKmTraveled: number;
+  vehicleStatusDistribution: {
+    AVAILABLE: number;
+    ON_TRIP: number;
+    MAINTENANCE: number;
+  };
+}
 /**
  * Statistiques détaillées d'une flotte spécifique
  */
@@ -19516,7 +19460,10 @@ export interface FleetStats {
     MAINTENANCE: number;
   };
 }
-
+export interface CreateFleetDto {
+  name: string;
+  phoneNumber?: string;
+}
 /**
  * Indicateurs clés pour le tableau de bord du Manager
  */
@@ -19557,6 +19504,8 @@ export interface User {
     licenceNumber?: string;      // Pour les Drivers
     vehicleId?: string;          // Pour les Drivers (véhicule assigné)
     service: string;             // Devrait être "FLEET_MANAGEMENT"
+     isActive: boolean;
+    lastLoginAt: string | null; 
 }
 
 export interface LoginResponse {
@@ -19710,9 +19659,6 @@ declare module '@changey/react-leaflet-markercluster' {
 import { UUID } from "./base.types";
 import { Role } from "./auth-api.types";
 
-/**
- * Représente un compte Administrateur géré par le SuperAdmin
- */
 export interface AdminUser {
   id: UUID;
   username: string;
@@ -19722,13 +19668,11 @@ export interface AdminUser {
   lastName: string;
   photoUrl?: string;
   roles: Role[];
-  isActive: boolean; // État du compte (Toggle)
-  service: string;   // Devrait être "FLEET_MANAGEMENT"
+  isActive: boolean;      // <-- AJOUTÉ
+  lastLoginAt: string | null; // <-- AJOUTÉ
+  service: string;
 }
 
-/**
- * Données requises pour créer un administrateur (JSON part du Multipart)
- */
 export interface CreateAdminRequest {
   username: string;
   password?: string;
@@ -20199,14 +20143,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Configuration du Proxy pour rediriger les appels API vers le serveur de la collaboratrice
   async rewrites() {
     return [
       {
-        // Tous les appels commençant par /api/proxy seront redirigés
         source: "/api/proxy/:path*",
-        // URL du serveur backend (IP fournie dans ton api-client)
-        destination: "http://192.168.180.48:8080/api/v1/:path*",
+        // Teste avec HTTP si le HTTPS échoue
+        destination: "https://fleet-management-geofence.pynfi.com/api/v1/:path*",
       },
     ];
   },

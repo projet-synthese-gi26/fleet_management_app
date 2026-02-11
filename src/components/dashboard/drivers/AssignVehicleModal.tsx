@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 import Modal from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -7,42 +6,34 @@ import { vehicleService } from "@/services/vehicle.service";
 import { driverService } from "@/services/driver.service";
 import { Vehicle } from "@/types/vehicle.types";
 import { Driver } from "@/types/driver.types";
-import { Truck, Search, CheckCircle2, AlertCircle } from "lucide-react";
+import { Truck, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-interface Props {
-  isOpen: boolean;
-  onClose: () => void;
-  driver: Driver | null;
-  onSuccess: () => void;
-}
-
-export function AssignVehicleModal({ isOpen, onClose, driver, onSuccess }: Props) {
+export function AssignVehicleModal({ isOpen, onClose, driver, onSuccess }: any) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Charger les véhicules de la même flotte
   useEffect(() => {
-    if (isOpen && driver?.fleetId) {
+    if (isOpen) {
       setIsLoading(true);
-      vehicleService.getAll() // Le backend filtre déjà par manager
-        .then(data => setVehicles(data.filter(v => v.fleetId === driver.fleetId)))
+      vehicleService.getAll()
+        .then(data => setVehicles(data.filter(v => v.status === 'AVAILABLE')))
         .finally(() => setIsLoading(false));
     }
-  }, [isOpen, driver]);
+  }, [isOpen]);
 
   const handleAssign = async () => {
     if (!driver || !selectedId) return;
     setIsSubmitting(true);
     try {
       await driverService.assignVehicle(driver.userId, selectedId);
-      toast.success("Assignation réussie !");
+      toast.success("Véhicule assigné");
       onSuccess();
       onClose();
     } catch (error: any) {
-      toast.error("Erreur", { description: error.detail });
+      toast.error("Erreur d'assignation");
     } finally {
       setIsSubmitting(false);
     }
@@ -51,41 +42,29 @@ export function AssignVehicleModal({ isOpen, onClose, driver, onSuccess }: Props
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Assigner un véhicule à ${driver?.firstName}`}>
       <div className="space-y-4">
-        <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl flex gap-3 items-start">
-          <AlertCircle className="text-amber-600 shrink-0" size={18} />
-          <p className="text-[11px] text-amber-800 leading-relaxed">
-            Note : Si le véhicule est déjà assigné, l'ancien chauffeur sera automatiquement libéré.
-          </p>
-        </div>
-
-        <div className="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-          {vehicles.map(v => (
-            <div 
-              key={v.id}
-              onClick={() => setSelectedId(v.id)}
-              className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-                selectedId === v.id ? 'border-primary bg-primary/5 shadow-sm' : 'border-border-default hover:bg-background-secondary'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${v.status === 'AVAILABLE' ? 'bg-success/10 text-success' : 'bg-slate-100 text-slate-400'}`}>
-                  <Truck size={18} />
+        {isLoading ? (
+          <div className="py-10 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
+        ) : (
+          <div className="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+            {vehicles.map(v => (
+              <div key={v.id} onClick={() => setSelectedId(v.id)} 
+                   className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${selectedId === v.id ? 'border-primary bg-primary/5' : 'border-slate-100 hover:bg-slate-50'}`}>
+                <div className="flex items-center gap-3">
+                  <Truck size={18} className="text-slate-400" />
+                  <div>
+                    <p className="text-sm font-bold text-slate-700 uppercase">{v.licensePlate}</p>
+                    <p className="text-[10px] text-slate-400">{v.brand} {v.model}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-text-primary uppercase">{v.licensePlate}</p>
-                  <p className="text-[10px] text-text-tertiary">{v.brand} {v.model}</p>
-                </div>
+                {selectedId === v.id && <CheckCircle2 size={18} className="text-primary" />}
               </div>
-              {selectedId === v.id && <CheckCircle2 size={18} className="text-primary" />}
-            </div>
-          ))}
-        </div>
-
+            ))}
+            {vehicles.length === 0 && <p className="text-center text-slate-400 text-sm py-4">Aucun véhicule disponible.</p>}
+          </div>
+        )}
         <div className="flex justify-end gap-3 pt-4 border-t">
           <Button variant="outline" onClick={onClose}>Annuler</Button>
-          <Button onClick={handleAssign} isLoading={isSubmitting} disabled={!selectedId}>
-            Confirmer l'assignation
-          </Button>
+          <Button onClick={handleAssign} isLoading={isSubmitting} disabled={!selectedId}>Confirmer</Button>
         </div>
       </div>
     </Modal>

@@ -1,124 +1,128 @@
 "use client";
 
-import React from "react";
-// Importations des composants de base de la carte
-import { MapContainer, TileLayer, FeatureGroup, Polygon, Circle, Popup } from "react-leaflet";
-// Importation des outils de dessin
+import React, { useEffect } from "react";
+import { MapContainer, TileLayer, FeatureGroup, Polygon, Circle, Popup, useMap } from "react-leaflet";
 import { EditControl } from "react-leaflet-draw";
-// ✅ IMPORTATION CORRIGÉE : On récupère le type depuis notre fichier de définition
+import L from "leaflet";
 import { GeofenceZone } from "@/types/geofence.types";
 
-// Styles obligatoires pour Leaflet et les outils de dessin
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
 
-/**
- * Propriétés attendues par le composant de carte
- */
-interface Props {
-  zones: GeofenceZone[]; // Liste des zones existantes à afficher
-  onZoneCreated: (data: any) => void; // Fonction appelée après un dessin
+if (typeof window !== "undefined") {
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+    iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+    shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  });
 }
 
-/**
- * Composant de carte interactive pour la gestion du Geofencing
- */
-export default function GeofenceMap({ zones, onZoneCreated }: Props) {
+interface Props {
+  zones: GeofenceZone[];
+  onZoneCreated: (data: any) => void;
+  focusedZoneId?: string;
+  onZoneSelect?: (zone: GeofenceZone) => void; // ✅ AJOUT : Callback de sélection
+}
+
+function MapViewHandler({ focusedZoneId, zones }: { focusedZoneId?: string; zones: GeofenceZone[] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!focusedZoneId) return;
+    const zone = zones.find((z) => z.id === focusedZoneId);
+    if (!zone) return;
+
+    if (zone.type === "CIRCLE" && zone.center) {
+      const center: [number, number] = [zone.center.coordinates[1], zone.center.coordinates[0]];
+      map.flyTo(center, 15, { duration: 1.5 });
+    } else if (zone.type === "POLYGON" && zone.polygon) {
+      const positions = zone.polygon.coordinates[0].map((c) => [c[1], c[0]] as [number, number]);
+      const bounds = L.latLngBounds(positions);
+      map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
+    }
+  }, [focusedZoneId, zones, map]);
+  return null;
+}
+
+export default function GeofenceMap({ zones, onZoneCreated, focusedZoneId, onZoneSelect }: Props) {
   
-  /**
-   * Handler déclenché par Leaflet Draw lorsqu'une forme est terminée
-   */
+  // ✅ AJOUT : Helper de style dynamique
+ const getStyle = (isFocused: boolean, p0: string) => ({
+    color: isFocused ? "#136dec" : "#94a3b8",      // Bleu si focus, Gris sinon
+    fillColor: isFocused ? "#136dec" : "#94a3b8",
+    fillOpacity: isFocused ? 0.5 : 0.2,            // Plus opaque si focus
+    weight: isFocused ? 5 : 2,                     // Bordure épaisse si focus
+    dashArray: isFocused ? "" : "5, 10",           // Pointillés si pas focus
+  });
+
+
   const _onCreated = (e: any) => {
     const { layerType, layer } = e;
-
-    // Cas 1 : Le manager a dessiné un polygone
     if (layerType === "polygon") {
       const latlngs = layer.getLatLngs()[0];
-      
-      // 🔄 CONVERSION : Leaflet utilise [Lat, Lng], le backend attend [Lng, Lat] (GeoJSON)
       const coords = latlngs.map((ll: any) => [ll.lng, ll.lat]);
-      
-      // 🔒 SÉCURITÉ : On ferme le polygone (le dernier point doit être identique au premier)
-      coords.push(coords[0]); 
-
-      onZoneCreated({
-        type: "POLYGON",
-        polygon: { type: "Polygon", coordinates: [coords] }
-      });
-    } 
-    // Cas 2 : Le manager a dessiné un cercle
-    else if (layerType === "circle") {
+      coords.push(coords[0]);
+      onZoneCreated({ type: "POLYGON", polygon: { type: "Polygon", coordinates: [coords] } });
+    } else if (layerType === "circle") {
       const center = layer.getLatLng();
-      
-      onZoneCreated({
-        type: "CIRCLE",
-        radius: layer.getRadius(),
-        // 🔄 CONVERSION : [Lng, Lat] pour le point central
-        center: { coordinates: [center.lng, center.lat] } 
-      });
+      onZoneCreated({ type: "CIRCLE", radius: layer.getRadius(), center: { coordinates: [center.lng, center.lat] } });
     }
-    
-    // On retire immédiatement le dessin "temporaire" de Leaflet. 
-    // La zone sera officiellement affichée une fois enregistrée en base de données.
     layer.remove();
   };
 
   return (
-    <MapContainer 
-      center={[4.0511, 9.7679]} // Centré sur le Cameroun (Douala) par défaut
-      zoom={12} 
-      className="h-full w-full z-0"
-    >
-      {/* Fond de carte (CartoDB Voyager - Look moderne et épuré) */}
-      <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+    <MapContainer center={[4.0511, 9.7679]} zoom={12} className="h-full w-full z-0">
+      <TileLayer 
+        attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" 
+      />
       
-      {/* Groupe contenant les outils de dessin */}
+      <MapViewHandler focusedZoneId={focusedZoneId} zones={zones} />
+
       <FeatureGroup>
         <EditControl
           position="topright"
           onCreated={_onCreated}
           draw={{
-            rectangle: false, // Désactivé (on utilise polygone)
-            polyline: false,  // Désactivé
-            circlemarker: false,
-            marker: false,
-            polygon: { 
-              shapeOptions: { color: "#136dec", fillOpacity: 0.2 } 
-            },
-            circle: { 
-              shapeOptions: { color: "#10b981", fillOpacity: 0.2 } 
-            }
+            rectangle: false, polyline: false, circlemarker: false, marker: false,
+            polygon: { shapeOptions: { color: "#136dec" } },
+            circle: { shapeOptions: { color: "#10b981" } }
           }}
         />
       </FeatureGroup>
 
-      {/* --- RENDU DES ZONES EXISTANTES --- */}
       {zones.map((zone) => {
-        // Affichage des polygones
+        const isFocused = zone.id === focusedZoneId;
+
         if (zone.type === "POLYGON" && zone.polygon) {
-          // 🔄 INVERSION : On repasse de [Lng, Lat] (API) à [Lat, Lng] (Leaflet)
-          const positions = zone.polygon.coordinates[0].map(c => [c[1], c[0]] as [number, number]);
+          const positions = zone.polygon.coordinates[0].map((c) => [c[1], c[0]] as [number, number]);
+          function getStyle(isFocused: boolean, arg1: string): L.PathOptions | undefined {
+            throw new Error("Function not implemented.");
+          }
+
           return (
             <Polygon 
-              key={zone.id} 
+              // 🔑 LA CLÉ EST ICI : On change la key si isFocused change
+              key={`${zone.id}-${isFocused}`} 
               positions={positions} 
-              pathOptions={{ color: "#136dec", fillOpacity: 0.15 }}
+              pathOptions={getStyle(isFocused, "POLYGON")}
+              eventHandlers={{ click: () => onZoneSelect?.(zone) }}
             >
               <Popup><span className="font-bold">{zone.title}</span></Popup>
             </Polygon>
           );
         }
         
-        // Affichage des cercles
         if (zone.type === "CIRCLE" && zone.center) {
-          // 🔄 INVERSION : [Lat, Lng] pour le centre
           const center: [number, number] = [zone.center.coordinates[1], zone.center.coordinates[0]];
           return (
             <Circle 
-              key={zone.id} 
+              // 🔑 LA CLÉ EST ICI AUSSI
+              key={`${zone.id}-${isFocused}`} 
               center={center} 
               radius={zone.radius} 
-              pathOptions={{ color: "#10b981", fillOpacity: 0.15 }}
+              pathOptions={getStyle(isFocused, "CIRCLE")}
+              eventHandlers={{ click: () => onZoneSelect?.(zone) }}
             >
               <Popup><span className="font-bold">{zone.title}</span></Popup>
             </Circle>

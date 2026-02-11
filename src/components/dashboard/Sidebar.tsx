@@ -1,4 +1,3 @@
-// components/dashboard/Sidebar.tsx
 "use client";
 
 import React from "react";
@@ -10,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   LayoutDashboard, Truck, Users, ShieldCheck, 
   Settings, LogOut, Building2, MapPin, UserCog, 
-  ChevronLeft, Activity, ChevronRight
+  Activity, ChevronRight, ChevronLeft
 } from "lucide-react";
 
 interface SidebarProps {
@@ -32,6 +31,24 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, closeMobile
     );
   };
 
+  /**
+   * Vérifie si un lien est actif de manière précise
+   */
+  const checkActive = (itemPath: string) => {
+    const fullItemPath = `/${locale}${itemPath}`;
+    
+    // Cas 1 : Correspondance exacte
+    if (pathname === fullItemPath) return true;
+    
+    // Cas 2 : Gestion des sous-routes (ex: /dashboard/vehicles doit activer /vehicles mais PAS /dashboard si on veut être strict)
+    // Sauf pour le tableau de bord principal où on ne veut l'activer que si c'est le chemin exact
+    if (itemPath === "/dashboard" || itemPath === "/admin") {
+        return pathname === fullItemPath;
+    }
+
+    return pathname.startsWith(`${fullItemPath}/`);
+  };
+
   return (
     <>
       <AnimatePresence>
@@ -50,16 +67,14 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, closeMobile
         ${isCollapsed ? 'w-20' : 'w-72'}
       `}>
         
-        {/* Bouton de rétraction Desktop */}
         <button 
           type="button"
-          onClick={() => setIsCollapsed?.(!isCollapsed)} // Le ?. évite l'erreur TypeError
+          onClick={() => setIsCollapsed(!isCollapsed)}
           className="hidden lg:flex absolute -right-3 top-10 size-6 bg-surface border border-border-default rounded-full items-center justify-center shadow-md hover:text-primary transition-all z-[60] cursor-pointer"
         >
           {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
 
-        {/* Logo */}
         <div className="h-20 flex items-center px-6 gap-3 shrink-0 overflow-hidden">
           <div className="size-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
             <ShieldCheck className="text-white" size={24} />
@@ -71,7 +86,6 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, closeMobile
           )}
         </div>
 
-        {/* Menu */}
         <nav className="flex-1 px-4 py-4 space-y-8 overflow-y-auto no-scrollbar">
           {MENU_CONFIG.map((section, idx) => {
             if (!hasRole(section.roles)) return null;
@@ -84,7 +98,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, closeMobile
                 )}
                 <div className="space-y-1">
                   {section.items.map((item) => {
-                    const isActive = pathname.includes(item.path);
+                    const isActive = checkActive(item.path); // ✅ Utilisation de la nouvelle fonction
                     return (
                       <Link 
                         key={item.path} 
@@ -92,13 +106,20 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, closeMobile
                         onClick={() => isMobileOpen && closeMobile()}
                         className={`group flex items-center p-3 rounded-xl transition-all ${
                           isActive 
-                            ? 'bg-primary/10 text-primary' 
+                            ? 'bg-primary/10 text-primary shadow-sm' 
                             : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
                         } ${isCollapsed ? 'justify-center' : ''}`}
                       >
                         <div className="flex items-center gap-3">
-                          <item.icon size={20} className={isActive ? 'text-primary' : 'text-text-tertiary group-hover:text-primary'} />
-                          {!isCollapsed && <span className="text-sm font-semibold whitespace-nowrap">{item.label}</span>}
+                          <item.icon 
+                            size={20} 
+                            className={`transition-colors ${isActive ? 'text-primary' : 'text-text-tertiary group-hover:text-primary'}`} 
+                          />
+                          {!isCollapsed && (
+                            <span className={`text-sm font-semibold whitespace-nowrap ${isActive ? 'text-primary' : ''}`}>
+                              {item.label}
+                            </span>
+                          )}
                         </div>
                       </Link>
                     );
@@ -109,7 +130,6 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, closeMobile
           })}
         </nav>
 
-        {/* Logout */}
         <div className="p-4 border-t border-border-default">
           <button 
             onClick={logout}
@@ -126,8 +146,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobileOpen, closeMobile
 
 const MENU_CONFIG = [
     { 
-      title: "Supervision et Gestion des admins",
-      roles: ['SUPER_ADMIN', 'FLEET_SUPER_ADMIN'],
+      title: "Supervision",
+      roles: ['FLEET_SUPER_ADMIN'],
       items: [
         { icon: ShieldCheck, label: "Administrateurs", path: "/admin/super/admins" },
         { icon: Activity, label: "Santé du Système", path: "/admin/diagnostic" }
@@ -135,7 +155,7 @@ const MENU_CONFIG = [
     },
     { 
       title: "Administration",
-      roles: ['ADMIN', 'FLEET_ADMIN', 'SUPER_ADMIN', 'FLEET_SUPER_ADMIN'],
+      roles: ['FLEET_ADMIN', 'FLEET_SUPER_ADMIN'],
       items: [
         { icon: UserCog, label: "Gestion des Managers", path: "/admin/management/managers" },
         { icon: Settings, label: "Gestion des Ressources", path: "/admin/resources" }
@@ -143,7 +163,7 @@ const MENU_CONFIG = [
     },
     { 
       title: "Ma Flotte",
-      roles: ['MANAGER', 'FLEET_MANAGER'],
+      roles: ['FLEET_MANAGER'],
       items: [
         { icon: LayoutDashboard, label: "Vue d'ensemble", path: "/dashboard" },
         { icon: Building2, label: "Mes Flottes", path: "/dashboard/fleets" },

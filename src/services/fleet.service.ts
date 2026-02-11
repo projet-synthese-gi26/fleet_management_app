@@ -44,5 +44,18 @@ export const fleetService = {
    getAllFleets: async (): Promise<Fleet[]> => {
     const { data } = await apiClient.get<Fleet[]>("/fleets");
     return data;
+  },
+  assignVehicle: async (fleetId: string, vehicleId: string): Promise<void> => {
+    await apiClient.post(`/fleets/${fleetId}/vehicles`, { vehicleId });
+  },
+
+  // 10c. Recruter un chauffeur (par email/username)
+  recruitDriver: async (fleetId: string, identifier: string): Promise<void> => {
+    await apiClient.post(`/fleets/${fleetId}/drivers`, { identifier });
+  },
+  
+  // Détacher (optionnel pour la gestion)
+  detachVehicle: async (fleetId: string, vehicleId: string): Promise<void> => {
+    await apiClient.delete(`/fleets/${fleetId}/vehicles/${vehicleId}`);
   }
 };

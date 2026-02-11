@@ -13,6 +13,11 @@ export const vehicleService = {
     const { data } = await apiClient.get<Vehicle>(`/vehicles/${id}`);
     return data;
   },
+  // Récupérer les véhicules filtrés par flotte
+  getByFleet: async (fleetId: string): Promise<Vehicle[]> => {
+    const { data } = await apiClient.get<Vehicle[]>(`/fleets/${fleetId}/vehicles`);
+    return data;
+  },
 
   create: async (payload: CreateVehicleDto): Promise<Vehicle> => {
     const { data } = await apiClient.post<Vehicle>("/vehicles", payload);

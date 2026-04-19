@@ -7,7 +7,8 @@ import StatusBadge from "./StatusBadge";
 import PageHeader from "@/components/admin/fleet-managers/PageHeader";
 import FilterBar from "@/components/admin/fleet-managers/FilterBar";
 import { adminService } from "@/services/admin.service";
-import { FleetManager, FleetStatistics } from "@/types/fleet.types";
+import { FleetStats } from "@/types/fleet.types";
+import { FleetManager } from "@/types/fleet-manager.types";
 import { TableSkeleton } from "@/components/ui/skeletons/TableSkeleton";
 import { PageLoader } from "@/components/ui/Spinner";
 import { toast } from "sonner";
@@ -99,7 +100,7 @@ const StatCard = ({
   </div>
 );
 
-const FleetStatisticsCard = ({ stats }: { stats: FleetStatistics }) => {
+const FleetStatisticsCard = ({ stats }: { stats: FleetStats }) => {
   const { t } = useI18n();
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">

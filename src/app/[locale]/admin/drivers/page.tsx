@@ -12,7 +12,7 @@ export default function AdminDriversPage() {
 
   useEffect(() => {
     // Note: Pour l'admin, le backend sans fleetId renvoie tout (à vérifier selon votre API)
-    driverService.getDriversByFleet("") 
+    driverService.getDrivers() 
       .then(setDrivers)
       .finally(() => setIsLoading(false));
   }, []);
@@ -32,7 +32,12 @@ export default function AdminDriversPage() {
 
       <div className="bg-surface rounded-xl border border-border-default shadow-sm overflow-hidden">
         {isLoading ? <TableSkeleton rows={10} columns={5} /> : (
-          <DriverTable drivers={drivers} isAdminView={true} />
+          <DriverTable 
+            drivers={drivers} 
+            onAssign={() => console.log("Assign Vehicle")} 
+            onUnassign={() => console.log("Unassign Vehicle")}
+            onRemove={() => console.log("Remove Vehicle")}
+          />
         )}
       </div>
     </div>

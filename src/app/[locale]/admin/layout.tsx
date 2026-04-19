@@ -12,10 +12,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="flex h-screen bg-background-secondary overflow-hidden">
       <Sidebar
-        isOpen={isSidebarOpen}
+        isMobileOpen={isSidebarOpen}
         isCollapsed={isCollapsed}
-        toggleCollapse={() => setIsCollapsed(!isCollapsed)}
-        closeMobileMenu={() => setIsSidebarOpen(false)}
+        setIsCollapsed={() => setIsCollapsed(!isCollapsed)}
+        closeMobile={() => setIsSidebarOpen(false)}
       />
 
       <div className={`flex flex-col flex-1 h-full transition-all duration-300 ease-in-out ${isCollapsed ? "lg:pl-20" : "lg:pl-72"}`}>

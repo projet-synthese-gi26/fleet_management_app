@@ -111,8 +111,7 @@ export default function VehicleDetailsPage() {
             
             <VehicleGeneralInfo 
               vehicle={vehicle} 
-              readOnly={true}
-              onUpdate={fetchVehicle} 
+              onUpdate={() => fetchVehicle} 
             />
           </div>
         )}

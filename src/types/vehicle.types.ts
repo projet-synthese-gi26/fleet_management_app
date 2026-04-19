@@ -50,6 +50,10 @@ export interface Vehicle {
   geofenceRemoteId?: string;
 }
 
+export interface OperationalParameters {
+  [key: string]: any;
+}
+
 export interface CreateVehicleDto {
   vehicleTypeId: UUID;
   manufacturerId: UUID;

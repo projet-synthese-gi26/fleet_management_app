@@ -65,8 +65,7 @@ export default function AdminVehiclesPage() {
       <div className="bg-surface rounded-xl border border-border-default shadow-sm overflow-hidden min-h-[400px]">
         {isLoading ? <TableSkeleton rows={8} columns={5} /> : (
           <VehicleTable 
-            vehicles={filtered} 
-            isAdminView={true} 
+            vehicles={filtered}  
             onView={(v) => console.log("Voir", v)} 
           />
         )}

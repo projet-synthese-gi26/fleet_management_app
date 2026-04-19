@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api-client';
-import { FleetManager, UpdateManagerDto } from '@/types/fleet.types';
+import { FleetManager, UpdateManagerDto } from '@/types/fleet-manager.types';
 import { UUID } from '@/types/base.types';
 
 export const adminService = {

@@ -45,7 +45,7 @@ export default function ManagerDetailsPage() {
     
     try {
       // Utilisation de l'ID du manager pour le PATCH
-      await adminManagementService.toggleManagerStatus(manager.id);
+      await adminManagementService.toggleManagerStatus(manager.id || "");
       toast.success(`Opération réussie`, { description: `La ${action} du compte a été effectuée.` });
       
       // Rafraîchissement complet pour garantir la synchronisation avec le backend

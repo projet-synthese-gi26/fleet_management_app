@@ -8,7 +8,8 @@ import {
   UserAdditionalInfo,
 } from "@/data/mockUsers";
 import { MOCK_FLEET_STATISTICS } from "@/data/mockFleetStatistics";
-import { FleetManager, FleetStatistics } from "@/types/fleet.types";
+import { FleetStats } from "@/types/fleet.types";
+import { FleetManager } from "@/types/fleet-manager.types";
 import { UUID } from "@/types/base.types";
 
 type ManagerWithDetails = {
@@ -18,7 +19,7 @@ type ManagerWithDetails = {
     id: string;
     name: string;
     vehicleCount: number;
-    statistics?: FleetStatistics;
+    statistics?: FleetStats;
   }[];
 };
 
@@ -66,6 +67,10 @@ const getManagerData = (): ManagerWithDetails[] => {
         // Champs optionnels UI
         avatarUrl: additionalInfo.avatarUrl,
         lastActive: additionalInfo.lastActive,
+        lastLoginAt: additionalInfo.lastActive,
+        username: "",
+        phone: "",
+        isActive: true  
       };
 
       managerMap.set(managerId, {

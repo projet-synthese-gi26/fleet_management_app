@@ -40,7 +40,7 @@ export default function AdminManagersPage() {
   const handleToggleStatus = async (manager: FleetManager) => {
     const action = manager.isActive ? "suspendre" : "réactiver";
     try {
-      await adminManagementService.toggleManagerStatus(manager.id);
+      await adminManagementService.toggleManagerStatus(manager.id || "");
       toast.success(`Le compte a été ${action}é avec succès`);
       fetchManagers(); 
     } catch (error: any) {

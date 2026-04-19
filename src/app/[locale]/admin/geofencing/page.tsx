@@ -5,9 +5,8 @@ import dynamic from "next/dynamic";
 import { geofenceService } from "@/services/geofence.service";
 import { fleetService } from "@/services/fleet.service";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
 import { Shield, Plus, MapPin } from "lucide-react";
-import CreateZoneModal from "@/components/admin/geofencing/CreateZoneModal";
+import { CreateZoneModal } from "@/components/admin/geofencing/CreateZoneModal";
 
 const GeofenceMap = dynamic(() => import("@/components/map/GeofenceMap"), { ssr: false });
 
@@ -77,7 +76,7 @@ export default function GeofencingPage() {
       {/* Carte (Prend le reste de l'espace) */}
       <div className="flex-1 relative">
         <GeofenceMap 
-            existingZones={zones} 
+            zones={zones} 
             onZoneCreated={handleZoneCreated}  
         />
       </div>
@@ -90,7 +89,7 @@ export default function GeofencingPage() {
           geometry={tempGeometry}
           fleets={fleets}
           managerId={user?.id || ""}
-          onSuccess={handleSaveComplete}
+          onSuccess={() => handleSaveComplete}
         />
       )}
     </div>

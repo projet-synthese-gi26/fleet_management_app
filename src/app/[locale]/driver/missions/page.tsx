@@ -133,10 +133,7 @@ const DriverMissionsPage = () => {
         setSelectedMission(null); // Clear selected mission when closing
     };
 
-    // Dummy function for now
-    const handleCallDispatch = () => {
-        console.log("Call Dispatch clicked");
-    };
+    
 
     return (
         <>
@@ -144,7 +141,7 @@ const DriverMissionsPage = () => {
                 <DashboardHeader />
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                     <div className="xl:col-span-2 flex flex-col gap-8">
-                        <CurrentMissionCard onCallDispatchClick={handleCallDispatch} />
+                        <CurrentMissionCard />
                         <UpcomingMissions onMissionClick={openDetailsModal} />
                     </div>
                     <div className="flex flex-col gap-6">

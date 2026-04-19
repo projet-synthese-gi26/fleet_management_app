@@ -1,4 +1,5 @@
 "use client";
+
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Trip } from '@/types/trip.types';
 import { tripService } from '@/services/trip.service';
@@ -19,15 +20,20 @@ export const TripProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const telemetryInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // 🔄 Recovery Logic : Au chargement, on check si un trajet existe
+  // 🔄 RECOVERY : Au chargement, on vérifie si une course est déjà en cours sur le serveur
   useEffect(() => {
     const initTrip = async () => {
-      const activeTrip = await tripService.getCurrentTrip();
-      if (activeTrip) {
-        setCurrentTrip(activeTrip);
-        startTelemetryLoop(activeTrip.id);
+      try {
+        const activeTrip = await tripService.getMyActiveTrip();
+        if (activeTrip) {
+          setCurrentTrip(activeTrip);
+          startTelemetryLoop(activeTrip.id);
+        }
+      } catch (e) {
+        console.error("Erreur recovery trip");
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     initTrip();
     return () => stopTelemetryLoop();
@@ -36,21 +42,27 @@ export const TripProvider = ({ children }: { children: React.ReactNode }) => {
   const startTelemetryLoop = (tripId: string) => {
     stopTelemetryLoop();
     telemetryInterval.current = setInterval(() => {
-      // Simulation GPS (En production, utiliser navigator.geolocation)
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((pos) => {
-          tripService.sendTelemetry(tripId, {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            speed: pos.coords.speed || 0
-          }).catch(console.error);
-        });
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            tripService.sendTelemetry(tripId, {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+              speed: pos.coords.speed || 0
+            }).catch(err => console.error("Erreur télémétrie:", err));
+          },
+          (err) => console.warn("GPS non disponible"),
+          { enableHighAccuracy: true }
+        );
       }
-    }, 10000); // Toutes les 10 secondes selon spec
+    }, 10000); // 10 secondes
   };
 
   const stopTelemetryLoop = () => {
-    if (telemetryInterval.current) clearInterval(telemetryInterval.current);
+    if (telemetryInterval.current) {
+      clearInterval(telemetryInterval.current);
+      telemetryInterval.current = null;
+    }
   };
 
   const startTrip = async (vehicleId?: string) => {
@@ -58,9 +70,9 @@ export const TripProvider = ({ children }: { children: React.ReactNode }) => {
       const trip = await tripService.startTrip({ vehicleId });
       setCurrentTrip(trip);
       startTelemetryLoop(trip.id);
-      toast.success("Trajet démarré !");
+      toast.success("Course démarrée ! GPS actif.");
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || "Impossible de démarrer le trajet");
+      toast.error("Impossible de démarrer", { description: err.detail });
     }
   };
 
@@ -70,20 +82,14 @@ export const TripProvider = ({ children }: { children: React.ReactNode }) => {
       const finalTrip = await tripService.endTrip(currentTrip.id);
       stopTelemetryLoop();
       setCurrentTrip(null);
-      toast.success(`Trajet terminé : ${finalTrip.distanceKm} km parcourus.`);
-    } catch (err) {
-      toast.error("Erreur lors de la clôture du trajet");
+      toast.success(`Course terminée. Distance : ${finalTrip.distanceKm?.toFixed(1)} km.`);
+    } catch (err: any) {
+      toast.error("Erreur lors de la clôture", { description: err.detail });
     }
   };
 
   return (
-    <TripContext.Provider value={{ 
-      currentTrip, 
-      isTripActive: !!currentTrip, 
-      startTrip, 
-      endTrip, 
-      isLoading 
-    }}>
+    <TripContext.Provider value={{ currentTrip, isTripActive: !!currentTrip, startTrip, endTrip, isLoading }}>
       {children}
     </TripContext.Provider>
   );
@@ -91,6 +97,6 @@ export const TripProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useTrip = () => {
   const context = useContext(TripContext);
-  if (!context) throw new Error('useTrip must be used within a TripProvider');
+  if (!context) throw new Error('useTrip doit être utilisé dans un TripProvider');
   return context;
 };

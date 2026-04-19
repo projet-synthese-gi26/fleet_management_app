@@ -1,170 +1,131 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  FeatureGroup,
-  Circle,
-  Polygon,
-  useMap,
-} from "react-leaflet";
+import React, { useEffect } from "react";
+import { MapContainer, TileLayer, FeatureGroup, Polygon, Circle, Popup, useMap } from "react-leaflet";
 import { EditControl } from "react-leaflet-draw";
 import L from "leaflet";
+import { GeofenceZone } from "@/types/geofence.types";
+
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
-import { Zone, CreateZoneDto, Vertex } from "@/types/geofence.types";
 
-// Configuration des icônes Leaflet (fix Next.js)
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
-
-interface GeofenceMapProps {
-  existingZones: Zone[];
-  onZoneCreated: (
-    zoneData: Omit<CreateZoneDto, "fleetId" | "name" | "description">,
-  ) => void;
-  onZoneDeleted: (zoneId: string) => void;
+if (typeof window !== "undefined") {
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+    iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+    shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  });
 }
 
-const MapController = ({ center }: { center: [number, number] }) => {
+interface Props {
+  zones: GeofenceZone[];
+  onZoneCreated: (data: any) => void;
+  focusedZoneId?: string;
+  onZoneSelect?: (zone: GeofenceZone) => void; // ✅ AJOUT : Callback de sélection
+}
+
+function MapViewHandler({ focusedZoneId, zones }: { focusedZoneId?: string; zones: GeofenceZone[] }) {
   const map = useMap();
   useEffect(() => {
-    map.flyTo(center, 13);
-  }, [center, map]);
+    if (!focusedZoneId) return;
+    const zone = zones.find((z) => z.id === focusedZoneId);
+    if (!zone) return;
+
+    if (zone.type === "CIRCLE" && zone.center) {
+      const center: [number, number] = [zone.center.coordinates[1], zone.center.coordinates[0]];
+      map.flyTo(center, 15, { duration: 1.5 });
+    } else if (zone.type === "POLYGON" && zone.polygon) {
+      const positions = zone.polygon.coordinates[0].map((c) => [c[1], c[0]] as [number, number]);
+      const bounds = L.latLngBounds(positions);
+      map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
+    }
+  }, [focusedZoneId, zones, map]);
   return null;
-};
+}
 
-export default function GeofenceMap({
-  existingZones,
-  onZoneCreated,
-  onZoneDeleted,
-}: GeofenceMapProps) {
-  const featureGroupRef = useRef<L.FeatureGroup>(null);
-  const defaultCenter: [number, number] = [4.0511, 9.7679]; // Douala par défaut
+export default function GeofenceMap({ zones, onZoneCreated, focusedZoneId, onZoneSelect }: Props) {
+  
+  // ✅ AJOUT : Helper de style dynamique
+ const getStyle = (isFocused: boolean, p0: string) => ({
+    color: isFocused ? "#136dec" : "#94a3b8",      // Bleu si focus, Gris sinon
+    fillColor: isFocused ? "#136dec" : "#94a3b8",
+    fillOpacity: isFocused ? 0.5 : 0.2,            // Plus opaque si focus
+    weight: isFocused ? 5 : 2,                     // Bordure épaisse si focus
+    dashArray: isFocused ? "" : "5, 10",           // Pointillés si pas focus
+  });
 
-  useEffect(() => {
-    return () => {
-      // Nettoyage Leaflet au démontage (fix Next.js)
-      const container = L.DomUtil.get("geofence-map-container");
-      if (container !== null) {
-        (container as any)._leaflet_id = null;
-      }
-    };
-  }, []);
 
   const _onCreated = (e: any) => {
-    const type = e.layerType;
-    const layer = e.layer;
-
-    let zoneData: any = {};
-
-    if (type === "polygon") {
+    const { layerType, layer } = e;
+    if (layerType === "polygon") {
       const latlngs = layer.getLatLngs()[0];
-      const vertices: Vertex[] = latlngs.map((ll: any, index: number) => ({
-        latitude: ll.lat,
-        longitude: ll.lng,
-        order: index + 1,
-      }));
-      zoneData = { type: "POLYGON", vertices };
-    } else if (type === "circle") {
+      const coords = latlngs.map((ll: any) => [ll.lng, ll.lat]);
+      coords.push(coords[0]);
+      onZoneCreated({ type: "POLYGON", polygon: { type: "Polygon", coordinates: [coords] } });
+    } else if (layerType === "circle") {
       const center = layer.getLatLng();
-      const radius = layer.getRadius();
-      const vertices: Vertex[] = [
-        {
-          latitude: center.lat,
-          longitude: center.lng,
-          order: 1,
-        },
-      ];
-      zoneData = { type: "CIRCLE", vertices, radius };
+      onZoneCreated({ type: "CIRCLE", radius: layer.getRadius(), center: { coordinates: [center.lng, center.lat] } });
     }
-
-    onZoneCreated(zoneData);
-
-    // On retire le layer dessiné temporairement car il sera rechargé via existingZones après sauvegarde API
-    if (featureGroupRef.current) {
-      featureGroupRef.current.removeLayer(layer);
-    }
-  };
-
-  const _onDeleted = (e: any) => {
-    // Logique de suppression si on utilisait les outils de suppression natifs de Leaflet Draw
-    // Ici nous allons gérer la suppression via l'interface UI (liste à côté) pour simplifier lier l'ID
+    layer.remove();
   };
 
   return (
-    <MapContainer
-      id="geofence-map-container"
-      center={defaultCenter}
-      zoom={12}
-      style={{ height: "100%", width: "100%" }}
-    >
-      <TileLayer
+    <MapContainer center={[4.0511, 9.7679]} zoom={12} className="h-full w-full z-0">
+      <TileLayer 
         attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" 
       />
-      <MapController center={defaultCenter} />
+      
+      <MapViewHandler focusedZoneId={focusedZoneId} zones={zones} />
 
-      <FeatureGroup ref={featureGroupRef}>
+      <FeatureGroup>
         <EditControl
           position="topright"
           onCreated={_onCreated}
-          onDeleted={_onDeleted}
           draw={{
-            rectangle: false,
-            polyline: false,
-            circlemarker: false,
-            marker: false,
-            polygon: {
-              allowIntersection: false,
-              drawError: {
-                color: "#e1e100",
-                message: "Intersection non autorisée",
-              },
-              shapeOptions: { color: "#136dec" },
-            },
-            circle: {
-              shapeOptions: { color: "#10b981" },
-            },
+            rectangle: false, polyline: false, circlemarker: false, marker: false,
+            polygon: { shapeOptions: { color: "#136dec" } },
+            circle: { shapeOptions: { color: "#10b981" } }
           }}
-          edit={{ edit: false, remove: false }} // On gère l'édition/suppression via l'UI externe pour lier aux IDs API
         />
       </FeatureGroup>
 
-      {/* Affichage des zones existantes */}
-      {existingZones.map((zone) => {
-        if (zone.type === "POLYGON") {
-          const positions = zone.vertices
-            .sort((a, b) => a.order - b.order)
-            .map((v) => [v.latitude, v.longitude] as [number, number]);
+      {zones.map((zone) => {
+        const isFocused = zone.id === focusedZoneId;
+
+        if (zone.type === "POLYGON" && zone.polygon) {
+          const positions = zone.polygon.coordinates[0].map((c) => [c[1], c[0]] as [number, number]);
+          function getStyle(isFocused: boolean, arg1: string): L.PathOptions | undefined {
+            throw new Error("Function not implemented.");
+          }
+
           return (
-            <Polygon
-              key={zone.id}
-              positions={positions}
-              pathOptions={{ color: "#136dec", fillOpacity: 0.2 }}
-            ></Polygon>
+            <Polygon 
+              // 🔑 LA CLÉ EST ICI : On change la key si isFocused change
+              key={`${zone.id}-${isFocused}`} 
+              positions={positions} 
+              pathOptions={getStyle(isFocused, "POLYGON")}
+              eventHandlers={{ click: () => onZoneSelect?.(zone) }}
+            >
+              <Popup><span className="font-bold">{zone.title}</span></Popup>
+            </Polygon>
           );
-        } else if (
-          zone.type === "CIRCLE" &&
-          zone.vertices.length > 0 &&
-          zone.radius
-        ) {
-          const center = zone.vertices[0];
+        }
+        
+        if (zone.type === "CIRCLE" && zone.center) {
+          const center: [number, number] = [zone.center.coordinates[1], zone.center.coordinates[0]];
           return (
-            <Circle
-              key={zone.id}
-              center={[center.latitude, center.longitude]}
-              radius={zone.radius}
-              pathOptions={{ color: "#10b981", fillOpacity: 0.2 }}
-            />
+            <Circle 
+              // 🔑 LA CLÉ EST ICI AUSSI
+              key={`${zone.id}-${isFocused}`} 
+              center={center} 
+              radius={zone.radius} 
+              pathOptions={getStyle(isFocused, "CIRCLE")}
+              eventHandlers={{ click: () => onZoneSelect?.(zone) }}
+            >
+              <Popup><span className="font-bold">{zone.title}</span></Popup>
+            </Circle>
           );
         }
         return null;

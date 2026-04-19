@@ -1,14 +1,39 @@
-import React from "react";
+"use client";
 
+import React from "react";
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  Minus,
+  Network,
+  Truck,
+  Users,
+  Navigation,
+  AlertCircle,
+  CheckCircle2,
+  LucideIcon
+} from "lucide-react";
+
+// Interface des propriétés du composant
 interface StatCardProps {
   title: string;
   value: string | number;
   subValue?: string;
-  icon: string;
+  icon: string; // Nom de l'icône (ex: "hub", "truck")
   trend?: "up" | "down" | "neutral";
   trendValue?: string;
   color?: "primary" | "success" | "warning" | "error" | "info";
 }
+
+// Mapping des chaînes de caractères vers les icônes Lucide
+const iconMap: Record<string, LucideIcon> = {
+  hub: Network,
+  local_shipping: Truck,
+  groups: Users,
+  alt_route: Navigation,
+  warning: AlertCircle,
+  check_circle: CheckCircle2,
+};
 
 export function StatCard({
   title,
@@ -19,106 +44,73 @@ export function StatCard({
   trendValue,
   color = "primary",
 }: StatCardProps) {
-  const colorClasses = {
-    primary: "bg-primary/10 text-primary border-primary/20 shadow-primary/10",
-    success: "bg-success/10 text-success border-success/20 shadow-success/10",
-    warning: "bg-warning/10 text-warning border-warning/20 shadow-warning/10",
-    error: "bg-error/10 text-error border-error/20 shadow-error/10",
-    info: "bg-info/10 text-info border-info/20 shadow-info/10",
+  
+  // Configuration des styles par couleur
+  const colorConfigs = {
+    primary: "bg-primary/10 text-primary border-primary/20",
+    success: "bg-success/10 text-success border-success/20",
+    warning: "bg-warning/10 text-warning border-warning/20",
+    error: "bg-error/10 text-error border-error/20",
+    info: "bg-info/10 text-info border-info/20",
   };
 
-  const gradientClasses = {
-    primary: "from-primary/5 to-transparent",
-    success: "from-success/5 to-transparent",
-    warning: "from-warning/5 to-transparent",
-    error: "from-error/5 to-transparent",
-    info: "from-info/5 to-transparent",
-  };
+  // Sélection de l'icône
+  const IconComponent = iconMap[icon] || Network;
 
-  const trendColor =
-    trend === "up"
-      ? "text-success bg-success/10 border-success/20"
-      : trend === "down"
-        ? "text-error bg-error/10 border-error/20"
-        : "text-text-secondary bg-background-secondary border-border-default";
-
-  const trendIcon =
-    trend === "up"
-      ? "trending_up"
-      : trend === "down"
-        ? "trending_down"
-        : "remove";
+  // Configuration de la tendance (Trend)
+  const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
+  const trendColorClass = trend === "up" ? "text-success" : trend === "down" ? "text-error" : "text-text-tertiary";
 
   return (
-    <div className="group relative bg-surface rounded-xl border border-border-default p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden">
-      {/* Gradient de fond subtil */}
-      <div
-        className={`absolute inset-0 bg-gradient-to-br ${gradientClasses[color]} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
-      ></div>
+    <div className="group relative bg-surface rounded-2xl border border-border-default p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+      
+      {/* Effet de dégradé au survol */}
+      <div className={`absolute inset-0 bg-gradient-to-br from-current to-transparent opacity-0 group-hover:opacity-[0.03] transition-opacity duration-300 ${colorConfigs[color]}`} />
 
-      {/* Contenu */}
-      <div className="relative z-10">
+      <div className="relative z-10 flex flex-col gap-4">
         <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-text-secondary mb-2 uppercase tracking-wide">
+          {/* Textes */}
+          <div className="space-y-1">
+            <p className="text-[11px] font-bold text-text-tertiary uppercase tracking-widest">
               {title}
             </p>
-            <h3 className="text-3xl font-bold text-text-primary mb-1 tracking-tight transition-all duration-300 group-hover:scale-105 origin-left">
+            <h3 className="text-2xl font-black text-text-primary tracking-tight">
               {value}
             </h3>
             {subValue && (
-              <p className="text-xs text-text-tertiary mt-1 font-medium">
+              <p className="text-[11px] text-text-secondary font-medium flex items-center gap-1">
                 {subValue}
               </p>
             )}
           </div>
 
-          {/* Icône avec effet de glow */}
-          <div
-            className={`
-            relative p-3 rounded-xl border transition-all duration-300
-            ${colorClasses[color]}
-            group-hover:scale-110 group-hover:shadow-lg
-          `}
-          >
-            <span className="material-symbols-outlined text-2xl">{icon}</span>
-
-            {/* Glow effect au hover */}
-            <div
-              className={`
-              absolute inset-0 rounded-xl blur-xl opacity-0 group-hover:opacity-50 transition-opacity duration-300
-              ${colorClasses[color]}
-            `}
-            ></div>
+          {/* Icône stylisée */}
+          <div className={`p-3 rounded-xl border transition-transform duration-300 group-hover:scale-110 ${colorConfigs[color]}`}>
+            <IconComponent size={22} strokeWidth={2.5} />
           </div>
         </div>
 
-        {/* Trend indicator */}
+        {/* Indicateur de tendance (si présent) */}
         {trend && trendValue && (
-          <div className="mt-4 pt-4 border-t border-border-default">
-            <div
-              className={`
-              inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold
-              border transition-all duration-200
-              ${trendColor}
-            `}
-            >
-              <span className="material-symbols-outlined text-base">
-                {trendIcon}
-              </span>
-              <span>{trendValue}</span>
-              <span className="text-text-tertiary font-normal ml-1">
-                vs last month
-              </span>
+          <div className="flex items-center gap-2 pt-2 border-t border-border-default/50">
+            <div className={`flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg bg-background-secondary ${trendColorClass}`}>
+              <TrendIcon size={12} strokeWidth={3} />
+              {trendValue}
             </div>
+            <span className="text-[10px] text-text-tertiary font-bold uppercase tracking-tighter">
+              vs mois dernier
+            </span>
           </div>
         )}
       </div>
 
-      {/* Effet de brillance au survol */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-        <div className="absolute top-0 -left-full h-full w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 group-hover:left-full transition-all duration-1000"></div>
-      </div>
+      {/* Barre décorative latérale */}
+      <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full transition-all duration-300 group-hover:h-12 ${
+        color === 'primary' ? 'bg-primary' : 
+        color === 'success' ? 'bg-success' : 
+        color === 'warning' ? 'bg-warning' : 
+        color === 'error' ? 'bg-error' : 'bg-info'
+      }`} />
     </div>
   );
 }

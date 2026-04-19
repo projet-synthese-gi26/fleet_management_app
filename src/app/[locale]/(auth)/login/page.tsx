@@ -14,7 +14,7 @@ const LoginPage = () => {
   const { t, locale } = useI18n();
   const { login, isLoading } = useAuth();
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [isShaking, setIsShaking] = useState(false);
 
@@ -25,7 +25,7 @@ const LoginPage = () => {
     setIsShaking(false); // Reset
 
     try {
-      await login({ identifier: email, password: password });
+      await login({ identifier: identifier, password: password });
       toast.success("Connexion réussie !");
     } catch (err: any) {
       console.error(err);
@@ -34,7 +34,7 @@ const LoginPage = () => {
       if (err.status === 401) {
         setIsShaking(true);
         toast.error("Identifiants incorrects", {
-          description: "Email ou mot de passe invalide.",
+          description: "Email ou Nom d'utilisateur ou mot de passe invalide.",
         });
         // Reset shake after animation
         setTimeout(() => setIsShaking(false), 500);
@@ -99,24 +99,37 @@ const LoginPage = () => {
               method="POST"
               onSubmit={handleSubmit}
             >
-              {/* Email field */}
+              {/* Email or Username field */}
               <div className="flex flex-col gap-2">
                 <label
                   className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
-                  htmlFor="email"
+                  htmlFor="identifier"
                 >
-                  {t("emailLabel", "authPage")}
+                  {t("identifierLabel", "authPage", "Email ou nom d'utilisateur")}
                 </label>
+
                 <input
-                  className="form-input flex w-full min-w-0 resize-none overflow-hidden rounded-lg text-[#0d131b] dark:text-white border border-[#cfd9e7] dark:border-slate-600 bg-surface-light dark:bg-surface-dark focus:border-primary focus:ring-1 focus:ring-primary h-12 placeholder:text-[#9aa2b1] p-[15px] text-base font-normal leading-normal transition-colors"
-                  id="email"
-                  placeholder={t("emailPlaceholder", "authPage")}
-                  type="email"
-                  value={email} // Binding
-                  onChange={(e) => setEmail(e.target.value)}
+                  className="form-input flex w-full min-w-0 resize-none overflow-hidden rounded-lg
+                    text-[#0d131b] dark:text-white
+                    border border-[#cfd9e7] dark:border-slate-600
+                    bg-surface-light dark:bg-surface-dark
+                    focus:border-primary focus:ring-1 focus:ring-primary
+                    h-12 placeholder:text-[#9aa2b1]
+                    p-[15px] text-base font-normal leading-normal transition-colors"
+                  id="identifier"
+                  placeholder={t(
+                    "identifierPlaceholder",
+                    "authPage",
+                    "Email ou nom d'utilisateur"
+                  )}
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   required
+                  autoComplete="username"
                 />
               </div>
+
               {/* Password field */}
               <div className="flex flex-col gap-2">
                 <label

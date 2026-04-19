@@ -150,7 +150,7 @@ export default function ProfileSettings() {
   if (!user) return null;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
       {/* ===== COLONNE GAUCHE : Sommaire & Info Métier (Lecture Seule) ===== */}
       <div className="space-y-6">
         <div className="bg-surface rounded-xl border border-border-default shadow-sm p-6 flex flex-col items-center text-center">
@@ -391,7 +391,7 @@ export default function ProfileSettings() {
 
         {/* Zone de Danger */}
         <section className="bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-900/30 p-6 md:p-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-col md:flex-row m-8 md:items-center justify-between gap-4">
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-red-600 dark:text-red-400 flex items-center gap-2">
                 <AlertTriangle size={20} /> Zone de danger

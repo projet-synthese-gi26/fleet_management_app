@@ -1,36 +1,43 @@
 import { apiClient } from "@/lib/api-client";
-import { Zone, CreateZoneDto, GeofenceEvent } from "@/types/geofence.types";
+import { GeofenceZone, CreateGeofenceDto, GeofenceAlertResponse } from "@/types/geofence.types";
 import { UUID } from "@/types/base.types";
 
 export const geofenceService = {
-  // GET /geofence/fleets/{fleetId}/zones
-  getZonesByFleet: async (fleetId: UUID): Promise<Zone[]> => {
-    const { data } = await apiClient.get<Zone[]>(
-      `/geofence/fleets/${fleetId}/zones`,
-    );
+  // Récupérer mes zones (Manager)
+  getMyZones: async (): Promise<GeofenceZone[]> => {
+    const { data } = await apiClient.get<GeofenceZone[]>("/geofence/my-zones");
     return data;
   },
 
-  // POST /geofence/zones
-  createZone: async (payload: CreateZoneDto): Promise<Zone> => {
-    const { data } = await apiClient.post<Zone>("/geofence/zones", payload);
+  // Créer une zone
+  createZone: async (payload: CreateGeofenceDto): Promise<GeofenceZone> => {
+    const { data } = await apiClient.post<GeofenceZone>("/geofence/zones", payload);
     return data;
   },
 
-  // DELETE /geofence/zones/{id}
-  deleteZone: async (id: UUID): Promise<void> => {
-    await apiClient.delete(`/geofence/zones/${id}`);
+  // Assigner une zone à une flotte (Active la surveillance live)
+  assignToFleet: async (zoneId: string, fleetId: string): Promise<void> => {
+    await apiClient.patch(`/geofence/${zoneId}/assign-fleet/${fleetId}`);
   },
 
-  // GET /geofence/events
-  getEvents: async (params?: {
-    vehicleId?: string;
-    zoneId?: string;
-    date?: string;
-  }): Promise<GeofenceEvent[]> => {
-    const { data } = await apiClient.get<GeofenceEvent[]>("/geofence/events", {
-      params,
+  // Supprimer une zone (Nécessite l'ID et le Type pour le moteur distant)
+  deleteZone: async (id: string, type: string): Promise<void> => {
+    const shortType = type.toLowerCase();
+    await apiClient.delete(`/geofence/${shortType}/${id}`);
+  },
+
+  // Historique des alertes
+  getAlerts: async (page = 0, size = 10): Promise<GeofenceAlertResponse> => {
+    const { data } = await apiClient.get<GeofenceAlertResponse>("/geofence/alerts", {
+      params: { page, size }
     });
     return data;
   },
+  // Récupérer les zones filtrées par flotte
+    getZonesByFleet: async (fleetId: string): Promise<any[]> => {
+    const { data } = await apiClient.get<any[]>(`/geofence/fleet/${fleetId}`, {
+      params: { _t: Date.now() } // Force le rafraîchissement réseau
+    });
+    return data;
+  }
 };

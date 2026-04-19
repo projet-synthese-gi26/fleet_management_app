@@ -1,34 +1,61 @@
 import { apiClient } from "@/lib/api-client";
-import { Fleet, CreateFleetDto, UpdateFleetDto } from "@/types/fleet.types";
-import { UUID } from "@/types/base.types";
+import { Fleet, FleetRequest, FleetStats } from "@/types/fleet.types";
 
 export const fleetService = {
-  // 📋 2.2. Lister les flottes
-  getAllFleets: async (): Promise<Fleet[]> => {
+  /**
+   * Liste toutes les flottes du manager connecté
+   */
+  listMyFleets: async (): Promise<Fleet[]> => {
     const { data } = await apiClient.get<Fleet[]>("/fleets");
     return data;
   },
 
-  // 🔍 2.3. Détails d'une flotte
-  getFleetById: async (id: UUID): Promise<Fleet> => {
-    const { data } = await apiClient.get<Fleet>(`/fleets/${id}`);
+  /**
+   * Crée une nouvelle flotte
+   */
+  createFleet: async (payload: FleetRequest): Promise<Fleet> => {
+    const { data } = await apiClient.post<Fleet>("/fleets", payload);
     return data;
   },
 
-  // 📝 2.1. Créer une flotte
-  createFleet: async (payload: CreateFleetDto): Promise<Fleet> => {
-    const { data } = await apiClient.post<Fleet>("/fleets", payload);
-    return data; // Le backend renvoie 201 Created
+  /**
+   * Récupère les détails et KPIs d'une flotte
+   */
+  getFleetStats: async (fleetId: string): Promise<FleetStats> => {
+    const { data } = await apiClient.get<FleetStats>(`/fleets/${fleetId}/stats`);
+    return data;
   },
 
-  // ✏️ 2.4. Modifier une flotte
-  updateFleet: async (id: UUID, payload: UpdateFleetDto): Promise<Fleet> => {
+  /**
+   * Met à jour les informations d'une flotte
+   */
+  updateFleet: async (id: string, payload: FleetRequest): Promise<Fleet> => {
     const { data } = await apiClient.put<Fleet>(`/fleets/${id}`, payload);
     return data;
   },
 
-  // 🗑️ 2.5. Supprimer une flotte
-  deleteFleet: async (id: UUID): Promise<void> => {
-    await apiClient.delete(`/fleets/${id}`); // Renvoie 204 No Content
+  /**
+   * Supprime une flotte (uniquement si elle est vide)
+   */
+  deleteFleet: async (id: string): Promise<void> => {
+    await apiClient.delete(`/fleets/${id}`);
   },
+
+   getAllFleets: async (): Promise<Fleet[]> => {
+    const { data } = await apiClient.get<Fleet[]>("/fleets");
+    return data;
+  },
+  assignVehicle: async (fleetId: string, vehicleId: string): Promise<void> => {
+    await apiClient.post(`/fleets/${fleetId}/vehicles`, { vehicleId });
+  },
+
+  // 10c. Recruter un chauffeur (par email/username)
+  recruitDriver: async (fleetId: string, identifier: string): Promise<void> => {
+    await apiClient.post(`/fleets/${fleetId}/drivers`, { identifier });
+  },
+  
+  // Détacher (optionnel pour la gestion)
+  detachVehicle: async (fleetId: string, vehicleId: string): Promise<void> => {
+    await apiClient.delete(`/fleets/${fleetId}/vehicles/${vehicleId}`);
+  }
 };

@@ -1,90 +1,92 @@
-import axios, { AxiosError } from "axios";
-import { toast } from "sonner";
-import { ProblemDetail } from "@/types/api-error.types";
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { authService } from "@/services/auth.service";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = "/api/proxy";
 
 export const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: {
-    Accept: "application/json",
-  },
+  baseURL: BASE_URL,
 });
 
-// Request Interceptor
-apiClient.interceptors.request.use(
-  (config) => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("accessToken");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    // Gestion automatique du Content-Type pour FormData
-    if (config.data instanceof FormData) {
-      delete config.headers["Content-Type"];
-    } else {
-      config.headers["Content-Type"] = "application/json";
-    }
-    return config;
-  },
-  (error) => Promise.reject(error),
-);
+// Variables pour gérer le rafraîchissement multiple
+let isRefreshing = false;
+let failedQueue: any[] = [];
 
-// Response Interceptor (Le cœur de la gestion d'erreur)
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) prom.reject(error);
+    else prom.resolve(token);
+  });
+  failedQueue = [];
+};
+
+apiClient.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("accessToken");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 apiClient.interceptors.response.use(
   (response) => response,
-  (error: AxiosError<ProblemDetail>) => {
-    const status = error.response?.status;
-    const problem = error.response?.data;
+  async (error: AxiosError<any>) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // Cas 1: Pas de réponse du tout (Réseau / Serveur down)
-    if (!status) {
-      toast.error("Erreur de connexion", {
-        description:
-          "Impossible de joindre le serveur. Vérifiez votre connexion.",
-      });
-      return Promise.reject(error);
-    }
+    // Si l'erreur est 401 et qu'on n'a pas déjà essayé de rafraîchir
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes("/auth/login")) {
+      
+      if (isRefreshing) {
+        // Si un rafraîchissement est déjà en cours, on met la requête en attente
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return apiClient(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
 
-    // Cas 2: 401 Unauthorized (Session expirée ou invalide)
-    // On ne redirige PAS si on est déjà sur la page de login pour éviter une boucle
-    if (status === 401 && !window.location.pathname.includes("/login")) {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("user");
-        toast.warning("Session expirée", {
-          description: "Veuillez vous reconnecter.",
-        });
-        // Redirection forcée (plus sûr que router.push hors composant React)
-        setTimeout(() => (window.location.href = "/fr/login"), 1000);
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const refreshToken = localStorage.getItem("refreshToken");
+
+      if (!refreshToken) {
+        isRefreshing = false;
+        return Promise.reject(error);
+      }
+
+      try {
+        // Tentative de rafraîchissement
+        const response = await authService.refresh(refreshToken);
+        const { accessToken, refreshToken: newRefreshToken } = response;
+
+        localStorage.setItem("accessToken", accessToken);
+        localStorage.setItem("refreshToken", newRefreshToken);
+
+        processQueue(null, accessToken);
+        isRefreshing = false;
+
+        // On relance la requête initiale avec le nouveau token
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return apiClient(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        isRefreshing = false;
+        localStorage.clear();
+        window.location.href = "/login";
+        return Promise.reject(refreshError);
       }
     }
 
-    // Cas 3: 403 Forbidden
-    if (status === 403) {
-      toast.error("Permission refusée", {
-        description:
-          "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
-      });
-    }
+    // Formatage de l'erreur pour le reste de l'app (comme fait en Tâche 1)
+    const formattedError = {
+      status: error.response?.status || 500,
+      detail: error.response?.data?.detail || "Erreur de communication avec le serveur.",
+      code: error.response?.data?.code || "SERVER_ERROR",
+    };
 
-    // Cas 4: 500+ Server Errors
-    if (status >= 500) {
-      toast.error("Erreur Serveur", {
-        description:
-          "Une erreur technique est survenue. Veuillez contacter le support.",
-      });
-    }
-
-    // On rejette l'erreur enrichie pour que le composant puisse gérer les 400/409 spécifiques
-    return Promise.reject({
-      status: status,
-      title: problem?.title || "Erreur",
-      detail: problem?.detail || "Une erreur est survenue",
-      instance: problem?.instance,
-      originalError: error,
-    });
-  },
+    return Promise.reject(formattedError);
+  }
 );

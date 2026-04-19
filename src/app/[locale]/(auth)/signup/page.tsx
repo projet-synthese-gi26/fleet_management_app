@@ -4,18 +4,17 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useI18n } from "@/hooks/useI18n";
 import AuthHeroSection from "@/components/auth/AuthHeroSection";
-import { Chrome, Upload, AlertCircle } from "lucide-react";
+import { Upload, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { toast } from "sonner";
 
-// Regex simple pour email
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const SignUpPage = () => {
   const { t, locale } = useI18n();
   const { register, isLoading } = useAuth();
-  
+
   const [step, setStep] = useState(1);
 
   // États du formulaire
@@ -24,21 +23,17 @@ const SignUpPage = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState(""); // Contiendra FLEET_MANAGER, FLEET_DRIVER, etc.
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
-  // État des erreurs de validation
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // États d'interface
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
   const togglePasswordVisibility = () => setPasswordVisible(!passwordVisible);
-  const toggleConfirmPasswordVisibility = () =>
-    setConfirmPasswordVisible(!confirmPasswordVisible);
+  const toggleConfirmPasswordVisibility = () => setConfirmPasswordVisible(!confirmPasswordVisible);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -48,12 +43,12 @@ const SignUpPage = () => {
 
   const validateStep1 = () => {
     const newErrors: Record<string, string> = {};
-    if (!firstName.trim()) newErrors.firstName = "Le prénom est requis.";
-    if (!lastName.trim()) newErrors.lastName = "Le nom est requis.";
+    if (!firstName.trim()) newErrors.firstName = t("errorFirstNameRequired", "authPage");
+    if (!lastName.trim()) newErrors.lastName = t("errorLastNameRequired", "authPage");
     if (!username.trim()) {
-      newErrors.username = "Le nom d'utilisateur est requis.";
+      newErrors.username = t("errorUsernameRequired", "authPage");
     } else if (username.length < 3) {
-      newErrors.username = "Au moins 3 caractères.";
+      newErrors.username = t("errorUsernameShort", "authPage");
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -61,13 +56,13 @@ const SignUpPage = () => {
 
   const validateStep2 = () => {
     const newErrors: Record<string, string> = {};
-    if (!phone.trim()) newErrors.phone = "Le téléphone est requis.";
+    if (!phone.trim()) newErrors.phone = t("errorPhoneRequired", "authPage");
     if (!email.trim()) {
-      newErrors.email = "L'email est requis.";
+      newErrors.email = t("errorEmailRequired", "authPage");
     } else if (!EMAIL_REGEX.test(email)) {
-      newErrors.email = "Format d'email invalide.";
+      newErrors.email = t("errorEmailInvalid", "authPage");
     }
-    if (!role) newErrors.role = "Veuillez sélectionner un rôle.";
+    if (!role) newErrors.role = t("errorRoleRequired", "authPage");
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -75,12 +70,12 @@ const SignUpPage = () => {
   const validateStep3 = () => {
     const newErrors: Record<string, string> = {};
     if (!password) {
-      newErrors.password = "Le mot de passe est requis.";
+      newErrors.password = t("errorPasswordRequired", "authPage");
     } else if (password.length < 6) {
-      newErrors.password = "Au moins 6 caractères.";
+      newErrors.password = t("errorPasswordShort", "authPage");
     }
     if (password !== confirmPassword) {
-      newErrors.confirmPassword = "Les mots de passe ne correspondent pas.";
+      newErrors.confirmPassword = t("errorPasswordsMismatch", "authPage");
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -89,14 +84,7 @@ const SignUpPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateStep3()) {
-      toast.error("Veuillez corriger les erreurs dans le formulaire.");
-      return;
-    }
-
-    let backendRole = "FLEET_MANAGER";
-    if (role === "admin") backendRole = "FLEET_ADMIN";
-    if (role === "driver") backendRole = "FLEET_DRIVER";
+    if (!validateStep3()) return;
 
     try {
       await register({
@@ -106,81 +94,48 @@ const SignUpPage = () => {
         firstName,
         lastName,
         phone,
-        roles: [backendRole],
+        roles: [role as any], // Utilise directement la valeur du select (FLEET_MANAGER, etc.)
         file: file || undefined,
       });
-      toast.success("Compte créé avec succès ! Bienvenue.");
+      toast.success(t("signupSuccess", "authPage"));
     } catch (err: any) {
-      console.error("Détail de l'erreur reçue:", {
-        status: err.status,
-        title: err.title,
-        detail: err.detail,
-      });
       if (err.status === 409) {
-        toast.error("Conflit", { description: err.detail });
         if (err.detail.toLowerCase().includes("email")) {
-          setErrors((prev) => ({ ...prev, email: "Email déjà utilisé" }));
+          setErrors((prev) => ({ ...prev, email: t("errorEmailTaken", "authPage") }));
           setStep(2);
         } else {
-          setErrors((prev) => ({
-            ...prev,
-            username: "Nom d'utilisateur déjà pris",
-          }));
+          setErrors((prev) => ({ ...prev, username: t("errorUsernameTaken", "authPage") }));
           setStep(1);
         }
-      } else if (err.status === 400) {
-        toast.error("Données invalides", { description: err.detail });
       } else {
-        toast.error(err.title || "Erreur", {
-          description: err.detail || "Une erreur inconnue est survenue",
-        });
+        toast.error(err.title || "Erreur", { description: err.detail });
       }
     }
   };
 
-  const signupHeroProps = {
-    titleKey: "heroTitle",
-    descriptionKey: "heroDetails",
-    imageUrl:
-      "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=2070&auto=format&fit=crop",
-    altText: "Logistics truck driving on a highway",
-    stats: [
-      {
-        icon: "hub",
-        label: "signupHeroStatLabel",
-        description: "signupHeroStatDescription",
-      },
-    ],
-    imageOverlayClass:
-      "bg-gradient-to-b from-[rgba(30,58,138,0.4)] via-[rgba(30,58,138,0.6)] to-[rgba(15,23,42,0.8)]",
+  const nextStep = () => {
+    if (step === 1 && validateStep1()) setStep(2);
+    else if (step === 2 && validateStep2()) setStep(3);
   };
+
+  const prevStep = () => setStep(step > 1 ? step - 1 : 1);
 
   const getInputClass = (fieldName: string) => `
     form-input flex w-full min-w-0 rounded-lg 
-    ${
-      errors[fieldName]
-        ? "border-red-500 focus:border-red-500 focus:ring-red-200"
-        : "border-[#cfd9e7] dark:border-slate-600 focus:border-primary focus:ring-1 focus:ring-primary"
-    }
+    ${errors[fieldName] ? "border-red-500 focus:border-red-500" : "border-[#cfd9e7] dark:border-slate-600 focus:border-primary"}
     bg-surface-light dark:bg-surface-dark text-[#0d131b] dark:text-white 
     h-12 placeholder:text-[#9aa2b1] p-[15px] text-base font-normal transition-colors
   `;
-  
-  const nextStep = () => {
-    if (step === 1 && validateStep1()) {
-        setStep(2);
-    } else if (step === 2 && validateStep2()){
-        setStep(3)
-    }
-  }
-  
-  const prevStep = () => {
-    setStep(step > 1 ? step -1 : 1);
-  }
 
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row overflow-hidden">
-      <AuthHeroSection {...signupHeroProps} />
+      <AuthHeroSection 
+        titleKey="heroTitle" 
+        descriptionKey="heroDetails" 
+        imageUrl="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=2070&auto=format&fit=crop"
+        altText="Logistics truck"
+        stats={[{ icon: "hub", label: "signupHeroStatLabel", description: "signupHeroStatDescription" }]}
+      />
 
       <div className="flex w-full lg:w-1/2 flex-col bg-background-light dark:bg-background-dark">
         <div className="flex-grow flex flex-col justify-center px-6 sm:px-12 xl:px-24">
@@ -199,305 +154,108 @@ const SignUpPage = () => {
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
-                        Prénom
-                      </label>
-                      <input
-                        className={getInputClass("firstName")}
-                        placeholder="Jean"
-                        value={firstName}
-                        onChange={(e) => {
-                          setFirstName(e.target.value);
-                          if (errors.firstName)
-                            setErrors({ ...errors, firstName: "" });
-                        }}
-                      />
-                      {errors.firstName && (
-                        <span className="text-xs text-red-500 flex items-center gap-1">
-                          <AlertCircle size={12} />
-                          {errors.firstName}
-                        </span>
-                      )}
+                      <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">{t("firstNameLabel", "authPage")}</label>
+                      <input className={getInputClass("firstName")} placeholder={t("firstNamePlaceholder", "authPage")} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                      {errors.firstName && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.firstName}</span>}
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
-                        Nom
-                      </label>
-                      <input
-                        className={getInputClass("lastName")}
-                        placeholder="Dupont"
-                        value={lastName}
-                        onChange={(e) => {
-                          setLastName(e.target.value);
-                          if (errors.lastName)
-                            setErrors({ ...errors, lastName: "" });
-                        }}
-                      />
-                      {errors.lastName && (
-                        <span className="text-xs text-red-500 flex items-center gap-1">
-                          <AlertCircle size={12} />
-                          {errors.lastName}
-                        </span>
-                      )}
+                      <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">{t("lastNameLabel", "authPage")}</label>
+                      <input className={getInputClass("lastName")} placeholder={t("lastNamePlaceholder", "authPage")} value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                      {errors.lastName && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.lastName}</span>}
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
-                    Nom d'utilisateur
-                  </label>
-                  <input
-                    className={getInputClass("username")}
-                    placeholder="jdupont"
-                    value={username}
-                    onChange={(e) => {
-                      setUsername(e.target.value);
-                      if (errors.username)
-                        setErrors({ ...errors, username: "" });
-                    }}
-                  />
-                  {errors.username && (
-                    <span className="text-xs text-red-500 flex items-center gap-1">
-                      <AlertCircle size={12} />
-                      {errors.username}
-                    </span>
-                  )}
-                </div>
+                    <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">{t("usernameLabel", "authPage")}</label>
+                    <input className={getInputClass("username")} placeholder={t("usernamePlaceholder", "authPage")} value={username} onChange={(e) => setUsername(e.target.value)} />
+                    {errors.username && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.username}</span>}
+                  </div>
                 </>
               )}
+
               {step === 2 && (
                 <>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
-                    Téléphone
-                  </label>
-                  <input
-                    className={getInputClass("phone")}
-                    placeholder="+237..."
-                    value={phone}
-                    onChange={(e) => {
-                      setPhone(e.target.value);
-                      if (errors.phone) setErrors({ ...errors, phone: "" });
-                    }}
-                  />
-                  {errors.phone && (
-                    <span className="text-xs text-red-500 flex items-center gap-1">
-                      <AlertCircle size={12} />
-                      {errors.phone}
-                    </span>
-                  )}
-                </div>
                   <div className="flex flex-col gap-2">
-                    <label
-                      className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
-                      htmlFor="email"
-                    >
-                      {t("professionalEmailLabel", "authPage")}
-                    </label>
-                    <input
-                      className={getInputClass("email")}
-                      id="email"
-                      placeholder={t("professionalEmailPlaceholder", "authPage")}
-                      type="email"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        if (errors.email) setErrors({ ...errors, email: "" });
-                      }}
-                    />
-                    {errors.email && (
-                      <span className="text-xs text-red-500 flex items-center gap-1">
-                        <AlertCircle size={12} />
-                        {errors.email}
-                      </span>
-                    )}
+                    <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">{t("phoneLabel", "authPage")}</label>
+                    <input className={getInputClass("phone")} placeholder={t("phonePlaceholder", "authPage")} value={phone} onChange={(e) => setPhone(e.target.value)} />
+                    {errors.phone && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.phone}</span>}
                   </div>
                   <div className="flex flex-col gap-2">
-                <label
-                  className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
-                  htmlFor="role"
-                >
-                  {t("roleLabel", "authPage")}
-                </label>
-                <div className="relative flex w-full items-center rounded-lg">
-                  <select
-                    className={`form-select flex w-full min-w-0 rounded-lg border h-12 p-[10px] pr-12 text-base font-normal transition-colors appearance-none 
-                    ${errors.role ? "border-red-500 text-red-500" : "border-[#cfd9e7] dark:border-slate-600 text-[#0d131b] dark:text-white"} 
-                    bg-surface-light dark:bg-surface-dark focus:border-primary focus:ring-1 focus:ring-primary`}
-                    id="role"
-                    value={role}
-                    onChange={(e) => {
-                      setRole(e.target.value);
-                      if (errors.role) setErrors({ ...errors, role: "" });
-                    }}
-                  >
-                    <option disabled value="">
-                      {t("selectRolePlaceholder", "authPage")}
-                    </option>
-                    <option value="admin">{t("roleAdmin", "authPage")}</option>
-                    <option value="driver">
-                      {t("roleDriver", "authPage")}
-                    </option>
-                    <option value="manager">
-                      {t("roleManager", "authPage")}
-                    </option>
-                  </select>
-                  <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 px-3 flex items-center justify-center text-[#4c6c9a] dark:text-slate-400 pointer-events-none">
-                    expand_more
-                  </span>
-                </div>
-                {errors.role && (
-                  <span className="text-xs text-red-500 flex items-center gap-1">
-                    <AlertCircle size={12} />
-                    {errors.role}
-                  </span>
-                )}
-              </div>
+                    <label className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal">{t("professionalEmailLabel", "authPage")}</label>
+                    <input className={getInputClass("email")} placeholder={t("professionalEmailPlaceholder", "authPage")} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                    {errors.email && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.email}</span>}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal">{t("roleLabel", "authPage")}</label>
+                    <div className="relative flex w-full items-center rounded-lg">
+                      <select
+                        className={`form-select flex w-full min-w-0 rounded-lg border h-12 p-[10px] pr-12 text-base font-normal transition-colors appearance-none 
+                        ${errors.role ? "border-red-500 text-red-500" : "border-[#cfd9e7] dark:border-slate-600 text-[#0d131b] dark:text-white"} 
+                        bg-surface-light dark:bg-surface-dark focus:border-primary focus:ring-1 focus:ring-primary`}
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                      >
+                        <option disabled value="">{t("selectRolePlaceholder", "authPage")}</option>
+                        <option value="FLEET_MANAGER">{t("roleManager", "authPage")}</option>
+                        <option value="FLEET_DRIVER">{t("roleDriver", "authPage")}</option>
+                        <option value="FLEET_ADMIN">{t("roleAdmin", "authPage")}</option>
+                      </select>
+                      <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 px-3 text-[#4c6c9a] pointer-events-none">expand_more</span>
+                    </div>
+                    {errors.role && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.role}</span>}
+                  </div>
                 </>
               )}
 
               {step === 3 && (
                 <>
-                <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">
-                  Photo de profil (Optionnel)
-                </label>
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer bg-surface-light dark:bg-surface-dark border border-[#cfd9e7] dark:border-slate-600 rounded-lg px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-700 transition">
-                    <Upload className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-text-primary">
-                      Choisir un fichier
-                    </span>
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                    />
-                  </label>
-                  {file && (
-                    <span className="text-sm text-success truncate max-w-[200px]">
-                      {file.name}
-                    </span>
-                  )}
-                </div>
-              </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-[#0d131b] dark:text-slate-200">{t("profilePictureLabel", "authPage")}</label>
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer bg-surface-light dark:bg-surface-dark border border-[#cfd9e7] dark:border-slate-600 rounded-lg px-4 py-2 hover:bg-gray-100 transition">
+                        <Upload className="w-4 h-4 text-primary" />
+                        <span className="text-sm text-text-primary">{t("chooseFile", "common")}</span>
+                        <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                      </label>
+                      {file && <span className="text-sm text-success truncate max-w-[200px]">{file.name}</span>}
+                    </div>
+                  </div>
 
-              <div className="flex flex-col gap-2">
-                <label
-                  className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
-                  htmlFor="password"
-                >
-                  {t("passwordLabel", "authPage")}
-                </label>
-                <div className="relative flex w-full items-center rounded-lg">
-                  <input
-                    className={`${getInputClass("password")} pr-12`}
-                    id="password"
-                    placeholder={t("passwordSignupPlaceholder", "authPage")}
-                    type={passwordVisible ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      if (errors.password)
-                        setErrors({ ...errors, password: "" });
-                    }}
-                  />
-                  <button
-                    className="absolute right-0 top-0 bottom-0 px-3 flex items-center justify-center text-[#4c6c9a] dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors cursor-pointer"
-                    type="button"
-                    onClick={togglePasswordVisibility}
-                  >
-                    <span className="material-symbols-outlined text-[20px]">
-                      {passwordVisible ? "visibility_off" : "visibility"}
-                    </span>
-                  </button>
-                </div>
-                {errors.password && (
-                  <span className="text-xs text-red-500 flex items-center gap-1">
-                    <AlertCircle size={12} />
-                    {errors.password}
-                  </span>
-                )}
-              </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal">{t("passwordLabel", "authPage")}</label>
+                    <div className="relative flex w-full items-center rounded-lg">
+                      <input className={`${getInputClass("password")} pr-12`} placeholder={t("passwordSignupPlaceholder", "authPage")} type={passwordVisible ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} />
+                      <button className="absolute right-0 px-3 text-[#4c6c9a]" type="button" onClick={togglePasswordVisibility}>
+                        <span className="material-symbols-outlined text-[20px]">{passwordVisible ? "visibility_off" : "visibility"}</span>
+                      </button>
+                    </div>
+                  </div>
 
-              <div className="flex flex-col gap-2">
-                <label
-                  className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal"
-                  htmlFor="confirm-password"
-                >
-                  {t("confirmPasswordLabel", "authPage")}
-                </label>
-                <div className="relative flex w-full items-center rounded-lg">
-                  <input
-                    className={`${getInputClass("confirmPassword")} pr-12`}
-                    id="confirm-password"
-                    placeholder={t("confirmPasswordPlaceholder", "authPage")}
-                    type={confirmPasswordVisible ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      if (errors.confirmPassword)
-                        setErrors({ ...errors, confirmPassword: "" });
-                    }}
-                  />
-                  <button
-                    className="absolute right-0 top-0 bottom-0 px-3 flex items-center justify-center text-[#4c6c9a] dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors cursor-pointer"
-                    type="button"
-                    onClick={toggleConfirmPasswordVisibility}
-                  >
-                    <span className="material-symbols-outlined text-[20px]">
-                      {confirmPasswordVisible ? "visibility_off" : "visibility"}
-                    </span>
-                  </button>
-                </div>
-                {errors.confirmPassword && (
-                  <span className="text-xs text-red-500 flex items-center gap-1">
-                    <AlertCircle size={12} />
-                    {errors.confirmPassword}
-                  </span>
-                )}
-              </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[#0d131b] dark:text-slate-200 text-sm font-medium leading-normal">{t("confirmPasswordLabel", "authPage")}</label>
+                    <div className="relative flex w-full items-center rounded-lg">
+                      <input className={`${getInputClass("confirmPassword")} pr-12`} placeholder={t("confirmPasswordPlaceholder", "authPage")} type={confirmPasswordVisible ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                      <button className="absolute right-0 px-3 text-[#4c6c9a]" type="button" onClick={toggleConfirmPasswordVisibility}>
+                        <span className="material-symbols-outlined text-[20px]">{confirmPasswordVisible ? "visibility_off" : "visibility"}</span>
+                      </button>
+                    </div>
+                    {errors.confirmPassword && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={12} />{errors.confirmPassword}</span>}
+                  </div>
                 </>
               )}
-                <div className="flex gap-4">
-                {step > 1 && (
-                    <Button
-                    onClick={prevStep}
-                    type="button"
-                    className="w-full mt-4"
-                    variant="outline"
-                  >
-                    Précédent
-                  </Button>
-                )}
+
+              <div className="flex gap-4">
+                {step > 1 && <Button onClick={prevStep} type="button" className="w-full mt-4" variant="outline">{t("back", "common")}</Button>}
                 {step < 3 ? (
-                    <Button
-                    onClick={nextStep}
-                    type="button"
-                    className="w-full mt-4"
-                  >
-                    Suivant
-                  </Button>
-                ): (
-                    <Button
-                    type="submit"
-                    isLoading={isLoading}
-                    className="w-full mt-4"
-                  >
-                    {t("signupButton", "authPage")}
-                  </Button>
+                  <Button onClick={nextStep} type="button" className="w-full mt-4">{t("next", "common")}</Button>
+                ) : (
+                  <Button type="submit" isLoading={isLoading} className="w-full mt-4">{t("signupButton", "authPage")}</Button>
                 )}
-                </div>
+              </div>
             </form>
 
             <p className="text-center text-sm text-[#4c6c9a] dark:text-slate-400">
               {t("alreadyAccount", "authPage")}{" "}
-              <Link
-                className="font-bold text-primary hover:text-primary-dark transition-colors ml-1"
-                href={`/${locale}/login`}
-              >
-                {t("loginLink", "authPage")}
-              </Link>
+              <Link className="font-bold text-primary hover:text-primary-dark transition-colors ml-1" href={`/${locale}/login`}>{t("loginLink", "authPage")}</Link>
             </p>
           </div>
         </div>

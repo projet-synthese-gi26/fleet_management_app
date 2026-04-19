@@ -1,17 +1,16 @@
 import { apiClient } from "@/lib/api-client";
-import { LoginRequest, LoginResponse, RegisterRequest, User } from "@/types/auth-api.types";
+import { LoginRequest, LoginResponse, RegisterRequest } from "@/types/auth-api.types";
 
 export const authService = {
-  // 🟢 2.1. Login
+  // Connexion initiale
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
     const { data } = await apiClient.post<LoginResponse>("/auth/login", credentials);
     return data;
   },
 
-  // 🟢 2.2. Register (Multipart/form-data conforme à la spec)
+  // Inscription (Multipart pour la photo)
   register: async (payload: RegisterRequest): Promise<LoginResponse> => {
     const formData = new FormData();
-
     const userData = {
       username: payload.username,
       password: payload.password,
@@ -22,33 +21,23 @@ export const authService = {
       roles: payload.roles,
     };
 
-    // Correct pour Spring Boot @RequestPart
-    const userBlob = new Blob([JSON.stringify(userData)], {
-      type: "application/json",
-    });
-
+    const userBlob = new Blob([JSON.stringify(userData)], { type: "application/json" });
     formData.append("user", userBlob);
+    if (payload.file) formData.append("file", payload.file);
 
-    if (payload.file) {
-      formData.append("file", payload.file);
-    }
+    const { data } = await apiClient.post<LoginResponse>("/auth/register", formData);
+    return data;
+  },
 
-    const { data } = await apiClient.post<LoginResponse>(
-      "/auth/register",
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      },
-    );
+  // NOUVEAU : Rafraîchir le token d'accès en utilisant le refresh token
+  refresh: async (refreshToken: string): Promise<LoginResponse> => {
+    const { data } = await apiClient.post<LoginResponse>("/auth/refresh", { refreshToken });
     return data;
   },
 
   logout: () => {
     if (typeof window !== "undefined") {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+      localStorage.clear();
     }
   },
 };

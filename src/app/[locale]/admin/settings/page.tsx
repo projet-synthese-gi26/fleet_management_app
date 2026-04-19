@@ -23,12 +23,12 @@ export default function SettingsPage() {
   const [pushNotifications, setPushNotifications] = useState(false);
   const [inAppNotifications, setInAppNotifications] = useState(true);
 
-  const currentAdmin = {
-    name: "Administrateur Principal",
-    email: "admin@fleetcontrol.com",
-    role: "Administrateur",
-    joinedDate: "1er janvier 2023",
-  };
+  // const currentAdmin = {
+  //   name: "Administrateur Principal",
+  //   email: "admin@fleetcontrol.com",
+  //   role: "Administrateur",
+  //   joinedDate: "1er janvier 2023",
+  // };
 
   const toggleTheme = (value: "light" | "dark") => {
     setTheme(value);
@@ -68,10 +68,9 @@ export default function SettingsPage() {
                 <li
                   key={label}
                   className={`px-6 py-4 flex items-center gap-3 cursor-pointer transition-colors
-                    ${
-                      active
-                        ? "bg-background-secondary text-primary font-medium"
-                        : "hover:bg-background-secondary text-text-primary"
+                    ${active
+                      ? "bg-background-secondary text-primary font-medium"
+                      : "hover:bg-background-secondary text-text-primary"
                     }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -85,7 +84,7 @@ export default function SettingsPage() {
         {/* ===== Contenu droit ===== */}
         <div className="lg:col-span-2 space-y-8">
           {/* ===== Profil ===== */}
-          <div className="bg-surface rounded-xl border border-border-default shadow-sm p-8">
+          {/* <div className="bg-surface rounded-xl border border-border-default shadow-sm p-8">
             <h2 className="text-xl font-semibold mb-6 flex items-center gap-3 text-text-primary">
               <User className="w-6 h-6 text-primary" />
               Mon profil
@@ -114,10 +113,10 @@ export default function SettingsPage() {
                                font-medium text-text-primary">
               Modifier le profil
             </button>
-          </div>
+          </div> */}
 
           {/* ===== Sécurité ===== */}
-          <div className="bg-surface rounded-xl border border-border-default shadow-sm p-8">
+          {/* <div className="bg-surface rounded-xl border border-border-default shadow-sm p-8">
             <h2 className="text-xl font-semibold mb-6 flex items-center gap-3 text-text-primary">
               <Shield className="w-6 h-6 text-primary" />
               Sécurité
@@ -150,7 +149,7 @@ export default function SettingsPage() {
                 Changer le mot de passe
               </button>
             </div>
-          </div>
+          </div> */}
 
           {/* ===== Notifications ===== */}
           <div className="bg-surface rounded-xl border border-border-default shadow-sm p-8">
@@ -219,10 +218,9 @@ export default function SettingsPage() {
                       key={key}
                       onClick={() => toggleTheme(key as "light" | "dark")}
                       className={`flex items-center gap-3 px-6 py-4 rounded-lg border transition-all
-                        ${
-                          theme === key
-                            ? "border-primary bg-background-secondary"
-                            : "border-border-default"
+                        ${theme === key
+                          ? "border-primary bg-background-secondary"
+                          : "border-border-default"
                         }`}
                     >
                       <Icon className="w-6 h-6 text-text-primary" />

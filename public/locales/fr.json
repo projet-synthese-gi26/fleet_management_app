@@ -14,7 +14,10 @@
     "copyright": "© 2024 Logistique Cameroun",
     "cancel": "Annuler",
     "add": "Ajouter",
-    "close": "Fermer"
+    "close": "Fermer",
+     "next": "Suivant",
+    "back": "Précédent",
+    "chooseFile": "Choisir un fichier"
   },
   "landing": {
     "hero_title": "Contrôle Total de Votre Flotte. Partout au Cameroun.",
@@ -158,7 +161,26 @@
     "fullNamePlaceholder": "Entrez votre nom complet",
     "passwordMismatch": "Les mots de passe ne correspondent pas.",
     "signupSuccess": "Inscription réussie ! Vous pouvez maintenant vous connecter.",
-    "signupError": "Échec de l'inscription. Veuillez réessayer plus tard."
+    "signupError": "Échec de l'inscription. Veuillez réessayer plus tard.",
+  "identifierPlaceholder": "Ex: m.mbarga@yowyob.cm ou m.mbarga",
+  "firstNamePlaceholder": "Ex: Ibrahim",
+  "lastNamePlaceholder": "Ex: Kamga",
+  "usernamePlaceholder": "Ex: i.kamga",
+  "phonePlaceholder": "Ex: +237 6xx xxx xxx",
+    "firstNameLabel": "Prénom",
+    "lastNameLabel": "Nom",
+    "usernameLabel": "Nom d'utilisateur",
+    "phoneLabel": "Téléphone",
+    "errorFirstNameRequired": "Le prénom est requis.",
+    "errorLastNameRequired": "Le nom est requis.",
+    "errorUsernameRequired": "Le nom d'utilisateur est requis.",
+    "errorUsernameShort": "Au moins 3 caractères.",
+    "errorEmailRequired": "L'email est requis.",
+    "errorEmailInvalid": "Format d'email invalide.",
+    "errorRoleRequired": "Veuillez sélectionner un rôle.",
+    "errorPasswordRequired": "Le mot de passe est requis.",
+    "errorPasswordShort": "Au moins 6 caractères.",
+    "errorPasswordsMismatch": "Les mots de passe ne correspondent pas."
   },
   "driverDashboardPage": {
     "modalReportIssueTitle": "Signaler un problème",

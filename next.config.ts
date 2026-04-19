@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
       {
         source: "/api/proxy/:path*",
         // Teste avec HTTP si le HTTPS échoue
-        destination: "https://fleet-management-geofence.pynfi.com/api/v1/:path*",
+        destination: " https://traefikdev.yowyob.com/fleet-management/:path*",
       },
     ];
   },

@@ -8,6 +8,12 @@ import { AuthProvider } from "@/contexts/AuthContext";
 export const metadata: Metadata = {
   title: "Fleet Management and Geofencing System",
   description: "Real-time tracking, geofencing, and powerful analytics...",
+  // AJOUTE CE BLOC ICI :
+  icons: {
+    icon: '/fleet-logo.png',     
+    shortcut: '/fleet-logo.png',  
+    apple: '/fleet-logo.png',     
+  },
 };
 
 export default async function LocaleLayout({

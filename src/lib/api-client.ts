@@ -1,7 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { authService } from "@/services/auth.service";
 
-const BASE_URL = "/api/proxy";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://traefikdev.yowyob.com/fleet-management";
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,

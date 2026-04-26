@@ -18,9 +18,8 @@ COPY . .
 ARG NEXT_PUBLIC_API_URL
 ARG KEY_WEATHER_API
 
-RUN printf "NEXT_PUBLIC_API_URL=https://traefikdev.yowyob.com/fleet-management \
-KEY_WEATHER_API=fa029148898e126826c0efa612535314" \
-  > .env
+RUN echo "NEXT_PUBLIC_API_URL=https://traefikdev.yowyob.com/fleet-management/api/v1" > .env && \
+    echo "KEY_WEATHER_API=fa029148898e126826c0efa612535314" >> .env
 
 RUN npm run build
 
